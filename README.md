@@ -1,5 +1,7 @@
 # Clones
 
+[![Build Status](https://travis-ci.org/kingcons/clones.svg?branch=master)](https://travis-ci.org/kingcons/clones)
+
 ## Usage
 
 ## Installation
