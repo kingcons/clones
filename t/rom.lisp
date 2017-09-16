@@ -1,8 +1,7 @@
 (in-package :cl-user)
 
 (defpackage clones-test.rom
-  (:use :cl :clones.rom :clones.util :prove)
-  (:import-from :trivial-types :property-list))
+  (:use :cl :clones.rom :clones.util :prove))
 
 (in-package :clones-test.rom)
 
@@ -13,7 +12,6 @@
          (rom (parse-rom nestest))
          (header (rom-header rom)))
     (is-type rom 'rom)
-    (is-type header 'property-list)
     ;; Use subseq here to avoid printing out the whole byte vector in test report.
     (is-type (subseq (rom-prg rom) 0 #x20) 'byte-vector)
     (is-type (subseq (rom-chr rom) 0 #x20) 'byte-vector)
