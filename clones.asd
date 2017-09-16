@@ -20,6 +20,7 @@
                :trivial-types)
   :components ((:module "src"
                 :components
-                ((:file "rom")
+                ((:file "rom" :depends-on ("util" "conditions"))
+                 (:file "conditions")
                  (:file "util"))))
   :in-order-to ((test-op (test-op clones-test))))
