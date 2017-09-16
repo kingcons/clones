@@ -16,8 +16,8 @@
   :version "0.1"
   :author "Brit Butler"
   :license "LLGPL"
-  :depends-on (:mgl-pax
-               :alexandria)
+  :depends-on (:alexandria
+               :trivial-types)
   :components ((:module "src"
                 :components
                 ((:file "rom")
