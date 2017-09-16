@@ -2,7 +2,8 @@
 
 (defpackage :clones.rom
   (:use :cl :clones.util :clones.conditions)
-  (:import-from :alexandria :read-file-into-byte-vector)
+  (:import-from :alexandria :read-file-into-byte-vector
+                            :define-constant)
   (:export #:parse-rom
            #:rom
            #:rom-pathname
@@ -12,7 +13,7 @@
 
 (in-package :clones.rom)
 
-(defconstant +mappers+
+(define-constant +mappers+
   '((0  . "NROM")            ; All 32kB ROM + 8kB VROM games, SMB
     (1  . "Nintendo MMC1")   ; Final Fantasy, Metroid, Mega Man 2, Zelda
     (2  . "UNROM")           ; Castlevania, Contra, Metal Gear, Mega Man
@@ -24,7 +25,8 @@
     (8  . "FFE F3xxx")       ; F3xxx games off FFE CDROM
     (9  . "Nintendo MMC2")   ; Punchout
     (10 . "Nintendo MMC4"))  ; Punchout 2
-  "An association list of the most common NES memory mappers.")
+  :test #'equal
+  :documentation "An association list of the most common NES memory mappers.")
 
 (defstruct rom
   (pathname nil :read-only t)
