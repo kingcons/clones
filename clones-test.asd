@@ -15,7 +15,7 @@
                :prove)
   :components ((:module "t"
                 :components
-                ((:test-file "clones"))))
+                 ((:test-file "rom"))))
   :description "Test system for clones"
 
   :defsystem-depends-on (:prove-asdf)

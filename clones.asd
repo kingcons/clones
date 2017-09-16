@@ -20,5 +20,6 @@
                :alexandria)
   :components ((:module "src"
                 :components
-                ((:file "clones"))))
+                ((:file "rom")
+                 (:file "util"))))
   :in-order-to ((test-op (test-op clones-test))))
