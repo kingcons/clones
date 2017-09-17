@@ -41,12 +41,12 @@
 
 (defmethod print-object ((obj rom) stream)
   (print-unreadable-object (obj stream :type t)
-    (with-slots (pathname prg-size chr-size mapper-name) obj
-      (format stream "~A.~A :prg-count ~D :chr-count ~D :mapper-name ~A"
+    (with-slots (pathname prg-count chr-count mapper-name) obj
+      (format stream "~A.~A :prg-size ~D :chr-size ~D :mapper-name ~A"
               (pathname-name pathname)
               (pathname-type pathname)
-              prg-count
-              chr-count
+              (* prg-count #x4000)
+              (* chr-count #x2000)
               mapper-name))))
 
 (defun parse-rom (pathname)
