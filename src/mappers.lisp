@@ -50,7 +50,9 @@
 (defstruct (nrom (:include mapper)))
 
 (defmethod load-prg ((mapper nrom) address)
-  (let* ((rom (mapper-rom mapper)))
+  #f
+  (declare (type ub16 address))
+  (let ((rom (mapper-rom mapper)))
     (if (= 1 (rom-prg-count rom))
         (aref (rom-prg rom) (logand address #x3fff))
         (aref (rom-prg rom) (logand address #x7fff)))))
