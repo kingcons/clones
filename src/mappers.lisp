@@ -62,6 +62,7 @@
   0)
 
 (defmethod load-chr ((mapper nrom) address)
+  #f
   (declare (type ub16 address))
   (let ((rom (mapper-rom mapper)))
     (aref (rom-chr rom) address)))
