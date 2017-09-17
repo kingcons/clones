@@ -9,17 +9,16 @@
 
 (subtest "ROM Interface"
   (let* ((nestest (clones-asset "roms/nestest.nes"))
-         (rom (parse-rom nestest))
-         (header (rom-header rom)))
+         (rom (parse-rom nestest)))
     (is-type rom 'rom)
-    ;; Use subseq here to avoid printing out the whole byte vector in test report.
-    (is-type (subseq (rom-prg rom) 0 #x20) 'byte-vector)
-    (is-type (subseq (rom-chr rom) 0 #x20) 'byte-vector)
+    ;; Use subseq here to avoid printing out the whole byte vector in test.
+    (is-type (subseq (rom-prg rom) 0 #x10) 'byte-vector)
+    (is-type (subseq (rom-chr rom) 0 #x10) 'byte-vector)
     (is (rom-pathname rom) nestest)
-    (is (getf header :prg-count) 1)
-    (is (getf header :chr-count) 1)
-    (is (getf header :mirroring) :horizontal)
-    (is (getf header :mapper-name) :nrom)
+    (is (rom-prg-count rom) 1)
+    (is (rom-chr-count rom) 1)
+    (is (rom-mirroring rom) :horizontal)
+    (is (rom-mapper-name rom) :nrom)
     (is-print (princ rom) "#<ROM nestest.nes :prg-size 16384 :chr-size 8192 :mapper-name NROM>")))
 
 (finalize)

@@ -9,7 +9,11 @@
            #:rom-pathname
            #:rom-header
            #:rom-prg
-           #:rom-chr))
+           #:rom-chr
+           #:rom-prg-count
+           #:rom-chr-count
+           #:rom-mirroring
+           #:rom-mapper-name))
 
 (in-package :clones.rom)
 
@@ -27,20 +31,23 @@
   :documentation "An association list of the most common NES memory mappers.")
 
 (defstruct rom
-  (pathname nil :read-only t)
-  (header   nil :read-only t)
-  (prg      nil :read-only t)
-  (chr      nil :read-only t))
+  (pathname    nil :read-only t)
+  (prg         nil :read-only t)
+  (chr         nil :read-only t)
+  (prg-count   nil :read-only t)
+  (chr-count   nil :read-only t)
+  (mirroring   nil :read-only t)
+  (mapper-name nil :read-only t))
 
 (defmethod print-object ((obj rom) stream)
   (print-unreadable-object (obj stream :type t)
-    (with-slots (pathname header) obj
+    (with-slots (pathname prg-size chr-size mapper-name) obj
       (format stream "~A.~A :prg-size ~D :chr-size ~D :mapper-name ~A"
               (pathname-name pathname)
               (pathname-type pathname)
-              (getf header :prg-size)
-              (getf header :chr-size)
-              (getf header :mapper-name)))))
+              prg-size
+              chr-size
+              mapper-name))))
 
 (defun parse-rom (pathname)
   (let* ((bytes (read-file-into-byte-vector pathname))
@@ -49,22 +56,23 @@
          (prg (subseq bytes 16 (+ 16 prg-size)))
          (chr (subseq bytes (+ 16 prg-size))))
     (make-rom :pathname pathname
-              :header metadata
               :prg prg
-              :chr chr)))
+              :chr chr
+              :prg-count (getf metadata :prg-count)
+              :chr-count (getf metadata :chr-count)
+              :mirroring (getf metadata :mirroring)
+              :mapper-name (getf metadata :mapper-name))))
 
 (defun parse-header (pathname header)
   (unless (valid-header-p header)
     (error 'invalid-header header :file pathname :header header))
   (let ((mapper-id (%mapper-id header))
         (prg-count (aref header 4))
-        (chr-count (aref header 5))
-        (ram-count (aref header 8)))
+        (chr-count (aref header 5)))
     (list :prg-count   prg-count
           :prg-size    (* #x4000 prg-count)
           :chr-count   chr-count
           :chr-size    (* #x2000 chr-count)
-          :ram-count   ram-count
           :mapper-id   mapper-id
           :mapper-name (%mapper-name mapper-id)
           :mirroring   (if (zerop (ldb (byte 1 0) (aref header 6)))
