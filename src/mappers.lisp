@@ -52,10 +52,10 @@
 (defmethod load-prg ((mapper nrom) address)
   #f
   (declare (type ub16 address))
-  (let ((rom (mapper-rom mapper)))
-    (if (= 1 (rom-prg-count rom))
-        (aref (rom-prg rom) (logand address #x3fff))
-        (aref (rom-prg rom) (logand address #x7fff)))))
+  (let* ((rom (mapper-rom mapper))
+         (prg-count (rom-prg-count rom))
+         (end-of-page (if (= 1 prg-count) #x3fff #x7fff)))
+    (aref (rom-prg rom) (logand address end-of-page))))
 
 (defmethod store-prg ((mapper nrom) address value)
   (declare (ignore address))

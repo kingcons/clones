@@ -22,4 +22,3 @@
     (is-print (princ rom) "#<ROM nestest.nes :prg-size 16384 :chr-size 8192 :mapper-name NROM>")))
 
 (finalize)
-
