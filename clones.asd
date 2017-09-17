@@ -19,7 +19,8 @@
   :depends-on (:alexandria)
   :components ((:module "src"
                 :components
-                ((:file "rom" :depends-on ("util" "conditions"))
+                ((:file "mappers" :depends-on ("rom" "conditions"))
+                 (:file "rom" :depends-on ("util" "conditions"))
                  (:file "conditions")
                  (:file "util"))))
   :in-order-to ((test-op (test-op clones-test))))

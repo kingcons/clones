@@ -17,3 +17,11 @@
   (:report (lambda (condition stream)
              (format stream "Could not parse the ROM at ~A.~%~%Header was ~A.~%"
                      (file condition) (header condition)))))
+
+(define-condition unsupported-mapper (clones-error)
+  ((rom :initarg :rom :reader rom)
+   (mapper-name :initarg :mapper-name :reader mapper-name))
+  (:report (lambda (condition stream)
+             (format stream "The mapper ~S is not currently supported.~%~%"
+                     (mapper-name condition))
+             (format stream "ROM: ~A~%~%" (rom condition)))))
