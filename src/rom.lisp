@@ -13,6 +13,9 @@
 
 (in-package :clones.rom)
 
+;;;; References:
+;;;; http://fms.komkon.org/EMUL8/NES.html#LABM
+
 (define-constant +mappers+
   '((0  . "NROM")            ; All 32kB ROM + 8kB VROM games, SMB
     (1  . "Nintendo MMC1")   ; Final Fantasy, Metroid, Mega Man 2, Zelda
