@@ -32,10 +32,10 @@
 
 (defstruct rom
   (pathname    nil :read-only t)
-  (prg         nil :read-only t)
-  (chr         nil :read-only t)
-  (prg-count   nil :read-only t)
-  (chr-count   nil :read-only t)
+  (prg         #() :read-only t :type byte-vector)
+  (chr         #() :read-only t :type byte-vector)
+  (prg-count     0 :read-only t :type ub8)
+  (chr-count     0 :read-only t :type ub8)
   (mirroring   nil :read-only t)
   (mapper-name nil :read-only t))
 
