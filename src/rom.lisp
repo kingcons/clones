@@ -17,17 +17,12 @@
 ;;;; http://fms.komkon.org/EMUL8/NES.html#LABM
 
 (define-constant +mappers+
-  '((0  . "NROM")            ; All 32kB ROM + 8kB VROM games, SMB
-    (1  . "Nintendo MMC1")   ; Final Fantasy, Metroid, Mega Man 2, Zelda
-    (2  . "UNROM")           ; Castlevania, Contra, Metal Gear, Mega Man
-    (3  . "CNROM")           ; Cybernoid, Gradius, PipeDream, QBert
-    (4  . "Nintendo MMC3")   ; Double Dragon II, SMB 3, SuperContra
-    (5  . "Nintendo MMC5")   ; Castlevania3
-    (6  . "FFE F4xxx")       ; F4xxx games off FFE CDROM
-    (7  . "AOROM switch")    ; WizardsAndWarriors, Solstice, etc.
-    (8  . "FFE F3xxx")       ; F3xxx games off FFE CDROM
-    (9  . "Nintendo MMC2")   ; Punchout
-    (10 . "Nintendo MMC4"))  ; Punchout 2
+  '((0  . :nrom)    ; All 32kB ROM + 8kB VROM games, SMB
+    (1  . :mmc1)    ; Final Fantasy, Metroid, Mega Man 2, Zelda
+    (2  . :unrom)   ; Castlevania, Contra, Metal Gear, Mega Man
+    (3  . :cnrom)   ; Cybernoid, Gradius, PipeDream, QBert
+    (4  . :mmc3)    ; Double Dragon II, SMB 3, SuperContra
+    (5  . :mmc5))   ; Castlevania3
   :test #'equal
   :documentation "An association list of the most common NES memory mappers.")
 

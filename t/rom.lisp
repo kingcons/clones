@@ -19,7 +19,7 @@
     (is (getf header :prg-count) 1)
     (is (getf header :chr-count) 1)
     (is (getf header :mirroring) :horizontal)
-    (is (getf header :mapper-name) "NROM")
+    (is (getf header :mapper-name) :nrom)
     (is-print (princ rom) "#<ROM nestest.nes :prg-size 16384 :chr-size 8192 :mapper-name NROM>")))
 
 (finalize)
