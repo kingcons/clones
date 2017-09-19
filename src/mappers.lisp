@@ -53,9 +53,9 @@
   #f
   (declare (type ub16 address))
   (let* ((rom (mapper-rom mapper))
-         (prg-count (rom-prg-count rom))
-         (end-of-page (if (= 1 prg-count) #x3fff #x7fff)))
-    (aref (rom-prg rom) (logand address end-of-page))))
+         (end-of-rom (1- (length (rom-prg rom))))
+         (wrapped-address (logand address end-of-rom)))
+    (aref (rom-prg rom) wrapped-address)))
 
 (defmethod store-prg ((mapper nrom) address value)
   (declare (ignore address))
