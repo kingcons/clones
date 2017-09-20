@@ -10,6 +10,8 @@
            #:rom-header
            #:rom-prg
            #:rom-chr
+           #:rom-prg-size
+           #:rom-chr-size
            #:rom-prg-count
            #:rom-chr-count
            #:rom-mirroring
@@ -34,6 +36,8 @@
   (pathname    nil :read-only t)
   (prg         #() :read-only t :type byte-vector)
   (chr         #() :read-only t :type byte-vector)
+  (prg-size      0 :read-only t :type fixnum)
+  (chr-size      0 :read-only t :type fixnum)
   (prg-count     0 :read-only t :type ub8)
   (chr-count     0 :read-only t :type ub8)
   (mirroring   nil :read-only t)
@@ -41,23 +45,28 @@
 
 (defmethod print-object ((obj rom) stream)
   (print-unreadable-object (obj stream :type t)
-    (with-slots (pathname prg-count chr-count mapper-name) obj
+    (with-slots (pathname prg-size chr-size mapper-name) obj
       (format stream "~A.~A :prg-size ~D :chr-size ~D :mapper-name ~A"
               (pathname-name pathname)
               (pathname-type pathname)
-              (* prg-count #x4000)
-              (* chr-count #x2000)
+              prg-size
+              chr-size
               mapper-name))))
 
 (defun parse-rom (pathname)
   (let* ((bytes (read-file-into-byte-vector pathname))
          (metadata (parse-header pathname (subseq bytes 0 16)))
          (prg-size (getf metadata :prg-size))
+         (chr-size (getf metadata :chr-size))
          (prg (subseq bytes 16 (+ 16 prg-size)))
          (chr (subseq bytes (+ 16 prg-size))))
+    (assert (= (length prg) prg-size))
+    (assert (= (length chr) chr-size))
     (make-rom :pathname pathname
               :prg prg
               :chr chr
+              :prg-size prg-size
+              :chr-size chr-size
               :prg-count (getf metadata :prg-count)
               :chr-count (getf metadata :chr-count)
               :mirroring (getf metadata :mirroring)

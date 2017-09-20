@@ -17,6 +17,8 @@
     (is (rom-pathname rom) nestest)
     (is (rom-prg-count rom) 1)
     (is (rom-chr-count rom) 1)
+    (is (rom-prg-size rom) #x4000)
+    (is (rom-chr-size rom) #x2000)
     (is (rom-mirroring rom) :horizontal)
     (is (rom-mapper-name rom) :nrom)
     (is-print (princ rom) "#<ROM nestest.nes :prg-size 16384 :chr-size 8192 :mapper-name NROM>")))
