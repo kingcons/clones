@@ -74,7 +74,7 @@
 
 (defun parse-header (pathname header)
   (unless (valid-header-p header)
-    (error 'invalid-header header :file pathname :header header))
+    (error 'invalid-rom :file pathname :header header))
   (let ((mapper-id (%mapper-id header))
         (prg-count (aref header 4))
         (chr-count (aref header 5)))
