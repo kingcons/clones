@@ -19,7 +19,8 @@
   :depends-on (:alexandria)
   :components ((:module "src"
                 :components
-                ((:file "mappers" :depends-on ("rom" "conditions"))
+                ((:file "memory" :depends-on ("mappers" "util"))
+                 (:file "mappers" :depends-on ("rom" "conditions"))
                  (:file "rom" :depends-on ("util" "conditions"))
                  (:file "conditions")
                  (:file "util"))))
