@@ -1,19 +1,19 @@
 (in-package :cl-user)
 
 (defpackage clones-test.rom
-  (:use :cl :clones.rom :clones.util :prove))
+  (:use :cl :clones.rom :prove))
 
 (in-package :clones-test.rom)
 
 (plan 1)
 
 (subtest "ROM Interface"
-  (let* ((nestest (clones-asset "roms/nestest.nes"))
+  (let* ((nestest (clones.util:asset-path "roms/nestest.nes"))
          (rom (parse-rom nestest)))
     (is-type rom 'rom)
     ;; Use subseq here to avoid printing out the whole byte vector in test.
-    (is-type (subseq (rom-prg rom) 0 #x10) 'byte-vector)
-    (is-type (subseq (rom-chr rom) 0 #x10) 'byte-vector)
+    (is-type (subseq (rom-prg rom) 0 #x10) 'clones.util:byte-vector)
+    (is-type (subseq (rom-chr rom) 0 #x10) 'clones.util:byte-vector)
     (is (rom-pathname rom) nestest)
     (is (rom-prg-count rom) 1)
     (is (rom-chr-count rom) 1)

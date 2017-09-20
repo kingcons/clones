@@ -2,7 +2,7 @@
 
 (defpackage :clones.util
   (:use :cl)
-  (:export #:clones-asset
+  (:export #:asset-path
            #:ub8
            #:ub16
            #:byte-vector
@@ -11,7 +11,7 @@
 
 (in-package :clones.util)
 
-(defun clones-asset (namestring)
+(defun asset-path (namestring)
   "Compute the relative path of a static asset in the clones project."
   (asdf:system-relative-pathname :clones namestring))
 
