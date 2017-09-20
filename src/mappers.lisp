@@ -53,7 +53,7 @@
   #f
   (declare (type ub16 address))
   (let* ((rom (mapper-rom mapper))
-         (end-of-rom (1- (length (rom-prg rom))))
+         (end-of-rom (1- (rom-prg-size rom)))
          (wrapped-address (logand address end-of-rom)))
     (aref (rom-prg rom) wrapped-address)))
 
