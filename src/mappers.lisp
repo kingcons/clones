@@ -1,7 +1,12 @@
 (in-package :cl-user)
 
 (defpackage :clones.mappers
-  (:use :cl :clones.rom :clones.conditions :clones.util)
+  (:use :cl :clones.rom)
+  (:import-from :clones.conditions
+                :unsupported-mapper)
+  (:import-from :clones.util
+                :ub16
+                :enable-sharpf-read-macro)
   (:export #:mapper
            #:load-prg
            #:store-prg

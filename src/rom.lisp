@@ -2,8 +2,9 @@
 
 (defpackage :clones.rom
   (:use :cl :clones.util :clones.conditions)
-  (:import-from :alexandria :read-file-into-byte-vector
-                            :define-constant)
+  (:import-from :alexandria
+                :read-file-into-byte-vector
+                :define-constant)
   (:export #:parse-rom
            #:rom
            #:rom-pathname
