@@ -2,7 +2,8 @@
 
 (defpackage :clones.mappers
   (:use :cl :clones.rom :clones.conditions :clones.util)
-  (:export #:load-prg
+  (:export #:mapper
+           #:load-prg
            #:store-prg
            #:load-chr
            #:store-chr

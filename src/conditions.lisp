@@ -3,7 +3,8 @@
 (defpackage :clones.conditions
   (:use :cl)
   (:export #:clones-error
-           #:invalid-rom))
+           #:invalid-rom
+           #:unsupported-mapper))
 
 (in-package :clones.conditions)
 
