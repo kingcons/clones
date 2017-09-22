@@ -22,6 +22,7 @@
                 ((:file "memory" :depends-on ("mappers" "util"))
                  (:file "mappers" :depends-on ("rom" "conditions"))
                  (:file "rom" :depends-on ("util" "conditions"))
+                 (:file "instructions")
                  (:file "conditions")
                  (:file "util"))))
   :in-order-to ((test-op (test-op clones-test))))
