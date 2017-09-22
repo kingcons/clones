@@ -14,6 +14,7 @@
   (:export #:memory
            #:make-memory
            #:fetch
+           #:fetch-word
            #:store))
 
 (in-package :clones.memory)
@@ -47,3 +48,10 @@
 ;        ((< address #x8000) 0) ; TODO: SRAM Not Yet Implemented
         (t
          (store-prg (memory-mapper memory) address value))))
+
+(declaim (ftype (function (memory ub16) ub16) fetch-word))
+(defun fetch-word (memory address)
+  #f
+  (let ((low-byte  (fetch memory address))
+        (high-byte (fetch memory (1+ address))))
+    (+ low-byte (ash high-byte 8))))
