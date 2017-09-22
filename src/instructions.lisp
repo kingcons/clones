@@ -2,9 +2,15 @@
 
 (defpackage :clones.instructions
   (:use :cl)
-  (:export #:*instructions*))
+  (:export #:*instructions*
+           #:*instructions-meta*
+           #:initialize-metadata))
 
 (in-package :cl-user)
+
+(defvar *instructions-meta*
+  (make-array #x100 :element-type list :initial-element '())
+  "An array of opcodes -> (mnemonic bytes cycles address-mode docs).")
 
 (defvar *instructions*
   '((adc ((#x61 2 6 indirect-x)
@@ -192,3 +198,9 @@
   (assembly-mnemonic ((opcode-1 bytes cycles addressing-mode &optional raw)
                       (opcode-n bytes cycles addressing-mode &optional raw))
                      description &optional skip-pc-bump)")
+
+(defun initialize-metadata ()
+  (loop for (name versions description skip-pc) in *instructions*
+        do (loop for (opcode bytes cycles addr-mode) in versions
+                 do (setf (aref *instructions-meta* opcode)
+                          `(,name ,bytes ,cycles ,addr-mode ,description)))))
