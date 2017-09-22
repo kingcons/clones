@@ -9,7 +9,7 @@
 (in-package :cl-user)
 
 (defvar *instructions-meta*
-  (make-array #x100 :element-type list :initial-element '())
+  (make-array #x100 :element-type 'list :initial-element '())
   "An array of opcodes -> (mnemonic bytes cycles address-mode docs).")
 
 (defvar *instructions*
