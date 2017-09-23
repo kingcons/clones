@@ -64,7 +64,7 @@
     (aref (rom-prg rom) wrapped-address)))
 
 (defmethod store-prg ((mapper nrom) address value)
-  (declare (ignore address))
+  (declare (ignore address value))
   0)
 
 (defmethod load-chr ((mapper nrom) address)
