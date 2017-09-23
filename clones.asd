@@ -19,11 +19,12 @@
   :depends-on (:alexandria)
   :components ((:module "src"
                 :components
-                ((:file "cpu" :depends-on ("memory" "instructions"))
+                ((:file "instructions")
+                 (:file "addressing" :depends-on ("cpu" "memory" "util"))
+                 (:file "cpu" :depends-on ("memory"))
                  (:file "memory" :depends-on ("mappers" "util"))
                  (:file "mappers" :depends-on ("rom" "conditions"))
                  (:file "rom" :depends-on ("util" "conditions"))
-                 (:file "instructions")
                  (:file "conditions")
                  (:file "util"))))
   :in-order-to ((test-op (test-op clones-test))))
