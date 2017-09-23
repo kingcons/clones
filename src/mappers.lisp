@@ -5,8 +5,7 @@
   (:import-from :clones.conditions
                 :unsupported-mapper)
   (:import-from :clones.util
-                :ub16
-                :enable-sharpf-read-macro)
+                :ub16)
   (:export #:mapper
            #:load-prg
            #:store-prg
@@ -15,9 +14,6 @@
            #:load-rom))
 
 (in-package :clones.mappers)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (enable-sharpf-read-macro))
 
 ;;; Mapper Protocol Notes:
 ;;; store and store-chr are permitted to return an arbitrary value if
