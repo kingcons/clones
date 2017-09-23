@@ -15,6 +15,7 @@
            #:make-memory
            #:fetch
            #:fetch-word
+           #:fetch-indirect
            #:store))
 
 (in-package :clones.memory)
@@ -54,4 +55,13 @@
   #f
   (let ((low-byte  (fetch memory address))
         (high-byte (fetch memory (1+ address))))
+    (+ low-byte (ash high-byte 8))))
+
+(declaim (ftype (function (memory ub16) ub16) fetch-indirect))
+(defun fetch-indirect (memory address)
+  #f
+  (let* ((wrapped (+ (logand address #xff00)
+                     (logand (1+ address) #xff)))
+         (low-byte (fetch memory address))
+         (high-byte (fetch memory wrapped)))
     (+ low-byte (ash high-byte 8))))
