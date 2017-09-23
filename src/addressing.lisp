@@ -84,11 +84,10 @@
 
 ;; Relative mode:
 ;; Offset is a signed byte in two's complement form.
+;; If negative, xor the offset with 255 to determine the unsigned value and jump.
 ;; If positive, add one to offset to step over the offset and jump.
-;; If negative, xor the offset with 255 to determine the unsigned value.
 (defaddress relative
-  (let* ((offset (fetch memory program-counter))
-         (backwards-p (logbitp 7 offset)))
-    (if backwards-p
+  (let* ((offset (fetch memory program-counter)))
+    (if (logbitp 7 offset)
         (wrap-word (- program-counter (logxor #xff offset)))
         (wrap-word (+ program-counter (1+ offset))))))
