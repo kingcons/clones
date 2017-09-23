@@ -15,7 +15,10 @@
                :prove)
   :components ((:module "t"
                 :components
-                ((:test-file "mappers")
+                ((:test-file "cpu")
+                 (:test-file "addressing")
+                 (:test-file "memory")
+                 (:test-file "mappers")
                  (:test-file "rom"))))
   :description "Test system for clones"
 
