@@ -6,7 +6,7 @@
            #:*instructions-meta*
            #:initialize-metadata))
 
-(in-package :cl-user)
+(in-package :clones.instructions)
 
 (defvar *instructions-meta*
   (make-array #x100 :element-type 'list :initial-element '())
