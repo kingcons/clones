@@ -7,6 +7,8 @@
            #:ub16
            #:byte-vector
            #:make-byte-vector
+           #:wrap-byte
+           #:wrap-word
            #:enable-sharpf-read-macro))
 
 (in-package :clones.util)
@@ -23,6 +25,18 @@
 (defun make-byte-vector (size)
   "Make a byte vector of length SIZE."
   (make-array size :element-type 'ub8))
+
+(declaim (inline wrap-byte))
+(defun wrap-byte (number)
+  "Constrain a number to (integer 0 255)."
+  #f
+  (logand number #xff))
+
+(declaim (inline wrap-word))
+(defun wrap-word (number)
+  "Constrain a number to (integer 0 65535)."
+  #f
+  (logand number #xffff))
 
 (defun enable-sharpf-read-macro ()
   "Add a read macro #f to easily declare optimization settings even in defmacro.
