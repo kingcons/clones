@@ -2,16 +2,21 @@
 
 (defpackage :clones.util
   (:use :cl)
-  (:export #:asset-path
+  (:export #:*standard-optimize-settings*
+           #:enable-sharpf-read-macro
+           #:asset-path
            #:ub8
            #:ub16
            #:byte-vector
            #:make-byte-vector
            #:wrap-byte
-           #:wrap-word
-           #:enable-sharpf-read-macro))
+           #:wrap-word))
 
 (in-package :clones.util)
+
+(defvar *standard-optimize-settings*
+  '(optimize speed (debug 1) (space 0) (compilation-speed 0))
+  "Optimize settings to use in opcode definitions (where safety 0 won't do).")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun enable-sharpf-read-macro ()

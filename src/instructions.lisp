@@ -1,16 +1,35 @@
 (in-package :cl-user)
 
 (defpackage :clones.instructions
-  (:use :cl)
-  (:export #:*instructions*
-           #:*instructions-meta*
-           #:initialize-metadata))
+  (:use :cl :clones.addressing :clones.cpu)
+  (:import-from :alexandria
+                :last-elt
+                :symbolicate
+                :with-gensyms)
+  (:import-from :clones.conditions
+                :illegal-opcode)
+  (:import-from :clones.util
+                :*standard-optimize-settings*
+                :wrap-byte)
+  (:export #:*instruction-funs*
+           #:*instruction-meta*))
 
 (in-package :clones.instructions)
 
-(defvar *instructions-meta*
-  (make-array #x100 :element-type 'list :initial-element '())
-  "An array of opcodes -> (mnemonic bytes cycles address-mode docs).")
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *instruction-funs*
+    (make-array #x100 :element-type 'function
+                      :initial-element (lambda (cpu)
+                                         (error 'illegal-opcode :cpu cpu)))
+    "An array of functions that take a CPU and execute a single opcode.")
+
+  (defvar *instruction-meta*
+    (make-array #x100 :element-type 'list :initial-element '())
+    "An array of opcodes -> (mnemonic bytes cycles address-mode docs).")
+
+  (defun %build-op-name (name opcode)
+    "Build a symbol to name a function implementing a 6502 opcode."
+    (symbolicate name '- (format nil "~2,'0X" opcode))))
 
 (defvar *instructions*
   '((adc ((#x61 2 6 indirect-x)
@@ -197,10 +216,40 @@
   "A list describing the 6502 Instruction Set of the form:
   (assembly-mnemonic ((opcode-1 bytes cycles addressing-mode &optional raw)
                       (opcode-n bytes cycles addressing-mode &optional raw))
-                     description &optional skip-pc-bump)")
+                     description &optional skip-pc)")
 
-(defun initialize-metadata ()
-  (loop for (name versions description skip-pc) in *instructions*
-        do (loop for (opcode bytes cycles addr-mode) in versions
-                 do (setf (aref *instructions-meta* opcode)
-                          `(,name ,bytes ,cycles ,addr-mode ,description)))))
+(defmacro define-instruction (name (&key docs skip-pc)
+                              opcodes &body body)
+    `(progn
+       ,@(loop for (opcode bytes cycles addr-mode raw) in opcodes
+               collect `(%define-opcode (,name ,opcode ,addr-mode
+                                         :bytes ,bytes :cycles ,cycles
+                                         :raw ,raw :skip-pc ,skip-pc)
+                          ,@body))
+       ,@(loop for (opcode) in opcodes
+               collect `(setf (aref *instruction-funs* ,opcode)
+                              (function ,(%build-op-name name opcode))))
+       ,@(loop for (opcode bytes cycles addr-mode raw) in opcodes
+               collect `(setf (aref *instruction-meta* opcode)
+                              (,name ,bytes ,cycles ,addr-mode ,docs))))))
+
+(defmacro %define-opcode ((name opcode address-mode &key bytes cycles raw skip-pc)
+                         &body body)
+  `(defun ,(%build-op-name name opcode) (cpu)
+     (declare (type cpu cpu))
+     (declare #.*standard-optimize-settings*)
+     (incf (cpu-pc cpu))
+     ,(cond ((null address-mode) `(progn ,@body))
+            (raw `(let ((address (,address-mode cpu)))
+                    ,@body))
+            (t `(let ((address `(fetch (cpu-memory cpu) (,address-mode cpu))))
+                  ,@body)))
+     (incf (cpu-cycles cpu) ,cycles)
+     ,@(unless (or skip-pc (= 1 bytes))
+         `((incf (cpu-pc cpu) ,(1- bytes))))))
+
+(define-instruction inx (:docs "Increment X")
+  ((#xe8 1 2 nil))
+  (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
+    (setf (cpu-x-reg cpu) result)
+    (set-flags-zn cpu result)))
