@@ -230,8 +230,8 @@
                collect `(setf (aref *instruction-funs* ,opcode)
                               (function ,(%build-op-name name opcode))))
        ,@(loop for (opcode bytes cycles addr-mode raw) in opcodes
-               collect `(setf (aref *instruction-meta* opcode)
-                              (,name ,bytes ,cycles ,addr-mode ,docs))))))
+               collect `(setf (aref *instruction-meta* ,opcode)
+                              '(,name ,bytes ,cycles ,addr-mode ,docs)))))
 
 (defmacro %define-opcode ((name opcode address-mode &key bytes cycles raw skip-pc)
                          &body body)
