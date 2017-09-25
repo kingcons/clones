@@ -1,9 +1,13 @@
 (in-package :cl-user)
 
 (defpackage :clones.cpu
-  (:use :cl :clones.memory)
+  (:use :cl)
   (:import-from :alexandria
                 :with-gensyms)
+  (:import-from :clones.memory
+                :memory
+                :fetch
+                :store)
   (:import-from :clones.util
                 :ub8
                 :ub16
@@ -17,7 +21,15 @@
            #:cpu-y-reg
            #:cpu-stack
            #:cpu-status
-           #:cpu-pc))
+           #:cpu-pc
+           #:update-flag
+           #:set-flags-zn
+           #:compare
+           #:stack-push
+           #:stack-push-word
+           #:stack-pop
+           #:stack-pop-word
+           #:branch-if))
 
 (in-package :clones.cpu)
 
@@ -46,6 +58,7 @@
       `(let ((,new-bit (if ,test 1 0)))
          (setf (ldb (byte 1 ,index) (cpu-status ,cpu)) ,new-bit)))))
 
+(declaim (inline set-flags-zn))
 (defun set-flags-zn (cpu value)
   (declare (type cpu cpu)
            (type ub8 value))
