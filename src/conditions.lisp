@@ -4,7 +4,8 @@
   (:use :cl)
   (:export #:clones-error
            #:invalid-rom
-           #:unsupported-mapper))
+           #:unsupported-mapper
+           #:illegal-opcode))
 
 (in-package :clones.conditions)
 
@@ -26,3 +27,9 @@
              (format stream "The mapper ~S is not currently supported.~%~%"
                      (mapper-name condition))
              (format stream "ROM: ~A~%~%" (rom condition)))))
+
+(define-condition illegal-opcode (clones-error)
+  ((cpu :initarg :cpu :reader cpu))
+  (:report (lambda (condition stream)
+             (format stream "Could not execute the current opcode for ~A.~%"
+                     (cpu condition)))))
