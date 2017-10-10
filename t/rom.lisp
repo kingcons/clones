@@ -13,7 +13,7 @@
          (aorom (clones.util:asset-path "roms/aorom.nes"))
          (rom (parse-rom nestest)))
     (is-error (parse-rom invalid) 'clones.conditions:invalid-rom)
-    (is (rom-mapper-name (parse-rom aorom)) "Unknown")
+    (is (rom-mapper-name (parse-rom aorom)) :unknown)
     (is-type rom 'rom)
     ;; Use subseq here to avoid printing out the whole byte vector in test.
     (is-type (subseq (rom-prg rom) 0 #x10) 'clones.util:byte-vector)

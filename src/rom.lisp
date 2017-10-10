@@ -28,21 +28,20 @@
     (1  . :mmc1)    ; Final Fantasy, Metroid, Mega Man 2, Zelda
     (2  . :unrom)   ; Castlevania, Contra, Metal Gear, Mega Man
     (3  . :cnrom)   ; Cybernoid, Gradius, PipeDream, QBert
-    (4  . :mmc3)    ; Double Dragon II, SMB 3, SuperContra
-    (5  . :mmc5))   ; Castlevania3
+    (4  . :mmc3))   ; Double Dragon II, SMB 3, SuperContra
   :test #'equal
   :documentation "An association list of the most common NES memory mappers.")
 
 (defstruct rom
-  (pathname    nil :read-only t)
+  (pathname    nil :read-only t :type pathname)
   (prg         #() :read-only t :type byte-vector)
   (chr         #() :read-only t :type byte-vector)
   (prg-size      0 :read-only t :type fixnum)
   (chr-size      0 :read-only t :type fixnum)
   (prg-count     0 :read-only t :type ub8)
   (chr-count     0 :read-only t :type ub8)
-  (mirroring   nil :read-only t)
-  (mapper-name nil :read-only t))
+  (mirroring   nil :read-only t :type keyword)
+  (mapper-name nil :read-only t :type keyword))
 
 (defmethod print-object ((obj rom) stream)
   (print-unreadable-object (obj stream :type t)
@@ -102,4 +101,4 @@
 
 (defun %mapper-name (id)
   "Look up the mapper name associated with ID in +MAPPERS+."
-  (or (rest (assoc id +mappers+)) "Unknown"))
+  (or (rest (assoc id +mappers+)) :unknown))
