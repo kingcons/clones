@@ -24,6 +24,7 @@
            #:cpu-status
            #:cpu-pc
            #:reset
+           #:single-step
            #:update-flag
            #:set-flags-zn
            #:compare
@@ -50,6 +51,12 @@
   (declare (type cpu cpu))
   (with-slots (memory pc) cpu
     (setf pc (clones.memory:fetch-word memory pc))))
+
+(defun single-step (cpu)
+  "Execute a single instruction and return the CPU."
+  (declare (type cpu cpu))
+  (with-slots (memory pc) cpu
+    (clones.instruction-data::jump-table (fetch memory pc))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)

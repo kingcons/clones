@@ -205,3 +205,15 @@
   "Get the instruction data matching NAME."
   (find name *instructions* :key #'car
         :test (lambda (x y) (string= (symbol-name x) (symbol-name y)))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun %jump-clause (name op sym)
+    `(,(first op) (,(%build-op-name name (first op)) ,sym)))
+
+  (defmacro jump-table (form &optional (package 'clones.cpu))
+    (let* ((sym (find-symbol "CPU" package))
+           (clauses (loop for (name opcodes) in *instructions*
+                         appending (mapcar (lambda (x) (%jump-clause name x sym)) opcodes))))
+      `(case ,form
+         ,@(sort clauses #'< :key #'first)
+         (otherwise (error 'illegal-opcode :cpu ,sym :opcode ,form))))))
