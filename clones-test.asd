@@ -12,7 +12,8 @@
   :author "Brit Butler"
   :license "LLGPL"
   :depends-on (:clones
-               :prove)
+               :prove
+               :split-sequence)
   :components ((:module "t"
                 :components
                 ((:file "helpers")
