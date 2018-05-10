@@ -15,7 +15,8 @@
                :prove)
   :components ((:module "t"
                 :components
-                ((:test-file "cpu")
+                ((:file "helpers")
+                 (:test-file "cpu")
                  (:test-file "addressing")
                  (:test-file "memory")
                  (:test-file "mappers")
