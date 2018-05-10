@@ -29,7 +29,9 @@
              (format stream "ROM: ~A~%~%" (rom condition)))))
 
 (define-condition illegal-opcode (clones-error)
-  ((cpu :initarg :cpu :reader cpu))
+  ((cpu :initarg :cpu :reader cpu)
+   (opcode :initarg :opcode :reader opcode))
   (:report (lambda (condition stream)
-             (format stream "Could not execute the current opcode for ~A.~%"
+             (format stream "Could not execute the requested opcode (~X) for ~A.~%"
+                     (opcode condition)
                      (cpu condition)))))
