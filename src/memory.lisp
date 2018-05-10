@@ -13,7 +13,6 @@
                 :make-byte-vector)
   (:export #:memory
            #:make-memory
-           #:swap-rom
            #:fetch
            #:fetch-word
            #:fetch-indirect
@@ -32,10 +31,8 @@
   #f
   (cond ((< address #x2000)
          (aref (memory-ram memory) (logand address #x7ff)))
-;        ((< address #x4000) 0) ; TODO: PPU Not Yet Implemented
-;        ((= address #x4016) 0) ; TODO: Input Not Yet Implemented
-;        ((< address #x4019) 0) ; TODO: APU Not Yet Implemented
-;        ((< address #x8000) 0) ; TODO: SRAM Not Yet Implemented
+        ((< address #x8000)
+         0)
         (t
          (load-prg (memory-mapper memory) address))))
 
@@ -44,10 +41,8 @@
   #f
   (cond ((< address #x2000)
          (setf (aref (memory-ram memory) (logand address #x7ff)) value))
-;        ((< address #x4000) 0) ; TODO: PPU Not Yet Implemented
-;        ((= address #x4016) 0) ; TODO: Input Not Yet Implemented
-;        ((< address #x4019) 0) ; TODO: APU Not Yet Implemented
-;        ((< address #x8000) 0) ; TODO: SRAM Not Yet Implemented
+        ((< address #x8000)
+         0)
         (t
          (store-prg (memory-mapper memory) address value))))
 
