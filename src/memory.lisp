@@ -27,11 +27,6 @@
   (apu nil)
   (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
 
-;; TODO: Reset afterwards?
-(defun swap-rom (memory filename)
-  (with-slots (mapper) memory
-    (setf mapper (load-rom (asset-path filename)))))
-
 (declaim (ftype (function (memory ub16) ub8) fetch))
 (defun fetch (memory address)
   #f
