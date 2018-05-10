@@ -5,7 +5,7 @@
 
 (in-package :clones-test.memory)
 
-(plan 1)
+(plan 2)
 
 (subtest "Storing and Fetching Data from RAM"
    (let* ((memory (make-memory)))
@@ -18,7 +18,7 @@
        (is (fetch memory #x800) 32)
        (is (fetch memory #xfff) 31))))
 
-(subtest "Storing and Fetching Data from Mapper"
+(subtest "Storing and Fetching Data from Mapper (NROM)"
   (let* ((memory (make-memory)))
     (is (fetch memory #x8000) 76)
     (is (fetch memory #xffff) 197)))
