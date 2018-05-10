@@ -25,18 +25,21 @@
     (unless (equal log expected-state)
       (fail (concatenate 'string "Failure at: " expected-state)))))
 
-(plan 2)
+(plan 1)
 
 (subtest "CPU Interface"
-   (let* ((cpu (make-cpu)))
-     (is (type-of cpu) 'cpu)
-     (is (cpu-cycles cpu) 0)
-     (is (cpu-accum cpu) 0)
-     (is (cpu-x-reg cpu) 0)
-     (is (cpu-y-reg cpu) 0)
-     (is (cpu-stack cpu) 253)
-     (is (cpu-status cpu) 36)
-     (is (cpu-pc cpu) 65532)))
+  (let ((cpu (make-cpu)))
+    (is (type-of cpu) 'cpu)
+    (is (cpu-cycles cpu) 0)
+    (is (cpu-accum cpu) 0)
+    (is (cpu-x-reg cpu) 0)
+    (is (cpu-y-reg cpu) 0)
+    (is (cpu-stack cpu) 253)
+    (is (cpu-status cpu) 36)
+    (is (cpu-pc cpu) #xfffc)
+    (subtest "The CPU jumps to the Reset Vector when Reset"
+      (reset cpu)
+      (is (cpu-pc cpu) 49156))))
 
 ;; (subtest "Nestest.nes"
 ;;   (let* ((cpu (make-cpu)))

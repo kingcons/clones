@@ -23,6 +23,7 @@
            #:cpu-stack
            #:cpu-status
            #:cpu-pc
+           #:reset
            #:update-flag
            #:set-flags-zn
            #:compare
@@ -43,6 +44,12 @@
   (stack  #xfd           :type ub8)
   (status #x24           :type ub8)
   (pc     #xfffc         :type ub16))
+
+(defun reset (cpu)
+  "Jump to the address at the Reset Vector (0xFFFC)."
+  (declare (type cpu cpu))
+  (with-slots (memory pc) cpu
+    (setf pc (clones.memory:fetch-word memory pc))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)
