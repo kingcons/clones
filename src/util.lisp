@@ -10,7 +10,9 @@
            #:byte-vector
            #:make-byte-vector
            #:wrap-byte
-           #:wrap-word))
+           #:wrap-word
+           #:wrap-nibble
+           #:wrap-bank))
 
 (in-package :clones.util)
 
@@ -57,3 +59,15 @@
   "Constrain a number to (integer 0 65535)."
   #f
   (logand number #xffff))
+
+(declaim (inline wrap-nibble))
+(defun wrap-nibble (number)
+  "Constrain a number to (integer 0 15)."
+  #f
+  (logand number #xf))
+
+(declaim (inline wrap-bank))
+(defun wrap-bank (number)
+  "Constrain a number to (integer 0 16383)."
+  #f
+  (logand number #x3fff))
