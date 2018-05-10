@@ -6,6 +6,7 @@
                 :with-gensyms)
   (:import-from :clones.memory
                 :memory
+                :make-memory
                 :fetch
                 :store)
   (:import-from :clones.util
@@ -34,14 +35,14 @@
 (in-package :clones.cpu)
 
 (defstruct cpu
-  (memory nil    :type memory)
-  (cycles 0      :type fixnum)
-  (accum  0      :type ub8)
-  (x-reg  0      :type ub8)
-  (y-reg  0      :type ub8)
-  (stack  #xfd   :type ub8)
-  (status #x24   :type ub8)
-  (pc     #xfffc :type ub16))
+  (memory (make-memory)  :type memory)
+  (cycles 0              :type fixnum)
+  (accum  0              :type ub8)
+  (x-reg  0              :type ub8)
+  (y-reg  0              :type ub8)
+  (stack  #xfd           :type ub8)
+  (status #x24           :type ub8)
+  (pc     #xfffc         :type ub16))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)

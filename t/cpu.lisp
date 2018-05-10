@@ -7,6 +7,8 @@
 
 (plan 1)
 
-(subtest "CPU Interface")
+(subtest "CPU Interface"
+   (let* ((cpu (make-cpu)))
+     (is (type-of cpu) 'cpu)))
 
 (finalize)
