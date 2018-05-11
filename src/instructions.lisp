@@ -170,9 +170,10 @@
   (setf (cpu-pc cpu) (1+ (stack-pop-word cpu))))
 
 (define-instruction sbc ()
-  (let ((result (- (cpu-accum cpu) argument)))
+  (let* ((carry-bit (if (flag-set-p cpu :carry) 0 1))
+         (result (- (cpu-accum cpu) argument carry-bit)))
     (set-flag-if cpu :overflow (overflow-p result (cpu-accum cpu) argument))
-    (set-flag-if cpu :negative (logbitp 7 result))
+    (set-flag-if cpu :carry (>= result 0))
     (let ((wrapped (wrap-byte result)))
       (set-flags-zn cpu wrapped)
       (setf (cpu-accum cpu) wrapped))))
