@@ -63,6 +63,9 @@
 (define-instruction beq ()
   (branch-if (flag-set-p cpu :zero)))
 
+(define-instruction bne ()
+  (branch-if (not (flag-set-p cpu :zero))))
+
 (define-instruction clc ()
   (set-flag cpu :carry 0))
 
