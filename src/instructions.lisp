@@ -49,7 +49,9 @@
 
 (defmacro branch-if (test)
   `(if ,test
-       (setf (cpu-pc cpu) argument)
+       (progn
+         (incf (cpu-cycles cpu))
+         (setf (cpu-pc cpu) argument))
        (incf (cpu-pc cpu))))
 
 (define-instruction bcs ()

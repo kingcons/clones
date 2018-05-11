@@ -8,8 +8,7 @@
                 :cpu-accum
                 :cpu-x-reg
                 :cpu-y-reg
-                :cpu-memory
-                :cpu-cycles)
+                :cpu-memory)
   (:import-from :clones.memory
                 :fetch
                 :fetch-word
@@ -88,9 +87,7 @@
 ;; If negative, xor the offset with 255 to determine the unsigned value and jump.
 ;; If positive, add one to offset to step over the offset and jump.
 (defaddress relative
-  (let* ((offset (fetch memory program-counter))
-         (result (if (logbitp 7 offset)
-                     (wrap-word (- program-counter (logxor #xff offset)))
-                     (wrap-word (+ program-counter (1+ offset))))))
-    (incf (cpu-cycles cpu))
-    result))
+  (let ((offset (fetch memory program-counter)))
+    (if (logbitp 7 offset)
+        (wrap-word (- program-counter (logxor #xff offset)))
+        (wrap-word (+ program-counter (1+ offset))))))
