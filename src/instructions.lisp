@@ -54,6 +54,10 @@
          (setf (cpu-pc cpu) argument))
        (incf (cpu-pc cpu))))
 
+(define-instruction and ()
+  (let ((result (setf (cpu-accum cpu) (logand (cpu-accum cpu) argument))))
+    (set-flags-zn cpu result)))
+
 (define-instruction bcc ()
   (branch-if (not (flag-set-p cpu :carry))))
 
