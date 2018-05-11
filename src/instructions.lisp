@@ -90,6 +90,15 @@
 (define-instruction clc ()
   (set-flag cpu :carry 0))
 
+(define-instruction cmp ()
+  (compare cpu (cpu-accum cpu) argument))
+
+(define-instruction cpx ()
+  (compare cpu (cpu-x-reg cpu) argument))
+
+(define-instruction cpy ()
+  (compare cpu (cpu-y-reg cpu) argument))
+
 (define-instruction inx ()
   (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
     (setf (cpu-x-reg cpu) result)

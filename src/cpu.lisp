@@ -78,7 +78,7 @@
   (declare (type cpu cpu)
            (type ub8 register memory))
   (let ((result (- register memory)))
-    (update-flag cpu :carry (>= result 0))
+    (set-flag-if cpu :carry (>= result 0))
     (set-flags-zn cpu result)))
 
 (declaim (ftype (function (cpu ub8) ub8) stack-push))
