@@ -90,6 +90,9 @@
 (define-instruction clc ()
   (set-flag cpu :carry 0))
 
+(define-instruction cld ()
+  (set-flag cpu :decimal 0))
+
 (define-instruction cmp ()
   (compare cpu (cpu-accum cpu) argument))
 
