@@ -98,6 +98,9 @@
 (define-instruction sei ()
   (set-flag cpu :interrupt 1))
 
+(define-instruction sta ()
+  (store (cpu-memory cpu) argument (cpu-accum cpu)))
+
 (define-instruction stx ()
   (store (cpu-memory cpu) argument (cpu-x-reg cpu)))
 
