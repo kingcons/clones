@@ -42,10 +42,11 @@
     (reset cpu)
     (with-open-file (in (asset-path "roms/nestest_cpu.log"))
       (loop for line = (read-line in nil) while line
-            do (let ((log (debug-log (single-step cpu)))
+            do (let ((log (debug-log cpu))
                      (expected (parse-log line)))
                  (unless (equal log expected)
                    (fail (format t "Expected: ~A, Actual: ~A" expected log))
-                   (return nil)))))))
+                   (return nil))
+                 (single-step cpu))))))
 
 (finalize)
