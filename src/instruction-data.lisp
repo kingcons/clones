@@ -3,7 +3,9 @@
 (defpackage :clones.instruction-data
   (:use :cl)
   (:import-from :alexandria
-                #:symbolicate)
+                :symbolicate)
+  (:import-from :clones.conditions
+                :illegal-opcode)
   (:export #:*instructions*
            #:%build-op-name
            #:get-instruction-meta
