@@ -52,5 +52,4 @@
 (defun single-step (cpu)
   "Execute a single instruction and return the CPU."
   (declare (type cpu cpu))
-  (with-slots (memory pc) cpu
-    (jump-table (fetch memory pc))))
+  (jump-table (fetch (cpu-memory cpu) (cpu-pc cpu))))
