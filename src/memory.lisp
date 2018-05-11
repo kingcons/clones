@@ -16,6 +16,7 @@
            #:fetch
            #:fetch-word
            #:fetch-indirect
+           #:fetch-range
            #:store))
 
 (in-package :clones.memory)
@@ -61,3 +62,9 @@
          (low-byte (fetch memory address))
          (high-byte (fetch memory wrapped)))
     (+ low-byte (ash high-byte 8))))
+
+(declaim (ftype (function (memory ub16 ub8) cons) fetch-range))
+(defun fetch-range (memory start end)
+  #f
+  (loop for i from start upto end
+        collect (fetch memory i)))

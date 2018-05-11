@@ -4,7 +4,7 @@
   (:use :cl :clones.instruction-data)
   (:import-from :clones.memory
                 :fetch
-                :fetch-word)
+                :fetch-range)
   (:export :disasm))
 
 (in-package :clones.disassembler)
@@ -20,11 +20,14 @@
             do (setf (aref *opcodes* opcode)
                      (list name bytes cycles mode docs))))))
 
-(defun disasm (memory start end &optional formatter)
-  (declare (ignore formatter))
+(defun hexify (bytes)
+  (format nil "~{~2,'0x ~}" bytes))
+
+(defun disasm (memory start end)
   (loop with index = start while (<= index end)
         for opcode = (fetch memory index)
         do (destructuring-bind (name size cycles mode docs) (aref *opcodes* opcode)
              (declare (ignore cycles mode docs))
-             (format t "~4,'0x ~2,'0x ;; ~A~%" index opcode name)
+             (let ((bytes (fetch-range memory index (+ index (1- size)))))
+               (format t "~4,'0x  ~9a ;; ~a~%" index (hexify bytes) name))
              (incf index size))))
