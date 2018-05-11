@@ -122,6 +122,11 @@
     (setf (cpu-x-reg cpu) result)
     (set-flags-zn cpu result)))
 
+(define-instruction iny ()
+  (let ((result (wrap-byte (1+ (cpu-y-reg cpu)))))
+    (setf (cpu-y-reg cpu) result)
+    (set-flags-zn cpu result)))
+
 (define-instruction jmp ()
   (setf (cpu-pc cpu) argument))
 
