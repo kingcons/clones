@@ -109,6 +109,13 @@
 (define-instruction nop ()
   nil)
 
+(define-instruction php ()
+  (stack-push cpu (logior (cpu-status cpu) #x10)))
+
+(define-instruction pla ()
+  (let ((result (setf (cpu-accum cpu) (stack-pop cpu))))
+    (set-flags-zn cpu result)))
+
 (define-instruction rts ()
   (setf (cpu-pc cpu) (1+ (stack-pop-word cpu))))
 
