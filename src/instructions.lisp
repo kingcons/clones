@@ -4,10 +4,12 @@
   (:use :cl :clones.addressing :clones.cpu)
   (:import-from :clones.memory
                 :fetch
-                :store)
+                :store
+                :fetch-word)
   (:import-from :clones.util
                 :*standard-optimize-settings*
                 :wrap-byte
+                :wrap-word
                 :flip-bit)
   (:import-from :clones.instruction-data
                 :*instructions*
@@ -105,6 +107,14 @@
 (define-instruction bpl ()
   (branch-if (not (flag-set-p cpu :negative))))
 
+(define-instruction brk ()
+  (let ((restore (wrap-word (1+ (cpu-pc cpu)))))
+    (stack-push-word cpu restore)
+    (set-flag cpu :break 1)
+    (stack-push cpu (cpu-status cpu))
+    (set-flag cpu :interrupt 1)
+    (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFE))))
+
 (define-instruction bvc ()
   (branch-if (not (flag-set-p cpu :overflow))))
 
@@ -116,6 +126,9 @@
 
 (define-instruction cld ()
   (set-flag cpu :decimal 0))
+
+(define-instruction cli ()
+  (set-flag cpu :interrupt 0))
 
 (define-instruction clv ()
   (set-flag cpu :overflow 0))
@@ -129,6 +142,11 @@
 (define-instruction cpy ()
   (compare cpu (cpu-y-reg cpu) argument))
 
+(define-instruction dec ()
+  (let ((result (wrap-byte (1- (fetch (cpu-memory cpu) argument)))))
+    (set-flags-zn cpu result)
+    (store (cpu-memory cpu) argument result)))
+
 (define-instruction dex ()
   (let ((result (setf (cpu-x-reg cpu) (wrap-byte (1- (cpu-x-reg cpu))))))
     (set-flags-zn cpu result)))
@@ -140,6 +158,11 @@
 (define-instruction eor ()
   (let ((result (setf (cpu-accum cpu) (logxor (cpu-accum cpu) argument))))
     (set-flags-zn cpu result)))
+
+(define-instruction inc ()
+  (let ((result (wrap-byte (1+ (fetch (cpu-memory cpu) argument)))))
+    (set-flags-zn cpu result)
+    (store (cpu-memory cpu) argument result)))
 
 (define-instruction inx ()
   (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
@@ -245,6 +268,9 @@
 
 (define-instruction stx ()
   (store (cpu-memory cpu) argument (cpu-x-reg cpu)))
+
+(define-instruction sty ()
+  (store (cpu-memory cpu) argument (cpu-y-reg cpu)))
 
 (define-instruction tax ()
   (let ((result (setf (cpu-x-reg cpu) (cpu-accum cpu))))
