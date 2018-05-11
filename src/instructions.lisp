@@ -16,12 +16,14 @@
 
 (in-package :clones.instructions)
 
-(defmacro define-instruction (name (&key skip-pc) &body body)
+(defmacro define-instruction (name () &body body)
   (let ((metadata (get-instruction-meta name)))
     (destructuring-bind (name opcodes docs &optional skip-pc) metadata
       (declare (ignore docs))
       `(progn
-         ,@(loop for (opcode bytes cycles addr-mode raw) in opcodes
+         ,@(loop for (opcode bytes cycles mode raw) in opcodes
+                 ;; KLUDGE: Find the symbol since it doesn't exist at instruction-data load-time.
+                 for addr-mode = (find-symbol (symbol-name mode))
                  collect `(%define-opcode (,name ,opcode ,addr-mode
                                            :bytes ,bytes :cycles ,cycles
                                            :raw ,raw :skip-pc ,skip-pc)
