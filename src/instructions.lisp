@@ -76,6 +76,12 @@
   (let ((result (setf (cpu-accum cpu) (logand (cpu-accum cpu) argument))))
     (set-flags-zn cpu result)))
 
+(define-instruction asl ()
+  (let ((result (wrap-byte (ash argument 1))))
+    (set-flag-if cpu :carry (logbitp 7 argument))
+    (set-flags-zn cpu result)
+    (store (cpu-memory cpu) argument result)))
+
 (define-instruction bcc ()
   (branch-if (not (flag-set-p cpu :carry))))
 
@@ -164,6 +170,13 @@
   (let ((result (setf (cpu-y-reg cpu) argument)))
     (set-flags-zn cpu result)))
 
+(define-instruction lsr ()
+  (declare (type fixnum argument))
+  (let ((result (ash argument -1)))
+    (set-flag-if cpu :carry (logbitp 0 argument))
+    (set-flags-zn cpu result)
+    (store (cpu-memory cpu) argument result)))
+
 (define-instruction nop ()
   nil)
 
@@ -183,6 +196,24 @@
 
 (define-instruction plp ()
   (setf (cpu-status cpu) (logandc2 (logior (stack-pop cpu) #x20) #x10)))
+
+(define-instruction rol ()
+  (declare (type fixnum argument))
+  (let ((result (wrap-byte (ash argument 1))))
+    (when (flag-set-p cpu :carry)
+      (setf result (logior result #x01)))
+    (set-flag-if cpu :carry (logbitp 7 argument))
+    (set-flags-zn cpu result)
+    (store (cpu-memory cpu) argument result)))
+
+(define-instruction ror ()
+  (declare (type fixnum argument))
+  (let ((result (wrap-byte (ash argument -1))))
+    (when (flag-set-p cpu :carry)
+      (setf result (logior result #x80)))
+    (set-flag-if cpu :carry (logbitp 0 argument))
+    (set-flags-zn cpu result)
+    (store (cpu-memory cpu) argument result)))
 
 (define-instruction rti ()
   (setf (cpu-status cpu) (logior (stack-pop cpu) #x20))
