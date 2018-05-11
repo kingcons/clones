@@ -54,6 +54,9 @@
          (setf (cpu-pc cpu) argument))
        (incf (cpu-pc cpu))))
 
+(define-instruction bcc ()
+  (branch-if (not (flag-set-p cpu :carry))))
+
 (define-instruction bcs ()
   (branch-if (flag-set-p cpu :carry)))
 
