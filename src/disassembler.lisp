@@ -5,7 +5,11 @@
   (:import-from :clones.memory
                 :fetch
                 :fetch-range)
-  (:export :disasm))
+  (:import-from :clones.cpu
+                :cpu-memory
+                :cpu-pc)
+  (:export #:disasm
+           #:now))
 
 (in-package :clones.disassembler)
 
@@ -31,3 +35,11 @@
              (let ((bytes (fetch-range memory index (+ index (1- size)))))
                (format t "~4,'0x  ~9a ;; ~a~%" index (hexify bytes) name))
              (incf index size))))
+
+(defun current-instruction (memory start)
+  (let* ((opcode (fetch memory start))
+         (size (second (aref *opcodes* opcode))))
+    (disasm memory start (+ start (1- size)))))
+
+(defun now (cpu)
+  (current-instruction (cpu-memory cpu) (cpu-pc cpu)))

@@ -19,7 +19,7 @@
   :depends-on (:alexandria)
   :components ((:module "src"
                 :components
-                ((:file "disassembler" :depends-on ("memory" "instruction-data"))
+                ((:file "disassembler" :depends-on ("addressing" "instruction-data"))
                  (:file "instructions" :depends-on ("cpu" "addressing"))
                  (:file "addressing" :depends-on ("cpu" "memory"))
                  (:file "cpu" :depends-on ("memory" "instruction-data"))
