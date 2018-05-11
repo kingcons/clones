@@ -164,6 +164,14 @@
 (define-instruction rts ()
   (setf (cpu-pc cpu) (1+ (stack-pop-word cpu))))
 
+(define-instruction sbc ()
+  (let ((result (- (cpu-accum cpu) argument)))
+    (set-flag-if cpu :overflow (overflow-p result (cpu-accum cpu) argument))
+    (set-flag-if cpu :negative (logbitp 7 result))
+    (let ((wrapped (wrap-byte result)))
+      (set-flags-zn cpu wrapped)
+      (setf (cpu-accum cpu) wrapped))))
+
 (define-instruction sec ()
   (set-flag cpu :carry 1))
 
