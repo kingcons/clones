@@ -109,6 +109,9 @@
 (define-instruction nop ()
   nil)
 
+(define-instruction rts ()
+  (setf (cpu-pc cpu) (1+ (stack-pop-word cpu))))
+
 (define-instruction sec ()
   (set-flag cpu :carry 1))
 

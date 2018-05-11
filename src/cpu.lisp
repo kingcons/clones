@@ -98,6 +98,7 @@
   (setf (cpu-stack cpu) (wrap-byte (1+ (cpu-stack cpu))))
   (fetch (cpu-memory cpu) (+ (cpu-stack cpu) #x100)))
 
+(declaim (ftype (function (cpu) ub16) stack-pop-word))
 (defun stack-pop-word (cpu)
   (let ((low-byte (stack-pop cpu))
         (high-byte (stack-pop cpu)))
