@@ -24,7 +24,8 @@
            #:cpu-status
            #:cpu-pc
            #:reset
-           #:update-flag
+           #:set-flag
+           #:set-flag-if
            #:set-flags-zn
            #:compare
            #:stack-push
@@ -60,18 +61,18 @@
 (defmacro flag-set-p (cpu flag)
   `(logbitp ,(%flag-index flag) ,(cpu-status cpu)))
 
-(defmacro update-flag (cpu flag test)
-  (let ((index (%flag-index flag)))
-    (with-gensyms (new-bit)
-      `(let ((,new-bit (if ,test 1 0)))
-         (setf (ldb (byte 1 ,index) (cpu-status ,cpu)) ,new-bit)))))
+(defmacro set-flag (cpu flag value)
+  `(setf (ldb (byte 1 ,(%flag-index flag)) (cpu-status ,cpu)) ,value))
+
+(defmacro set-flag-if (cpu flag test)
+  `(set-flag ,cpu ,flag (if ,test 1 0)))
 
 (declaim (inline set-flags-zn))
 (defun set-flags-zn (cpu value)
   (declare (type cpu cpu)
            (type ub8 value))
-  (update-flag cpu :zero (zerop value))
-  (update-flag cpu :negative (logbitp 7 value)))
+  (set-flag-if cpu :zero (zerop value))
+  (set-flag-if cpu :negative (logbitp 7 value)))
 
 (defun compare (cpu register memory)
   (declare (type cpu cpu)

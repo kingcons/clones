@@ -49,6 +49,9 @@
     (setf (cpu-x-reg cpu) result)
     (set-flags-zn cpu result)))
 
+(define-instruction sei ()
+  (set-flag cpu :interrupt 1))
+
 (defun single-step (cpu)
   "Execute a single instruction and return the CPU."
   (declare (type cpu cpu))
