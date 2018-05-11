@@ -33,7 +33,8 @@
            #:stack-push
            #:stack-push-word
            #:stack-pop
-           #:stack-pop-word))
+           #:stack-pop-word
+           #:overflow-p))
 
 (in-package :clones.cpu)
 
@@ -108,3 +109,10 @@
         (high-byte (stack-pop cpu)))
     (declare (type ub8 low-byte high-byte))
     (+ low-byte (ash high-byte 8))))
+
+(declaim (ftype (function (ub8 ub8 ub8) boolean) overflow-p))
+(defun overflow-p (result augend addend)
+  (flet ((sign-bit (x) (logbitp 7 x)))
+    (let ((result-sign (sign-bit result)))
+      (not (or (eql result-sign (sign-bit augend))
+               (eql result-sign (sign-bit addend)))))))
