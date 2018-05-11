@@ -10,7 +10,8 @@
            #:byte-vector
            #:make-byte-vector
            #:wrap-byte
-           #:wrap-word))
+           #:wrap-word
+           #:flip-bit))
 
 (in-package :clones.util)
 
@@ -57,3 +58,6 @@
   "Constrain a number to (integer 0 65535)."
   #f
   (logand number #xffff))
+
+(defmacro flip-bit (position value)
+  `(logxor ,(expt 2 position) ,value))
