@@ -40,7 +40,7 @@
      ,(cond ((null address-mode) `(progn ,@body))
             (raw `(let ((address (,address-mode cpu)))
                     ,@body))
-            (t `(let ((address `(fetch (cpu-memory cpu) (,address-mode cpu))))
+            (t `(let ((address (fetch (cpu-memory cpu) (,address-mode cpu))))
                   ,@body)))
      (incf (cpu-cycles cpu) ,cycles)
      ,@(unless (or skip-pc (= 1 bytes))
