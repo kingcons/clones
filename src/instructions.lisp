@@ -3,7 +3,8 @@
 (defpackage :clones.instructions
   (:use :cl :clones.addressing :clones.cpu)
   (:import-from :clones.memory
-                :fetch)
+                :fetch
+                :store)
   (:import-from :clones.util
                 :*standard-optimize-settings*
                 :wrap-byte)
@@ -54,12 +55,24 @@
 (define-instruction jmp ()
   (setf (cpu-pc cpu) argument))
 
+(define-instruction jsr ()
+  (stack-push-word cpu (1+ (cpu-pc cpu)))
+  (setf (cpu-pc cpu) argument))
+
 (define-instruction ldx ()
   (let ((result (setf (cpu-x-reg cpu) argument)))
     (set-flags-zn cpu result)))
 
+(define-instruction nop ()
+  nil)
+
 (define-instruction sei ()
   (set-flag cpu :interrupt 1))
+
+;; TODO: Shouldn't STX be a "raw" instruction in this version of the world?
+;; We don't provide a "setter" and need to call store directly...
+(define-instruction stx ()
+  (store (cpu-memory cpu) argument (cpu-x-reg cpu)))
 
 (defun single-step (cpu)
   "Execute a single instruction and return the CPU."
