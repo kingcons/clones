@@ -75,7 +75,7 @@
 (declaim (inline set-flags-zn))
 (defun set-flags-zn (cpu value)
   (declare (type cpu cpu)
-           (type ub8 value))
+           (type fixnum value))
   (set-flag-if cpu :zero (zerop value))
   (set-flag-if cpu :negative (logbitp 7 value)))
 
