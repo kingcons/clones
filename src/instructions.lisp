@@ -175,6 +175,10 @@
 (define-instruction plp ()
   (setf (cpu-status cpu) (logandc2 (logior (stack-pop cpu) #x20) #x10)))
 
+(define-instruction rti ()
+  (setf (cpu-status cpu) (logior (stack-pop cpu) #x20))
+  (setf (cpu-pc cpu) (stack-pop-word cpu)))
+
 (define-instruction rts ()
   (setf (cpu-pc cpu) (1+ (stack-pop-word cpu))))
 
