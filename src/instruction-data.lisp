@@ -207,6 +207,7 @@
   (find name *instructions* :key #'car
         :test (lambda (x y) (string= (symbol-name x) (symbol-name y)))))
 
+;; TODO: Use ecase/tree later -> http://www.foldr.org/~michaelw/log/programming/lisp/icfp-contest-2006-vm
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %jump-clause (name op sym)
     `(,(first op) (,(%build-op-name name (first op)) ,sym)))
