@@ -115,6 +115,9 @@
 (define-instruction sec ()
   (set-flag cpu :carry 1))
 
+(define-instruction sed ()
+  (set-flag cpu :decimal 1))
+
 (define-instruction sei ()
   (set-flag cpu :interrupt 1))
 
