@@ -93,6 +93,9 @@
 (define-instruction cld ()
   (set-flag cpu :decimal 0))
 
+(define-instruction clv ()
+  (set-flag cpu :overflow 0))
+
 (define-instruction cmp ()
   (compare cpu (cpu-accum cpu) argument))
 
@@ -124,6 +127,10 @@
 
 (define-instruction nop ()
   nil)
+
+(define-instruction ora ()
+  (let ((result (setf (cpu-accum cpu) (logior (cpu-accum cpu) argument))))
+    (set-flags-zn cpu result)))
 
 (define-instruction pha ()
   (stack-push cpu (cpu-accum cpu)))
