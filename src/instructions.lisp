@@ -63,8 +63,25 @@
 (define-instruction beq ()
   (branch-if (flag-set-p cpu :zero)))
 
+(define-instruction bit ()
+  (set-flag-if cpu :zero (zerop (logand (cpu-accum cpu) argument)))
+  (set-flag-if cpu :negative (logbitp 7 argument))
+  (set-flag-if cpu :overflow (logbitp 6 argument)))
+
+(define-instruction bmi ()
+  (branch-if (flag-set-p cpu :negative)))
+
 (define-instruction bne ()
   (branch-if (not (flag-set-p cpu :zero))))
+
+(define-instruction bpl ()
+  (branch-if (not (flag-set-p cpu :negative))))
+
+(define-instruction bvc ()
+  (branch-if (not (flag-set-p cpu :overflow))))
+
+(define-instruction bvs ()
+  (branch-if (flag-set-p cpu :overflow)))
 
 (define-instruction clc ()
   (set-flag cpu :carry 0))
