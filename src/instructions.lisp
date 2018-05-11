@@ -114,6 +114,14 @@
 (define-instruction cpy ()
   (compare cpu (cpu-y-reg cpu) argument))
 
+(define-instruction dex ()
+  (let ((result (setf (cpu-x-reg cpu) (wrap-byte (1- (cpu-x-reg cpu))))))
+    (set-flags-zn cpu result)))
+
+(define-instruction dey ()
+  (let ((result (setf (cpu-y-reg cpu) (wrap-byte (1- (cpu-y-reg cpu))))))
+    (set-flags-zn cpu result)))
+
 (define-instruction eor ()
   (let ((result (setf (cpu-accum cpu) (logxor (cpu-accum cpu) argument))))
     (set-flags-zn cpu result)))
@@ -193,6 +201,29 @@
 
 (define-instruction stx ()
   (store (cpu-memory cpu) argument (cpu-x-reg cpu)))
+
+(define-instruction tax ()
+  (let ((result (setf (cpu-x-reg cpu) (cpu-accum cpu))))
+    (set-flags-zn cpu result)))
+
+(define-instruction tay ()
+  (let ((result (setf (cpu-y-reg cpu) (cpu-accum cpu))))
+    (set-flags-zn cpu result)))
+
+(define-instruction tsx ()
+  (let ((result (setf (cpu-x-reg cpu) (cpu-stack cpu))))
+    (set-flags-zn cpu result)))
+
+(define-instruction txa ()
+  (let ((result (setf (cpu-accum cpu) (cpu-x-reg cpu))))
+    (set-flags-zn cpu result)))
+
+(define-instruction txs ()
+  (setf (cpu-stack cpu) (cpu-x-reg cpu)))
+
+(define-instruction tya ()
+  (let ((result (setf (cpu-accum cpu) (cpu-y-reg cpu))))
+    (set-flags-zn cpu result)))
 
 (defun single-step (cpu)
   "Execute a single instruction and return the CPU."
