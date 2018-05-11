@@ -66,6 +66,9 @@
 (define-instruction nop ()
   nil)
 
+(define-instruction sec ()
+  (set-flag cpu :carry 1))
+
 (define-instruction sei ()
   (set-flag cpu :interrupt 1))
 
