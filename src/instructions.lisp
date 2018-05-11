@@ -54,6 +54,10 @@
 (define-instruction jmp ()
   (setf (cpu-pc cpu) address))
 
+(define-instruction ldx ()
+  (let ((result (setf (cpu-x-reg cpu) address)))
+    (set-flags-zn cpu result)))
+
 (define-instruction sei ()
   (set-flag cpu :interrupt 1))
 
