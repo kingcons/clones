@@ -75,6 +75,10 @@
   (stack-push-word cpu (1+ (cpu-pc cpu)))
   (setf (cpu-pc cpu) argument))
 
+(define-instruction lda ()
+  (let ((result (setf (cpu-accum cpu) argument)))
+    (set-flags-zn cpu result)))
+
 (define-instruction ldx ()
   (let ((result (setf (cpu-x-reg cpu) argument)))
     (set-flags-zn cpu result)))
