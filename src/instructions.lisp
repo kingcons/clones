@@ -13,7 +13,7 @@
                 :%build-op-name
                 :get-instruction-meta
                 :jump-table)
-  (:export :single-step))
+  (:export #:single-step))
 
 (in-package :clones.instructions)
 
@@ -47,6 +47,14 @@
      ,@(unless (or skip-pc (= 1 bytes))
          `((incf (cpu-pc cpu) ,(1- bytes))))))
 
+(defmacro branch-if (test)
+  `(if ,test
+       (setf (cpu-pc cpu) argument)
+       (incf (cpu-pc cpu))))
+
+(define-instruction bcs ()
+  (branch-if (flag-set-p cpu :carry)))
+
 (define-instruction inx ()
   (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
     (setf (cpu-x-reg cpu) result)
@@ -72,8 +80,6 @@
 (define-instruction sei ()
   (set-flag cpu :interrupt 1))
 
-;; TODO: Shouldn't STX be a "raw" instruction in this version of the world?
-;; We don't provide a "setter" and need to call store directly...
 (define-instruction stx ()
   (store (cpu-memory cpu) argument (cpu-x-reg cpu)))
 

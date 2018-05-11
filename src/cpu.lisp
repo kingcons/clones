@@ -32,8 +32,7 @@
            #:stack-push
            #:stack-push-word
            #:stack-pop
-           #:stack-pop-word
-           #:branch-if))
+           #:stack-pop-word))
 
 (in-package :clones.cpu)
 
@@ -104,8 +103,3 @@
         (high-byte (stack-pop cpu)))
     (declare (type ub8 low-byte high-byte))
     (+ low-byte (ash high-byte 8))))
-
-(defmacro branch-if (test)
-  `(if ,test
-       (setf (cpu-pc cpu) (relative cpu))
-       (incf (cpu-pc cpu))))
