@@ -39,7 +39,7 @@
 
 (subtest "Nestest.nes"
   (let* ((cpu (make-cpu)))
-    (reset cpu)
+    (setf (cpu-pc cpu) #xC000)
     (with-open-file (in (asset-path "roms/nestest_cpu.log"))
       (loop for line = (read-line in nil) while line
             do (let ((log (debug-log cpu))
