@@ -125,12 +125,18 @@
 (define-instruction nop ()
   nil)
 
+(define-instruction pha ()
+  (stack-push cpu (cpu-accum cpu)))
+
 (define-instruction php ()
   (stack-push cpu (logior (cpu-status cpu) #x10)))
 
 (define-instruction pla ()
   (let ((result (setf (cpu-accum cpu) (stack-pop cpu))))
     (set-flags-zn cpu result)))
+
+(define-instruction plp ()
+  (setf (cpu-status cpu) (logandc2 (logior (stack-pop cpu) #x20) #x10)))
 
 (define-instruction rts ()
   (setf (cpu-pc cpu) (1+ (stack-pop-word cpu))))
