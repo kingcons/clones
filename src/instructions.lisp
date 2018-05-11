@@ -2,12 +2,6 @@
 
 (defpackage :clones.instructions
   (:use :cl :clones.addressing :clones.cpu)
-  (:import-from :alexandria
-                :last-elt
-                :symbolicate
-                :with-gensyms)
-  (:import-from :clones.conditions
-                :illegal-opcode)
   (:import-from :clones.util
                 :*standard-optimize-settings*
                 :wrap-byte)
@@ -21,12 +15,15 @@
 (defmacro define-instruction (name (&key skip-pc) &body body)
   (let ((metadata (get-instruction-meta name)))
     (destructuring-bind (name opcodes docs) metadata
+      (declare (ignore docs))
       `(progn
          ,@(loop for (opcode bytes cycles addr-mode raw) in opcodes
                  collect `(%define-opcode (,name ,opcode ,addr-mode
                                            :bytes ,bytes :cycles ,cycles
                                            :raw ,raw :skip-pc ,skip-pc)
-                            ,@body))))))
+                            ,@body))
+         ,@(loop for (opcode) in opcodes
+                 collect `(export ',(%build-op-name name opcode) 'clones.instructions))))))
 
 (defmacro %define-opcode ((name opcode address-mode &key bytes cycles raw skip-pc)
                          &body body)
