@@ -144,7 +144,7 @@
      "Store X Register")
     (sty ((#x84 2 3 zero-page)
           (#x8c 3 4 absolute)
-          (#x96 2 4 zero-page-x))
+          (#x94 2 4 zero-page-x))
      "Store Y Register")
     (bcc ((#x90 2 2 relative))
      "Branch on Carry Clear" t)
