@@ -5,7 +5,8 @@
   (:import-from :split-sequence
                 :split-sequence)
   (:import-from :alexandria
-                :last-elt)
+                :last-elt
+                :compose)
   (:export #:run-file))
 
 (in-package :clones-test.helpers)
@@ -18,7 +19,10 @@
 
 (defun parse-log (line)
   "Parse a line of nestest.log, returning a list of the form: (pc acc x y status stack cycles)"
-  (flet ((unhexify (text)
-           (parse-integer text :radix 16)))
-    (loop for word in (delete #\Return (split-sequence #\Space line))
-          collect (unhexify (last-elt (split-sequence #\: word))))))
+  (flet ((to-fixnum (text &key (radix 16))
+           (parse-integer text :radix radix))
+         (colon-value (field)
+           (last-elt (split-sequence #\: field))))
+    (let ((fields (split-sequence #\Space (delete #\Return line))))
+      (append (mapcar (compose #'to-fixnum #'colon-value) (butlast fields))
+              (list (to-fixnum (colon-value (last-elt fields)) :radix 10))))))
