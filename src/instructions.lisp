@@ -18,7 +18,7 @@
 
 (defmacro define-instruction (name (&key skip-pc) &body body)
   (let ((metadata (get-instruction-meta name)))
-    (destructuring-bind (name opcodes docs) metadata
+    (destructuring-bind (name opcodes docs &optional skip-pc) metadata
       (declare (ignore docs))
       `(progn
          ,@(loop for (opcode bytes cycles addr-mode raw) in opcodes
