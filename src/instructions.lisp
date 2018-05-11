@@ -105,6 +105,10 @@
 (define-instruction cpy ()
   (compare cpu (cpu-y-reg cpu) argument))
 
+(define-instruction eor ()
+  (let ((result (setf (cpu-accum cpu) (logxor (cpu-accum cpu) argument))))
+    (set-flags-zn cpu result)))
+
 (define-instruction inx ()
   (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
     (setf (cpu-x-reg cpu) result)
