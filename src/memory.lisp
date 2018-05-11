@@ -63,7 +63,7 @@
          (high-byte (fetch memory wrapped)))
     (+ low-byte (ash high-byte 8))))
 
-(declaim (ftype (function (memory ub16 ub8) cons) fetch-range))
+(declaim (ftype (function (memory ub16 ub16) cons) fetch-range))
 (defun fetch-range (memory start end)
   #f
   (loop for i from start upto end
