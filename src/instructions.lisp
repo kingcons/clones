@@ -60,6 +60,9 @@
 (define-instruction bcs ()
   (branch-if (flag-set-p cpu :carry)))
 
+(define-instruction beq ()
+  (branch-if (flag-set-p cpu :zero)))
+
 (define-instruction clc ()
   (set-flag cpu :carry 0))
 
