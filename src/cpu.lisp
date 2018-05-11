@@ -110,7 +110,7 @@
     (declare (type ub8 low-byte high-byte))
     (+ low-byte (ash high-byte 8))))
 
-(declaim (ftype (function (ub8 ub8 ub8) boolean) overflow-p))
+(declaim (ftype (function (ub16 ub8 ub8) boolean) overflow-p))
 (defun overflow-p (result augend addend)
   (flet ((sign-bit (x) (logbitp 7 x)))
     (let ((result-sign (sign-bit result)))
