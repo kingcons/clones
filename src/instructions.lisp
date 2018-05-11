@@ -137,6 +137,10 @@
   (let ((result (setf (cpu-x-reg cpu) argument)))
     (set-flags-zn cpu result)))
 
+(define-instruction ldy ()
+  (let ((result (setf (cpu-y-reg cpu) argument)))
+    (set-flags-zn cpu result)))
+
 (define-instruction nop ()
   nil)
 
