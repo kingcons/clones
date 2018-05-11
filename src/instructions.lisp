@@ -54,6 +54,14 @@
          (setf (cpu-pc cpu) argument))
        (incf (cpu-pc cpu))))
 
+(define-instruction adc ()
+  (let ((result (+ (cpu-accum cpu) argument (status-bit cpu :carry))))
+    (set-flag-if cpu :carry (> result #xff))
+    (set-flag-if cpu :overflow (overflow-p result (cpu-accum cpu) argument))
+    (let ((wrapped (wrap-byte result)))
+      (set-flags-zn cpu wrapped)
+      (setf (cpu-accum cpu) (wrap-byte wrapped)))))
+
 (define-instruction and ()
   (let ((result (setf (cpu-accum cpu) (logand (cpu-accum cpu) argument))))
     (set-flags-zn cpu result)))
