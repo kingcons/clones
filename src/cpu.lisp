@@ -24,6 +24,7 @@
            #:cpu-status
            #:cpu-pc
            #:reset
+           #:status-bit
            #:flag-set-p
            #:set-flag
            #:set-flag-if
@@ -58,8 +59,11 @@
                    :break :unused :overflow :negative)))
       (position flag flags :test #'eq))))
 
+(defmacro status-bit (cpu flag)
+  `(ldb (byte 1 ,(%flag-index flag)) (cpu-status ,cpu)))
+
 (defmacro flag-set-p (cpu flag)
-  `(logbitp ,(%flag-index flag) (cpu-status cpu)))
+  `(logbitp ,(%flag-index flag) (cpu-status ,cpu)))
 
 (defmacro set-flag (cpu flag value)
   `(setf (ldb (byte 1 ,(%flag-index flag)) (cpu-status ,cpu)) ,value))
