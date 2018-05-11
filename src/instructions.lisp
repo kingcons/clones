@@ -55,6 +55,9 @@
 (define-instruction bcs ()
   (branch-if (flag-set-p cpu :carry)))
 
+(define-instruction clc ()
+  (set-flag cpu :carry 0))
+
 (define-instruction inx ()
   (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
     (setf (cpu-x-reg cpu) result)
