@@ -2,6 +2,8 @@
 
 (defpackage :clones-test.cpu
   (:use :cl :clones.cpu :prove)
+  (:import-from :clones.instructions
+                :single-step)
   (:import-from :clones.util
                 :asset-path)
   (:import-from :clones-test.helpers
@@ -19,13 +21,7 @@
         (cpu-stack cpu)
         (cpu-cycles cpu)))
 
-(defun confirm-state (cpu expected-state)
-  (step cpu)
-  (let ((log (debug-log cpu)))
-    (unless (equal log expected-state)
-      (fail (concatenate 'string "Failure at: " expected-state)))))
-
-(plan 1)
+(plan 2)
 
 (subtest "CPU Interface"
   (let ((cpu (make-cpu)))
@@ -41,11 +37,15 @@
       (reset cpu)
       (is (cpu-pc cpu) 49156))))
 
-;; (subtest "Nestest.nes"
-;;   (let* ((cpu (make-cpu)))
-;;     (with-open-file (in (asset-path "roms/nestest_cpu.log"))
-;;       (loop for line = (read-line in nil)
-;;             while line
-;;             do (confirm-state cpu (parse-log line))))))
+(subtest "Nestest.nes"
+  (let* ((cpu (make-cpu)))
+    (reset cpu)
+    (with-open-file (in (asset-path "roms/nestest_cpu.log"))
+      (loop for line = (read-line in nil) while line
+            do (let ((log (debug-log (single-step cpu)))
+                     (expected (parse-log line)))
+                 (unless (equal log expected)
+                   (fail (format t "Expected: ~A, Actual: ~A" expected log))
+                   (return nil)))))))
 
 (finalize)

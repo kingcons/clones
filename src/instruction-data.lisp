@@ -6,7 +6,8 @@
                 #:symbolicate)
   (:export #:*instructions*
            #:%build-op-name
-           #:get-instruction-meta))
+           #:get-instruction-meta
+           #:jump-table))
 
 (in-package :clones.instruction-data)
 

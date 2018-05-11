@@ -2,13 +2,17 @@
 
 (defpackage :clones.instructions
   (:use :cl :clones.addressing :clones.cpu)
+  (:import-from :clones.memory
+                :fetch)
   (:import-from :clones.util
                 :*standard-optimize-settings*
                 :wrap-byte)
   (:import-from :clones.instruction-data
                 :*instructions*
                 :%build-op-name
-                :get-instruction-meta))
+                :get-instruction-meta
+                :jump-table)
+  (:export :single-step))
 
 (in-package :clones.instructions)
 
@@ -44,3 +48,9 @@
   (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
     (setf (cpu-x-reg cpu) result)
     (set-flags-zn cpu result)))
+
+(defun single-step (cpu)
+  "Execute a single instruction and return the CPU."
+  (declare (type cpu cpu))
+  (with-slots (memory pc) cpu
+    (jump-table (fetch memory pc))))
