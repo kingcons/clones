@@ -8,7 +8,8 @@
                 :cpu-accum
                 :cpu-x-reg
                 :cpu-y-reg
-                :cpu-memory)
+                :cpu-memory
+                :cpu-cycles)
   (:import-from :clones.memory
                 :fetch
                 :fetch-word
