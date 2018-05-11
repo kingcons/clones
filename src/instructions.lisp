@@ -7,7 +7,8 @@
                 :store)
   (:import-from :clones.util
                 :*standard-optimize-settings*
-                :wrap-byte)
+                :wrap-byte
+                :flip-bit)
   (:import-from :clones.instruction-data
                 :*instructions*
                 :%build-op-name
@@ -56,8 +57,8 @@
 
 (define-instruction adc ()
   (let ((result (+ (cpu-accum cpu) argument (status-bit cpu :carry))))
-    (set-flag-if cpu :carry (> result #xff))
     (set-flag-if cpu :overflow (overflow-p result (cpu-accum cpu) argument))
+    (set-flag-if cpu :carry (> result #xff))
     (let ((wrapped (wrap-byte result)))
       (set-flags-zn cpu wrapped)
       (setf (cpu-accum cpu) wrapped))))
@@ -170,9 +171,9 @@
   (setf (cpu-pc cpu) (1+ (stack-pop-word cpu))))
 
 (define-instruction sbc ()
-  (let* ((carry-bit (if (flag-set-p cpu :carry) 0 1))
-         (result (- (cpu-accum cpu) argument carry-bit)))
-    (set-flag-if cpu :overflow (overflow-p result (cpu-accum cpu) argument))
+  (let* ((borrow-bit (flip-bit 0 (status-bit cpu :carry)))
+         (result (- (cpu-accum cpu) argument borrow-bit)))
+    (set-flag-if cpu :overflow (overflow-p result (cpu-accum cpu) (flip-bit 7 argument)))
     (set-flag-if cpu :carry (>= result 0))
     (let ((wrapped (wrap-byte result)))
       (set-flags-zn cpu wrapped)
