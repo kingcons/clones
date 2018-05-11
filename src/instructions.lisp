@@ -51,6 +51,9 @@
     (setf (cpu-x-reg cpu) result)
     (set-flags-zn cpu result)))
 
+(define-instruction jmp ()
+  (setf (cpu-pc cpu) address))
+
 (define-instruction sei ()
   (set-flag cpu :interrupt 1))
 
