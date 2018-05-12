@@ -74,7 +74,7 @@
     (fetch-indirect memory start)))
 
 (defaddress indirect-x
-  (let ((start (+ (fetch memory program-counter) x-register)))
+  (let ((start (wrap-byte (+ (fetch memory program-counter) x-register))))
     (fetch-indirect memory start)))
 
 (defaddress indirect-y
