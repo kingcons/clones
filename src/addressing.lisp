@@ -73,9 +73,8 @@
   (let ((start (fetch-word memory program-counter)))
     (fetch-indirect memory start)))
 
-;; TODO: Seems likely we need to wrap-word after additions here.
 (defaddress indirect-x
-  (let ((start (+ (fetch-word memory program-counter) x-register)))
+  (let ((start (+ (fetch memory program-counter) x-register)))
     (fetch-indirect memory start)))
 
 (defaddress indirect-y
