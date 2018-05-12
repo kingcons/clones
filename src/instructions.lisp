@@ -12,7 +12,6 @@
                 :wrap-word
                 :flip-bit)
   (:import-from :clones.instruction-data
-                :*instructions*
                 :%build-op-name
                 :get-instruction-meta
                 :jump-table)
