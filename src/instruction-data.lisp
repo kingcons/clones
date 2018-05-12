@@ -141,7 +141,7 @@
           (#x99 3 5 absolute-y t)
           (#x9d 3 5 absolute-x t))
      "Store Accumulator")
-    (stx ((#x86 2 3 zero-page-x t)
+    (stx ((#x86 2 3 zero-page t)
           (#x8e 3 4 absolute t)
           (#x96 2 4 zero-page-y t))
      "Store X Register")
