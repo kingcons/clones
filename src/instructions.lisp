@@ -21,39 +21,41 @@
 
 (defmacro define-instruction (name () &body body)
   (let ((metadata (get-instruction-meta name)))
-    (destructuring-bind (name opcodes docs &optional skip-pc) metadata
+    (destructuring-bind (name opcodes docs &key access-pattern skip-pc) metadata
       (declare (ignore docs))
       `(progn
-         ,@(loop for (opcode bytes cycles mode raw) in opcodes
+         ,@(loop for (opcode bytes cycles mode) in opcodes
                  ;; KLUDGE: Find the symbol since it doesn't exist at instruction-data load-time.
                  for addr-mode = (find-symbol (symbol-name mode))
                  collect `(%define-opcode (,name ,opcode ,addr-mode
-                                           :bytes ,bytes :cycles ,cycles
-                                           :raw ,raw :skip-pc ,skip-pc)
+                                           :bytes ,bytes
+                                           :cycles ,cycles
+                                           :access-pattern ,access-pattern
+                                           :skip-pc ,skip-pc)
                             ,@body))
          ,@(loop for (opcode) in opcodes
                  collect `(export ',(%build-op-name name opcode) 'clones.instructions))))))
 
-(defmacro %define-opcode ((name opcode address-mode &key bytes cycles raw skip-pc)
+(defmacro %define-opcode ((name opcode address-mode &key bytes cycles access-pattern skip-pc)
                          &body body)
   `(defun ,(%build-op-name name opcode) (cpu)
      (declare (type cpu cpu))
      (declare #.*standard-optimize-settings*)
      (incf (cpu-pc cpu))
-     ,(cond ((null address-mode)
-             `(progn ,@body))
-            ((and raw (eql address-mode 'accumulator))
-             `(flet ((store (memory address value)
-                       (declare (ignore memory address))
-                       (setf (cpu-accum cpu) value)))
-                (let ((argument (,address-mode cpu)))
-                  ,@body)))
-            (raw
-             `(let ((argument (,address-mode cpu)))
-                    ,@body))
-            (t
-             `(let ((argument (fetch (cpu-memory cpu) (,address-mode cpu))))
-                  ,@body)))
+     ,(ecase access-pattern
+        (:update `(flet ((update (address value)
+                           (declare (ignore address))
+                           ,(if (eql address-mode 'accumulator)
+                                `(setf (cpu-accum cpu) value)
+                                `(store (cpu-memory cpu) address value))))
+                    (let* ((address (,address-mode cpu))
+                           (argument (fetch (cpu-memory cpu) address)))
+                      ,@body)))
+        (:pointer `(let ((address (,address-mode cpu)))
+                     ,@body))
+        (:dereference `(let ((argument (fetch (cpu-memory cpu) (,address-mode cpu))))
+                         ,@body))
+        ((nil) `(progn ,@body)))
      (incf (cpu-cycles cpu) ,cycles)
      ,@(unless (or skip-pc (= 1 bytes))
          `((incf (cpu-pc cpu) ,(1- bytes))))))

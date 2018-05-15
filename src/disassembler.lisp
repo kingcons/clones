@@ -18,8 +18,8 @@
     "An array of opcode metadata for fast disassembly.")
 
   (dolist (metadata *instructions*)
-    (destructuring-bind (name opcodes docs &optional skip-pc) metadata
-      (declare (ignore skip-pc))
+    (destructuring-bind (name opcodes docs &key access-pattern skip-pc) metadata
+      (declare (ignore access-pattern skip-pc))
       (loop for (opcode bytes cycles mode) in opcodes
             do (setf (aref *opcodes* opcode)
                      (list name bytes cycles mode docs))))))
