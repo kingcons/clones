@@ -64,7 +64,7 @@
   `(if ,test
        (progn
          (incf (cpu-cycles cpu))
-         (setf (cpu-pc cpu) argument))
+         (setf (cpu-pc cpu) address))
        (incf (cpu-pc cpu))))
 
 (define-instruction adc ()
@@ -176,11 +176,11 @@
     (set-flags-zn cpu result)))
 
 (define-instruction jmp ()
-  (setf (cpu-pc cpu) argument))
+  (setf (cpu-pc cpu) address))
 
 (define-instruction jsr ()
   (stack-push-word cpu (1+ (cpu-pc cpu)))
-  (setf (cpu-pc cpu) argument))
+  (setf (cpu-pc cpu) address))
 
 (define-instruction lda ()
   (let ((result (setf (cpu-accum cpu) argument)))
