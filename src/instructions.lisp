@@ -83,7 +83,7 @@
   (let ((result (wrap-byte (ash argument 1))))
     (set-flag-if cpu :carry (logbitp 7 argument))
     (set-flags-zn cpu result)
-    (store (cpu-memory cpu) argument result)))
+    (update address result)))
 
 (define-instruction bcc ()
   (branch-if (not (flag-set-p cpu :carry))))
@@ -146,7 +146,7 @@
 (define-instruction dec ()
   (let ((result (wrap-byte (1- (fetch (cpu-memory cpu) argument)))))
     (set-flags-zn cpu result)
-    (store (cpu-memory cpu) argument result)))
+    (update address result)))
 
 (define-instruction dex ()
   (let ((result (setf (cpu-x-reg cpu) (wrap-byte (1- (cpu-x-reg cpu))))))
@@ -163,7 +163,7 @@
 (define-instruction inc ()
   (let ((result (wrap-byte (1+ (fetch (cpu-memory cpu) argument)))))
     (set-flags-zn cpu result)
-    (store (cpu-memory cpu) argument result)))
+    (update address result)))
 
 (define-instruction inx ()
   (let ((result (wrap-byte (1+ (cpu-x-reg cpu)))))
@@ -199,7 +199,7 @@
   (let ((result (ash argument -1)))
     (set-flag-if cpu :carry (logbitp 0 argument))
     (set-flags-zn cpu result)
-    (store (cpu-memory cpu) argument result)))
+    (update address result)))
 
 (define-instruction nop ()
   nil)
@@ -228,7 +228,7 @@
       (setf result (logior result #x01)))
     (set-flag-if cpu :carry (logbitp 7 argument))
     (set-flags-zn cpu result)
-    (store (cpu-memory cpu) argument result)))
+    (update address result)))
 
 (define-instruction ror ()
   (declare (type fixnum argument))
@@ -237,7 +237,7 @@
       (setf result (logior result #x80)))
     (set-flag-if cpu :carry (logbitp 0 argument))
     (set-flags-zn cpu result)
-    (store (cpu-memory cpu) argument result)))
+    (update address result)))
 
 (define-instruction rti ()
   (setf (cpu-status cpu) (logior (stack-pop cpu) #x20))
@@ -265,13 +265,13 @@
   (set-flag cpu :interrupt 1))
 
 (define-instruction sta ()
-  (store (cpu-memory cpu) argument (cpu-accum cpu)))
+  (update address (cpu-accum cpu)))
 
 (define-instruction stx ()
-  (store (cpu-memory cpu) argument (cpu-x-reg cpu)))
+  (update address (cpu-x-reg cpu)))
 
 (define-instruction sty ()
-  (store (cpu-memory cpu) argument (cpu-y-reg cpu)))
+  (update address (cpu-y-reg cpu)))
 
 (define-instruction tax ()
   (let ((result (setf (cpu-x-reg cpu) (cpu-accum cpu))))
