@@ -80,8 +80,8 @@
     (fetch-indirect memory start)))
 
 (defaddress indirect-y
-  (let* ((start (fetch memory program-counter))
-         (final (wrap-word (+ y-register (fetch-indirect memory start)))))
+  (let* ((start (fetch-indirect memory (fetch memory program-counter)))
+         (final (wrap-word (+ start y-register))))
     (when (page-crossed-p start final)
       (incf (cpu-cycles cpu)))
     final))
