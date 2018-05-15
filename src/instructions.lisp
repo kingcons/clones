@@ -44,7 +44,6 @@
      (incf (cpu-pc cpu))
      ,(ecase access-pattern
         (:update `(flet ((update (address value)
-                           (declare (ignore address))
                            ,(if (eql address-mode 'accumulator)
                                 `(setf (cpu-accum cpu) value)
                                 `(store (cpu-memory cpu) address value))))
