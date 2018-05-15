@@ -147,7 +147,7 @@
   (compare cpu (cpu-y-reg cpu) argument))
 
 (define-instruction dec ()
-  (let ((result (wrap-byte (1- (fetch (cpu-memory cpu) argument)))))
+  (let ((result (wrap-byte (1- argument))))
     (set-flags-zn cpu result)
     (update address result)))
 
@@ -164,7 +164,7 @@
     (set-flags-zn cpu result)))
 
 (define-instruction inc ()
-  (let ((result (wrap-byte (1+ (fetch (cpu-memory cpu) argument)))))
+  (let ((result (wrap-byte (1+ argument))))
     (set-flags-zn cpu result)
     (update address result)))
 
