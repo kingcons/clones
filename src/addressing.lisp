@@ -66,10 +66,18 @@
   (fetch-word memory program-counter))
 
 (defaddress absolute-x
-  (wrap-word (+ x-register (fetch-word memory program-counter))))
+  (let* ((start (fetch-word memory program-counter))
+         (final (wrap-word (+ start x-register))))
+    (when (page-crossed-p start final)
+      (incf (cpu-cycles cpu)))
+    final))
 
 (defaddress absolute-y
-  (wrap-word (+ y-register (fetch-word memory program-counter))))
+  (let* ((start (fetch-word memory program-counter))
+         (final (wrap-word (+ start y-register))))
+    (when (page-crossed-p start final)
+      (incf (cpu-cycles cpu)))
+    final))
 
 (defaddress indirect
   (let ((start (fetch-word memory program-counter)))
