@@ -42,6 +42,7 @@
      (declare (type cpu cpu))
      (declare #.*standard-optimize-settings*)
      (incf (cpu-pc cpu))
+     ;; TODO: Change access-pattern variants to: goto, read, write, read-modify-write, nil?
      ,(ecase access-pattern
         (:update (if (eql address-mode 'accumulator)
                      `(flet ((update (address value)
