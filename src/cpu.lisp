@@ -34,7 +34,8 @@
            #:stack-push-word
            #:stack-pop
            #:stack-pop-word
-           #:overflow-p))
+           #:overflow-p
+           #:page-crossed-p))
 
 (in-package :clones.cpu)
 
@@ -116,3 +117,8 @@
     (let ((result-sign (sign-bit result)))
       (not (or (eql result-sign (sign-bit augend))
                (eql result-sign (sign-bit addend)))))))
+
+(declaim (ftype (function (ub16 ub16) boolean) page-crossed-p))
+(defun page-crossed-p (start final)
+  (/= (logand start #xff00)
+      (logand final #xff00)))

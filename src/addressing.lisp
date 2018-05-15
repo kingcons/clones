@@ -8,7 +8,9 @@
                 :cpu-accum
                 :cpu-x-reg
                 :cpu-y-reg
-                :cpu-memory)
+                :cpu-memory
+                :cpu-cycles
+                :page-crossed-p)
   (:import-from :clones.memory
                 :fetch
                 :fetch-word
@@ -78,8 +80,11 @@
     (fetch-indirect memory start)))
 
 (defaddress indirect-y
-  (let ((start (fetch-word memory program-counter)))
-    (+ y-register (fetch-indirect memory start))))
+  (let* ((start (fetch memory program-counter))
+         (final (wrap-word (+ y-register (fetch-indirect memory start)))))
+    (when (page-crossed-p start final)
+      (incf (cpu-cycles cpu)))
+    final))
 
 ;; Relative mode:
 ;; Offset is a signed byte in two's complement form.
