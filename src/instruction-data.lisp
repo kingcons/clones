@@ -60,7 +60,7 @@
      "Compare with Y Register" :access-pattern :dereference)
     (dec ((#xc6 2 5 zero-page)
           (#xce 3 6 absolute)
-          (#xd6 2 7 zero-page-x)
+          (#xd6 2 6 zero-page-x)
           (#xde 3 7 absolute-x))
      "Decrement Memory" :access-pattern :update)
     (eor ((#x41 2 6 indirect-x)
