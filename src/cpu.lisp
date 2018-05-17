@@ -119,7 +119,7 @@
       (not (or (eql result-sign (sign-bit augend))
                (eql result-sign (sign-bit addend)))))))
 
-(declaim (ftype (function (cpu ub16 ub16) fixnum) maybe-update-cycle-count))
+(declaim (ftype (function (cpu ub16 ub16)) maybe-update-cycle-count))
 (defun maybe-update-cycle-count (cpu start final)
   (when (page-crossed-p start final)
     (incf (cpu-cycles cpu))))
