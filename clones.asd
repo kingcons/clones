@@ -16,7 +16,7 @@
   :version "0.1"
   :author "Brit Butler"
   :license "LLGPL"
-  :depends-on (:alexandria)
+  :depends-on (:alexandria :sdl2)
   :components ((:module "src"
                 :components
                 ((:file "disassembler" :depends-on ("addressing" "instruction-data"))
