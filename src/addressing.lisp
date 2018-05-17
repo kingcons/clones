@@ -68,15 +68,11 @@
 (defaddress absolute-x
   (let* ((start (fetch-word memory program-counter))
          (final (wrap-word (+ start x-register))))
-    (when (page-crossed-p start final)
-      (incf (cpu-cycles cpu)))
     final))
 
 (defaddress absolute-y
   (let* ((start (fetch-word memory program-counter))
          (final (wrap-word (+ start y-register))))
-    (when (page-crossed-p start final)
-      (incf (cpu-cycles cpu)))
     final))
 
 (defaddress indirect
@@ -90,8 +86,6 @@
 (defaddress indirect-y
   (let* ((start (fetch-indirect memory (fetch memory program-counter)))
          (final (wrap-word (+ start y-register))))
-    (when (page-crossed-p start final)
-      (incf (cpu-cycles cpu)))
     final))
 
 ;; Relative mode:
