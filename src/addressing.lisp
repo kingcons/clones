@@ -68,12 +68,12 @@
 (defaddress absolute-x
   (let* ((start (fetch-word memory program-counter))
          (final (wrap-word (+ start x-register))))
-    final))
+    (values final start)))
 
 (defaddress absolute-y
   (let* ((start (fetch-word memory program-counter))
          (final (wrap-word (+ start y-register))))
-    final))
+    (values final start)))
 
 (defaddress indirect
   (let ((start (fetch-word memory program-counter)))
@@ -86,7 +86,7 @@
 (defaddress indirect-y
   (let* ((start (fetch-indirect memory (fetch memory program-counter)))
          (final (wrap-word (+ start y-register))))
-    final))
+    (values final start)))
 
 ;; Relative mode:
 ;; Offset is a signed byte in two's complement form.
