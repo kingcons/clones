@@ -270,13 +270,13 @@
   (set-flag cpu :interrupt 1))
 
 (define-instruction sta ()
-  (update address (cpu-accum cpu)))
+  (store (cpu-memory cpu) address (cpu-accum cpu)))
 
 (define-instruction stx ()
-  (update address (cpu-x-reg cpu)))
+  (store (cpu-memory cpu) address (cpu-x-reg cpu)))
 
 (define-instruction sty ()
-  (update address (cpu-y-reg cpu)))
+  (store (cpu-memory cpu) address (cpu-y-reg cpu)))
 
 (define-instruction tax ()
   (let ((result (setf (cpu-x-reg cpu) (cpu-accum cpu))))
