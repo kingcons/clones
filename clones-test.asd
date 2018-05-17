@@ -18,7 +18,6 @@
                 :components
                 ((:file "helpers")
                  (:test-file "cpu")
-                 (:test-file "addressing")
                  (:test-file "memory")
                  (:test-file "mappers")
                  (:test-file "rom"))))
