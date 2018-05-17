@@ -39,10 +39,11 @@
 
 (subtest "Nestest.nes"
   (let ((cpu (make-cpu))
-        (trace-asm t))
+        (trace-asm nil))
     (setf (cpu-pc cpu) #xC000)
     (with-open-file (in (asset-path "roms/nestest_cpu.log"))
-      (loop for line = (read-line in nil) while line
+      (loop for line = (read-line in nil)
+            until (= (cpu-pc cpu) #xc6bd) ; first illegal opcode test
             do (let ((log (debug-log cpu))
                      (expected (parse-log line)))
                  (when trace-asm
@@ -50,6 +51,7 @@
                  (unless (equal log expected)
                    (fail (format t "Expected: ~A, Actual: ~A" expected log))
                    (return nil))
-                 (single-step cpu))))))
+                 (single-step cpu))
+            finally (pass "Completed all legal opcode tests in nestest!")))))
 
 (finalize)
