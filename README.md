@@ -2,13 +2,20 @@
 
 [![Build Status](https://travis-ci.org/kingcons/clones.svg?branch=master)](https://travis-ci.org/kingcons/clones)
 
+## Goals
+
+See: [Design](https://github.com/kingcons/clones/blob/master/DESIGN.md)
+
 ## Usage
+
+Not just yet...
 
 ## Installation
 
-Use [Quicklisp](https://quicklisp.org)!
+Eventually, Clones will be installable through [Quicklisp](https://quicklisp.org).
 
-Just run `(ql:quickload :clones)` and you should be ready to go.
+For now, you may clone this repo into `~/quicklisp/local-projects`.
+Then run `(ql:quickload :clones)` and you should be ready to go!
 
 ## Tests
 
@@ -23,13 +30,20 @@ since SLIME doesn't support ANSI color codes.
 (let ((prove:*enable-colors* nil)) (asdf:test-system :clones))
 ```
 
+There is also a helper for running individual test files.
+
+```lisp
+(ql:quickload :clones-test)
+(clones-test.helpers:run-file "cpu")
+```
+
 ## Author
 
 * Brit Butler (brit@kingcons.io)
 
 ## Copyright
 
-Copyright (c) 2017 Brit Butler (brit@kingcons.io)
+Copyright (c) 2018 Brit Butler (brit@kingcons.io)
 
 ## License
 

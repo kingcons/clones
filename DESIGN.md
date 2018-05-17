@@ -12,12 +12,12 @@ software, their capabilities were staggeringly limited compared to anything mode
 
 But the _distance_ between _access_ and _discovery_ seems much shorter to me.
 Modern computers are marvels but they sit upon a bedrock of knowledge and
-existing software so large, it dwarfs the ability to master it and even deep
+existing software so large, it impedes the ability to master it. Even deep
 comprehension is attained by very few.
 
-I want to write an environment to simulate an old computer. An old computer that
-had some cool applications that will be fun to use. A new environment with
-built-in tools for _observation_ and _exploration_. A toolkit for interacting
+I want to write a new environment to simulate an old computer. An old computer
+that had some cool applications that will be fun to use. A new environment with
+built-in tools for _observation_ and _exploration_. A toolkit for interacting,
 for rooting around in search of buried treasure.
 
 I'm way out of my depth here, technically speaking. But maybe that's the point.
@@ -43,7 +43,7 @@ To expand, here are some notes which are part project planning, part philosophic
   * Anti-goals: Support for all mappers/games, glitch accuracy, 60 FPS/no latency blips, etc.
   * Bronze: Test roms / CPU interpreter, Silver: Donkey Kong / PPU, Gold: Mega Man 2 / CPU JIT?
 2. "Readable" lisp codebase, modern software practices.
-  * Don't write Lisp like it is C. Use CI, test roms and unit tests to ensure components work.
+  * Don't write Lisp like it is C. Use CI, test roms, and unit tests to ensure components work.
   * Readability is nebulous and for the moment adheres to my personal taste.
     * However, ideally the code and docs could serve as an introduction to low-level programming
       issues for someone with light lisp exposure and serious experience with a previous language.
@@ -61,26 +61,3 @@ To expand, here are some notes which are part project planning, part philosophic
   * A companion webservice might be ideal, though clearly a separate project.
   * Formats for storing and disseminating partially deconstructed / annotated binaries.
   * Ways to export visualizations or recompiled code?
-
-### Architecture
-
-#### Memory
-
-##### The Address Space
-
-#### CPU
-
-* All the CPU registers fit in 56 bits. We could get crazy and use a bit vector to represent it...
-* Probably not a great idea but cute.
-
-##### Instruction Dispatch
-
-* Basic interpreter to start with.
-* Threaded interpreter with go/tagbody? Room for deep macrology here, could be cool!
-* Predecoding? Keep a hash mapping address -> opcode(args)...
-
-#### Graphics
-
-##### Drawing Frames
-
-* Possibly use static-vectors here to hand off framebuffers to OpenGL/SDL?
