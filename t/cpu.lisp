@@ -21,6 +21,21 @@
         (cpu-stack cpu)
         (cpu-cycles cpu)))
 
+(defun run-legal-opcode-tests (cpu trace-asm)
+  (setf (cpu-pc cpu) #xC000)
+  (with-open-file (in (asset-path "roms/nestest_cpu.log"))
+    (loop for line = (read-line in nil)
+          until (= (cpu-pc cpu) #xc6bd) ; first illegal opcode test
+          do (let ((log (debug-log cpu))
+                   (expected (parse-log line)))
+               (when trace-asm
+                 (clones.disassembler:now cpu))
+               (unless (equal log expected)
+                 (fail (format t "Expected: ~A, Actual: ~A" expected log))
+                 (return nil))
+               (single-step cpu))
+          finally (pass "Completed all legal opcode tests in nestest!"))))
+
 (plan 2)
 
 (subtest "CPU Interface"
@@ -40,18 +55,6 @@
 (subtest "Nestest.nes"
   (let ((cpu (make-cpu))
         (trace-asm nil))
-    (setf (cpu-pc cpu) #xC000)
-    (with-open-file (in (asset-path "roms/nestest_cpu.log"))
-      (loop for line = (read-line in nil)
-            until (= (cpu-pc cpu) #xc6bd) ; first illegal opcode test
-            do (let ((log (debug-log cpu))
-                     (expected (parse-log line)))
-                 (when trace-asm
-                   (clones.disassembler:now cpu))
-                 (unless (equal log expected)
-                   (fail (format t "Expected: ~A, Actual: ~A" expected log))
-                   (return nil))
-                 (single-step cpu))
-            finally (pass "Completed all legal opcode tests in nestest!")))))
+    (run-legal-opcode-tests cpu trace-asm)))
 
 (finalize)
