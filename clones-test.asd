@@ -12,10 +12,15 @@
   :author "Brit Butler"
   :license "LLGPL"
   :depends-on (:clones
-               :prove)
+               :prove
+               :split-sequence)
   :components ((:module "t"
                 :components
-                ((:test-file "clones"))))
+                ((:file "helpers")
+                 (:test-file "cpu")
+                 (:test-file "memory")
+                 (:test-file "mappers")
+                 (:test-file "rom"))))
   :description "Test system for clones"
 
   :defsystem-depends-on (:prove-asdf)
