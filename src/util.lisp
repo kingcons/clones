@@ -11,7 +11,8 @@
            #:make-byte-vector
            #:wrap-byte
            #:wrap-word
-           #:flip-bit))
+           #:flip-bit
+           #:page-crossed-p))
 
 (in-package :clones.util)
 
@@ -61,3 +62,9 @@
 
 (defmacro flip-bit (position value)
   `(logxor ,(expt 2 position) ,value))
+
+(declaim (inline page-crossed-p))
+(declaim (ftype (function (ub16 ub16) boolean) page-crossed-p))
+(defun page-crossed-p (start final)
+  (/= (logand start #xff00)
+      (logand final #xff00)))

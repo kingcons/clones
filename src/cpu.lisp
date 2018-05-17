@@ -12,7 +12,8 @@
   (:import-from :clones.util
                 :ub8
                 :ub16
-                :wrap-byte)
+                :wrap-byte
+                :page-crossed-p)
   (:export #:cpu
            #:make-cpu
            #:cpu-memory
@@ -35,7 +36,7 @@
            #:stack-pop
            #:stack-pop-word
            #:overflow-p
-           #:page-crossed-p))
+           #:maybe-update-cycle-count))
 
 (in-package :clones.cpu)
 
@@ -118,7 +119,7 @@
       (not (or (eql result-sign (sign-bit augend))
                (eql result-sign (sign-bit addend)))))))
 
-(declaim (ftype (function (ub16 ub16) boolean) page-crossed-p))
-(defun page-crossed-p (start final)
-  (/= (logand start #xff00)
-      (logand final #xff00)))
+(declaim (ftype (function (cpu ub16 ub16) fixnum) maybe-update-cycle-count))
+(defun maybe-update-cycle-count (cpu start final)
+  (when (page-crossed-p start final)
+    (incf (cpu-cycles cpu))))
