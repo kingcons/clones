@@ -9,6 +9,11 @@ env:
     - LISP=sbcl-bin
     - LISP=ccl-bin
 
+addons:
+  apt:
+    packages:
+      - libsdl2-dev
+
 install:
   # Roswell
   - curl -L https://raw.githubusercontent.com/roswell/roswell/release/scripts/install-for-ci.sh | sh
