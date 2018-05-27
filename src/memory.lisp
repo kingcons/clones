@@ -4,7 +4,9 @@
   (:use :cl :clones.mappers)
   (:import-from :clones.ppu
                 :ppu
-                :make-ppu)
+                :make-ppu
+                :ppu-read
+                :ppu-write)
   (:import-from :clones.mappers
                 :mapper
                 :load-rom)
@@ -35,6 +37,8 @@
   #f
   (cond ((< address #x2000)
          (aref (memory-ram memory) (logand address #x7ff)))
+        ((< address #x4000)
+         (ppu-read (memory-ppu memory) address))
         ((< address #x8000)
          0)
         (t
@@ -45,6 +49,8 @@
   #f
   (cond ((< address #x2000)
          (setf (aref (memory-ram memory) (logand address #x7ff)) value))
+        ((< address #x4000)
+         (ppu-write (memory-ppu memory) address value))
         ((< address #x8000)
          0)
         (t

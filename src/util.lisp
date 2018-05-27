@@ -11,6 +11,8 @@
            #:make-byte-vector
            #:wrap-byte
            #:wrap-word
+           #:wrap-nametable
+           #:wrap-palette
            #:flip-bit
            #:page-crossed-p))
 
@@ -51,14 +53,22 @@
 (declaim (inline wrap-byte))
 (defun wrap-byte (number)
   "Constrain a number to (integer 0 255)."
-  #f
   (logand number #xff))
 
 (declaim (inline wrap-word))
 (defun wrap-word (number)
   "Constrain a number to (integer 0 65535)."
-  #f
   (logand number #xffff))
+
+(declaim (inline wrap-nametable))
+(defun wrap-nametable (number)
+  "Constrain a number to (integer 0 2047)."
+  (logand number #x7ff))
+
+(declaim (inline wrap-palette))
+(defun wrap-palette (number)
+  "Constrain a number to (integer 0 31)."
+  (logand number #x1f))
 
 (defmacro flip-bit (position value)
   `(logxor ,(expt 2 position) ,value))
