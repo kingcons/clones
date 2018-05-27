@@ -2,7 +2,15 @@
 
 (defpackage :clones.ppu
   (:use :cl)
-  (:import-from :alexandria :define-constant))
+  (:import-from :alexandria
+                :define-constant)
+  (:import-from :clones.util
+                :ub8
+                :ub16
+                :byte-vector
+                :make-byte-vector)
+  (:export #:ppu
+           #:make-ppu))
 
 (in-package :clones.ppu)
 
@@ -24,3 +32,18 @@
     #xF8 #xD8 #x78 #xD8 #xF8 #x78 #xB8 #xF8 #xB8 #xB8 #xF8 #xD8
     #x00 #xFC #xFC #xF8 #xD8 #xF8 #x00 #x00 #x00 #x00 #x00 #x00)
   :documentation "The color palette used by the graphics card." :test #'equalp)
+
+(defstruct ppu
+  (cycles        0 :type fixnum)
+  (scanline      0 :type fixnum)
+  (control       0 :type ub8)
+  (mask          0 :type ub8)
+  (status        0 :type ub8)
+  (oam-address   0 :type ub8)
+  (scroll-x      0 :type ub8)
+  (scroll-y      0 :type ub8)
+  (address       0 :type ub16)
+  (oam           (make-byte-vector #x100) :type byte-vector)
+  (name-table    (make-byte-vector #x800) :type byte-vector)
+  (palette-table (make-byte-vector #x020) :type byte-vector))
+

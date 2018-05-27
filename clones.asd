@@ -24,7 +24,7 @@
                  (:file "instructions" :depends-on ("cpu" "addressing"))
                  (:file "addressing" :depends-on ("cpu" "memory"))
                  (:file "cpu" :depends-on ("memory" "instruction-data"))
-                 (:file "memory" :depends-on ("mappers" "util"))
+                 (:file "memory" :depends-on ("mappers" "ppu"))
                  (:file "mappers" :depends-on ("rom" "conditions"))
                  (:file "rom" :depends-on ("conditions" "util"))
                  (:file "ppu" :depends-on ("conditions" "util"))

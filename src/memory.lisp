@@ -2,6 +2,9 @@
 
 (defpackage :clones.memory
   (:use :cl :clones.mappers)
+  (:import-from :clones.ppu
+                :ppu
+                :make-ppu)
   (:import-from :clones.mappers
                 :mapper
                 :load-rom)
@@ -23,7 +26,7 @@
 
 (defstruct memory
   (ram (make-byte-vector #x800) :type byte-vector)
-  (ppu nil)
+  (ppu (make-ppu) :type ppu)
   (apu nil)
   (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
 
