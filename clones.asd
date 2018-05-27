@@ -16,17 +16,18 @@
   :version "0.1"
   :author "Brit Butler"
   :license "LLGPL"
-  :depends-on (:alexandria :sdl2)
+  :depends-on (:alexandria :sdl2 :static-vectors)
   :components ((:module "src"
                 :components
-                ((:file "ppu" :depends-on ("instructions"))
+                ((:file "graphics" :depends-on ("ppu"))
                  (:file "disassembler" :depends-on ("addressing" "instruction-data"))
                  (:file "instructions" :depends-on ("cpu" "addressing"))
                  (:file "addressing" :depends-on ("cpu" "memory"))
                  (:file "cpu" :depends-on ("memory" "instruction-data"))
                  (:file "memory" :depends-on ("mappers" "util"))
                  (:file "mappers" :depends-on ("rom" "conditions"))
-                 (:file "rom" :depends-on ("util" "conditions"))
+                 (:file "rom" :depends-on ("conditions" "util"))
+                 (:file "ppu" :depends-on ("conditions" "util"))
                  (:file "instruction-data")
                  (:file "conditions")
                  (:file "util"))))
