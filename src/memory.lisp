@@ -9,6 +9,7 @@
                 :ppu-write)
   (:import-from :clones.mappers
                 :mapper
+                :mapper-rom
                 :load-rom)
   (:import-from :clones.util
                 :asset-path
@@ -18,6 +19,7 @@
                 :make-byte-vector)
   (:export #:memory
            #:make-memory
+           #:swap-cartridge
            #:fetch
            #:fetch-word
            #:fetch-indirect
@@ -31,6 +33,11 @@
   (ppu (make-ppu) :type ppu)
   (apu nil)
   (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
+
+(defun swap-rom (memory rom-file)
+  (let ((rom (load-rom (asset-path rom-file))))
+    (setf (memory-mapper memory) rom)
+    (clones.ppu:initialize-pattern-table (memory-ppu memory) (clones.mappers::mapper-rom rom))))
 
 (declaim (ftype (function (memory ub16) ub8) fetch))
 (defun fetch (memory address)
