@@ -25,6 +25,8 @@
            #:cpu-status
            #:cpu-pc
            #:reset
+           #:nmi
+           #:irq
            #:status-bit
            #:flag-set-p
            #:set-flag
@@ -54,7 +56,23 @@
   "Jump to the address at the Reset Vector (0xFFFC)."
   (declare (type cpu cpu))
   (with-slots (memory pc) cpu
-    (setf pc (clones.memory:fetch-word memory pc))))
+    (setf pc (clones.memory:fetch-word memory #xFFFC))))
+
+(declaim (inline interrupt-goto))
+(defun interrupt-goto (cpu vector)
+  (with-slots (memory pc status) cpu
+    (stack-push-word cpu pc)
+    (stack-push cpu status)
+    (setf pc (clones.memory:fetch-word memory vector))))
+
+(defun nmi (cpu)
+  (declare (type cpu cpu))
+  (interrupt-goto cpu #xFFFA))
+
+(defun irq (cpu)
+  (declare (type cpu cpu))
+  (when (flag-set-p cpu :interrupt)
+    (interrupt-goto cpu #xFFFE)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)
