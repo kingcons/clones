@@ -4,6 +4,8 @@
   (:use :cl)
   (:import-from :alexandria
                 :define-constant)
+  (:import-from :static-vectors
+                :make-static-vector)
   (:import-from :clones.util
                 :ub8
                 :ub16
@@ -13,6 +15,7 @@
                 :wrap-palette)
   (:export #:*cpu-cycles-per-scanline*
            #:*cpu-cycles-per-frame*
+           #:*framebuffer*
            #:ppu
            #:make-ppu
            #:ppu-read
@@ -25,6 +28,9 @@
 (defvar *cpu-cycles-per-frame*  29781)
 
 ;;; Core PPU Data Structures
+
+(defvar *framebuffer* (make-static-vector (* 256 240 3) :element-type 'ub8)
+  "A Framebuffer for graphics operations, 256x240 with 3 bytes for RGB.")
 
 (define-constant +color-palette+
   #(#x7C #x7C #x7C  #x00 #x00 #xFC  #x00 #x00 #xBC  #x44 #x28 #xBC
