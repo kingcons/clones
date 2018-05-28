@@ -21,7 +21,7 @@
                 :components
                 ((:file "graphics" :depends-on ("ppu"))
                  (:file "disassembler" :depends-on ("addressing" "instruction-data"))
-                 (:file "instructions" :depends-on ("cpu" "addressing"))
+                 (:file "instructions" :depends-on ("ppu" "addressing"))
                  (:file "addressing" :depends-on ("cpu" "memory"))
                  (:file "cpu" :depends-on ("memory" "instruction-data"))
                  (:file "memory" :depends-on ("mappers" "ppu"))

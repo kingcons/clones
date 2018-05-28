@@ -2,6 +2,8 @@
 
 (defpackage :clones.instructions
   (:use :cl :clones.addressing :clones.cpu)
+  (:import-from :clones.ppu
+                :*cpu-cycles-per-scanline*)
   (:import-from :clones.memory
                 :fetch
                 :store
@@ -15,7 +17,8 @@
                 :%build-op-name
                 :get-instruction-meta
                 :jump-table)
-  (:export #:single-step))
+  (:export #:single-step
+           #:scanline-step))
 
 (in-package :clones.instructions)
 
@@ -310,3 +313,11 @@
   "Execute a single instruction and return the CPU."
   (declare (type cpu cpu))
   (jump-table (fetch (cpu-memory cpu) (cpu-pc cpu))))
+
+(defun scanline-step (cpu)
+  (declare (type cpu cpu))
+  (with-slots (cycles) cpu
+    (loop until (> cycles *cpu-cycles-per-scanline*)
+          do (single-step cpu))
+    (format *standard-output* cpu)
+    (setf cycles (mod cycles *cycles-per-scanline*))))

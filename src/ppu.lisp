@@ -11,12 +11,18 @@
                 :make-byte-vector
                 :wrap-nametable
                 :wrap-palette)
-  (:export #:ppu
+  (:export #:*cpu-cycles-per-scanline*
+           #:*cpu-cycles-per-frame*
+           #:ppu
            #:make-ppu
            #:ppu-read
-           #:ppu-write))
+           #:ppu-write
+           #:initialize-pattern-table))
 
 (in-package :clones.ppu)
+
+(defvar *cpu-cycles-per-scanline* 114)
+(defvar *cpu-cycles-per-frame*  29781)
 
 ;;; Core PPU Data Structures
 

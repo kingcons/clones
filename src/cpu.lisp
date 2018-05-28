@@ -53,6 +53,12 @@
   (status #x24           :type ub8)
   (pc     #xfffc         :type ub16))
 
+(defmethod print-object ((cpu cpu) stream)
+  (print-unreadable-object (cpu stream)
+    (with-slots (pc accum x-reg y-reg stack status cycles) cpu
+      (format stream "CPU PC:~4,'0x Stack:~2,'0x Cycles:~D " pc stack cycles)
+      (format stream "Acc:~2,'0x X:~2,'0x Y:~2,'0x Status:~8,'0b" accum x-reg y-reg status))))
+
 (defun reset (cpu)
   "Jump to the address at the Reset Vector (0xFFFC)."
   (declare (type cpu cpu))
