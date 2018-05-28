@@ -12,6 +12,7 @@
   (:import-from :clones.util
                 :ub8
                 :ub16
+                :ub32
                 :wrap-byte
                 :page-crossed-p)
   (:export #:cpu
@@ -44,7 +45,7 @@
 
 (defstruct cpu
   (memory (make-memory)  :type memory)
-  (cycles 0              :type fixnum)
+  (cycles 0              :type ub32)
   (accum  0              :type ub8)
   (x-reg  0              :type ub8)
   (y-reg  0              :type ub8)

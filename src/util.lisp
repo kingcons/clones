@@ -7,6 +7,7 @@
            #:asset-path
            #:ub8
            #:ub16
+           #:ub32
            #:byte-vector
            #:make-byte-vector
            #:wrap-byte
@@ -43,6 +44,7 @@
 
 (deftype ub8 () '(unsigned-byte 8))
 (deftype ub16 () '(unsigned-byte 16))
+(deftype ub32 () '(unsigned-byte 32))
 (deftype byte-vector (&optional (length '*))
   `(simple-array ub8 ,length))
 
