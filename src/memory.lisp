@@ -19,7 +19,7 @@
                 :make-byte-vector)
   (:export #:memory
            #:make-memory
-           #:swap-cartridge
+           #:swap-rom
            #:fetch
            #:fetch-word
            #:fetch-indirect
