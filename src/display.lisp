@@ -1,9 +1,9 @@
 (in-package :cl-user)
 
-(defpackage :clones.graphics
+(defpackage :clones.display
   (:use :cl :clones.ppu))
 
-(in-package :clones.graphics)
+(in-package :clones.display)
 
 (defvar *screen-width* 256)
 (defvar *screen-height* 240)
