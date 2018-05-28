@@ -20,7 +20,8 @@
            #:make-ppu
            #:ppu-read
            #:ppu-write
-           #:initialize-pattern-table))
+           #:initialize-pattern-table
+           #:scanline-step))
 
 (in-package :clones.ppu)
 
@@ -113,6 +114,11 @@
 (defstatus set-sprite-zero-hit 6)
 (defstatus set-in-vblank       7)
 
+(defmacro with-vblank (() &body body)
+  `(symbol-macrolet ((vblank-status (ldb (byte 1 7) (ppu-status ppu)))
+                     (vblank-nmi    (ldb (byte 1 7) (ppu-control ppu))))
+     ,@body))
+
 ;;; PPU Memory Map
 
 ;; KLUDGE: Just copy the CHR into PPU at boot time until we figure out bank switching.
@@ -199,3 +205,21 @@
 
 ;;; PPU Rendering Loop
 
+(defun render-scanline (ppu))
+
+(defun scanline-step (ppu)
+  (let ((result '(:new-frame nil :vblank-nmi nil)))
+    (with-slots (scanline) ppu
+      (when (< scanline 240)
+        (render-scanline ppu))
+      (incf scanline)
+      (case scanline
+        (241 (with-vblank ()
+               (setf vblank-status 1)
+               (when (plusp vblank-nmi)
+                 (setf (getf result :vblank-nmi) t))))
+        (261 (with-vblank ()
+               (setf scanline 0
+                     vblank-status 0
+                     (getf result :new-frame) t)))))
+    result))
