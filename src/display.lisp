@@ -5,7 +5,7 @@
   (:import-from :clones.ppu
                 :*framebuffer*)
   (:import-from :static-vectors
-                :static-vector-ptr)
+                :static-vector-pointer)
   (:export #:init-display))
 
 (in-package :clones.display)
@@ -29,7 +29,7 @@
 (defun display-frame ()
   (sdl2:in-main-thread ()
     (let ((start-of-frame (get-internal-real-time)))
-      (sdl2:update-texture *texture* (static-vector-ptr *framebuffer*)
+      (sdl2:update-texture *texture* (static-vector-pointer *framebuffer*)
                            :rect (cffi:null-pointer)
                            :width (* 3 *screen-width*))
       (sdl2:render-copy *renderer* *texture*)
