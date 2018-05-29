@@ -2,6 +2,8 @@
 
 (defpackage :clones.instructions
   (:use :cl :clones.addressing :clones.cpu)
+  (:import-from :clones.cpu
+                :cycles)
   (:import-from :clones.ppu
                 :*cpu-cycles-per-scanline*)
   (:import-from :clones.memory
@@ -319,5 +321,5 @@
   (with-slots (cycles) cpu
     (loop until (> cycles *cpu-cycles-per-scanline*)
           do (single-step cpu))
-    (format *standard-output* cpu)
-    (setf cycles (mod cycles *cycles-per-scanline*))))
+    (print cpu)
+    (setf cycles (mod cycles *cpu-cycles-per-scanline*))))
