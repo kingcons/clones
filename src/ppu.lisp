@@ -70,6 +70,12 @@
   (palette-table (make-byte-vector #x020)  :type byte-vector)
   (pattern-table (make-byte-vector #x2000) :type byte-vector))
 
+(defmethod print-object ((ppu ppu) stream)
+  (print-unreadable-object (ppu stream :type t)
+    (with-slots (scanline control mask status address) ppu
+      (format stream "Scanline: ~D   Ctrl: ~B  Mask: ~B  Status: ~B  Address: ~4,'0x"
+              scanline control mask status address))))
+
 ;;; PPU Register Helpers
 
 (defmacro define-ppu-bit (name (&rest args) &body body)
