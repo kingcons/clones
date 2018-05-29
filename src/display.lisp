@@ -24,7 +24,7 @@
                                          :h *screen-height*)
           *renderer* (sdl2:create-renderer *display*
                                            :flags '(:accelerated))
-          *texture*  (sdl2:create-texture renderer :bgr24 :streaming 256 240))))
+          *texture*  (sdl2:create-texture renderer :rgb24 :streaming 256 240))))
 
 (defun display-frame ()
   (sdl2:in-main-thread ()
