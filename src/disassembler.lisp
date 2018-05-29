@@ -6,8 +6,8 @@
                 :fetch
                 :fetch-range)
   (:import-from :clones.cpu
-                :cpu-memory
-                :cpu-pc)
+                :memory
+                :pc)
   (:export #:disasm
            #:now))
 
@@ -24,28 +24,27 @@
             do (setf (aref *opcodes* opcode)
                      (list name bytes cycles mode docs))))))
 
-(defun hexify (bytes)
-  (format nil "~{~2,'0x ~}" bytes))
-
 (defun disasm (memory start end)
   (loop with index = start while (<= index end)
         for opcode = (fetch memory index)
         do (destructuring-bind (name size cycles mode docs) (aref *opcodes* opcode)
              (declare (ignore cycles docs))
-             (flet ((format-args (format-string bytes)
+             (flet ((hexify (bytes)
+                      (format nil "~{~2,'0x ~}" bytes))
+                    (format-args (format-string bytes)
                       (if (member mode '(absolute absolute-x absolute-y indirect))
                           (format nil format-string (reverse bytes))
                           (format nil format-string bytes))))
-               (let* ((writer (clones.addressing:get-format-string mode))
-                      (bytes (fetch-range memory index (+ index (1- size))))
-                      (args (format-args writer (rest bytes))))
-                 (format t "~4,'0x  ~9a ;; ~a ~a~%" index (hexify bytes) name args)))
+               (let ((writer (clones.addressing:get-format-string mode))
+                     (bytes (fetch-range memory index (+ index (1- size)))))
+                 (if (rest bytes)
+                     (format t "~4,'0x  ~9a ;; ~a ~a~%" index (hexify bytes)
+                             name (format-args writer (rest bytes)))
+                     (format t "~4,'0x  ~9a ;; ~a~%" index (hexify bytes) name))))
              (incf index size))))
 
-(defun current-instruction (memory start)
-  (let* ((opcode (fetch memory start))
-         (size (second (aref *opcodes* opcode))))
-    (disasm memory start (+ start (1- size)))))
-
 (defun now (cpu)
-  (current-instruction (cpu-memory cpu) (cpu-pc cpu)))
+  (with-slots (pc memory) cpu
+    (let* ((opcode (fetch memory pc))
+           (size (second (aref *opcodes* opcode))))
+      (disasm memory pc (+ pc (1- size))))))
