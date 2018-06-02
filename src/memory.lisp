@@ -4,6 +4,7 @@
   (:use :cl :clones.mappers)
   (:import-from :clones.ppu
                 :ppu
+                :ppu-result
                 :make-ppu
                 :ppu-read
                 :ppu-write)
@@ -18,6 +19,7 @@
                 :byte-vector
                 :make-byte-vector)
   (:export #:memory
+           #:memory-ppu
            #:make-memory
            #:swap-rom
            #:fetch
@@ -33,6 +35,15 @@
   (ppu (make-ppu) :type ppu)
   (apu nil)
   (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
+
+(declaim (inline %oam-dma))
+(defun %oam-dma (memory value)
+  (let ((ppu (memory-ppu memory))
+        (page (ash value 8)))
+    (loop for index from page to (+ page 256)
+          do (let ((data (fetch memory index)))
+               (ppu-write ppu #x2004 data)))
+    (setf (getf (ppu-result ppu) :oam-dma) t)))
 
 (defun swap-rom (memory rom-file)
   (let ((rom (load-rom (asset-path rom-file))))
@@ -58,6 +69,8 @@
          (setf (aref (memory-ram memory) (logand address #x7ff)) value))
         ((< address #x4000)
          (ppu-write (memory-ppu memory) address value))
+        ((= address #x4014)
+         (%oam-dma memory value))
         ((< address #x8000)
          0)
         (t
