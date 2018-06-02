@@ -4,8 +4,6 @@
   (:use :cl :clones.addressing :clones.cpu)
   (:import-from :clones.cpu
                 :cycles)
-  (:import-from :clones.ppu
-                :*cpu-cycles-per-scanline*)
   (:import-from :clones.memory
                 :fetch
                 :store
@@ -315,11 +313,3 @@
   "Execute a single instruction and return the CPU."
   (declare (type cpu cpu))
   (jump-table (fetch (cpu-memory cpu) (cpu-pc cpu))))
-
-(defun scanline-step (cpu)
-  (declare (type cpu cpu))
-  (with-slots (cycles) cpu
-    (loop until (> cycles *cpu-cycles-per-scanline*)
-          do (single-step cpu))
-    (print cpu)
-    (setf cycles (mod cycles *cpu-cycles-per-scanline*))))
