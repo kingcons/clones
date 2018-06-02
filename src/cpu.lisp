@@ -25,9 +25,11 @@
            #:cpu-stack
            #:cpu-status
            #:cpu-pc
+           #:cpu-waiting
            #:reset
            #:nmi
            #:irq
+           #:dma
            #:status-bit
            #:flag-set-p
            #:set-flag
@@ -44,14 +46,15 @@
 (in-package :clones.cpu)
 
 (defstruct cpu
-  (memory (make-memory)  :type memory)
-  (cycles 0              :type ub32)
-  (accum  0              :type ub8)
-  (x-reg  0              :type ub8)
-  (y-reg  0              :type ub8)
-  (stack  #xfd           :type ub8)
-  (status #x24           :type ub8)
-  (pc     #xfffc         :type ub16))
+  (memory  (make-memory)  :type memory)
+  (waiting 0              :type ub32)
+  (cycles  0              :type ub32)
+  (accum   0              :type ub8)
+  (x-reg   0              :type ub8)
+  (y-reg   0              :type ub8)
+  (stack   #xfd           :type ub8)
+  (status  #x24           :type ub8)
+  (pc      #xfffc         :type ub16))
 
 (defmethod print-object ((cpu cpu) stream)
   (print-unreadable-object (cpu stream)
@@ -80,6 +83,10 @@
   (declare (type cpu cpu))
   (when (flag-set-p cpu :interrupt)
     (interrupt-goto cpu #xFFFE)))
+
+(defun dma (cpu)
+  (declare (type cpu cpu))
+  (setf (cpu-waiting cpu) 512))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)

@@ -312,4 +312,7 @@
 (defun single-step (cpu)
   "Execute a single instruction and return the CPU."
   (declare (type cpu cpu))
+  (when (plusp (cpu-waiting cpu))
+    (decf (cpu-waiting cpu))
+    (return 1))
   (jump-table (fetch (cpu-memory cpu) (cpu-pc cpu))))
