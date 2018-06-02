@@ -8,11 +8,19 @@
   (:import-from :clones.cpu
                 :make-cpu
                 :cpu-memory
-                :reset)
+                :reset
+                :dma)
+  (:import-from :clones.ppu
+                :ppu-cycles
+                :*cycles-per-frame*
+                :sync)
   (:import-from :clones.instructions
-                :scanline-step)
+                :single-step)
   (:import-from :clones.memory
-                :swap-rom))
+                :memory-ppu
+                :swap-rom)
+  (:import-from :clones.util
+                :slot->))
 
 (in-package :clones)
 
@@ -20,23 +28,27 @@
 (defvar *trace* nil)
 
 (defun change-game (rom-file)
+  ;; TODO: Reset other CPU+PPU slots, RAM, etc as necessary.
   (swap-rom (cpu-memory *nes*) rom-file)
   (reset *nes*))
 
-(defun tracing ()
-  (when *trace*
-    (format t *nes*)
-    (clones.disassembler:now)))
-
 (defun play ()
-  ;; KLUDGE: SCANLINE-STEP should probably be a generic function if we're using it like this.
   (init-display)
   (with-slots (ppu apu) (cpu-memory *nes*)
     (loop
-      (scanline-step *nes*)
-      (tracing)
-      (let ((ppu-result (clones.ppu:scanline-step ppu)))
-        (when (getf ppu-result :vblank-nmi)
-          (nmi *nes*))
-        (when (getf ppu-result :new-frame)
-          (display-frame))))))
+      (let ((cycle-count (single-step *nes*)))
+        (when *trace*
+          (format t *nes*)
+          (clones.disassembler:now))
+        (let ((ppu-result (sync ppu (* cycle-count 3))))
+          (when (getf ppu-result :oam-dma)
+            (dma *nes*))
+          (when (getf ppu-result :vblank-nmi)
+            (nmi *nes*))
+          (when (getf ppu-result :new-frame)
+            (display-frame)
+            (with-slots (cycles) *nes*
+              (setf cycles (mod cycles (round *cycles-per-frame* 3)))
+              (when *trace*
+                (format t "CPU Cycles: ~5d  PPU Cycles: ~5d~%"
+                        cycles (slot-> *nes* memory ppu cycles))))))))))
