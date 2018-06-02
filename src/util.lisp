@@ -13,6 +13,7 @@
            #:wrap-byte
            #:wrap-word
            #:wrap-nametable
+           #:wrap-palette-table
            #:wrap-palette
            #:flip-bit
            #:page-crossed-p))
@@ -67,10 +68,15 @@
   "Constrain a number to (integer 0 2047)."
   (logand number #x7ff))
 
-(declaim (inline wrap-palette))
-(defun wrap-palette (number)
+(declaim (inline wrap-palette-table))
+(defun wrap-palette-table (number)
   "Constrain a number to (integer 0 31)."
   (logand number #x1f))
+
+(declaim (inline wrap-palette))
+(defun wrap-palette (number)
+  "Constrain a number to (integer 0 63)."
+  (logand number #x3f))
 
 (defmacro flip-bit (position value)
   `(logxor ,(expt 2 position) ,value))
