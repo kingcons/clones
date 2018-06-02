@@ -69,9 +69,9 @@
                                    (let* ((address (,address-mode cpu))
                                           (argument (fetch (cpu-memory cpu) address)))
                                      ,@body)))))
-     (incf (cpu-cycles cpu) ,cycles)
      ,@(unless (or skip-pc (= 1 bytes))
-         `((incf (cpu-pc cpu) ,(1- bytes))))))
+         `((incf (cpu-pc cpu) ,(1- bytes))))
+     (incf (cpu-cycles cpu) ,cycles)))
 
 (defmacro branch-if (test)
   `(if ,test
