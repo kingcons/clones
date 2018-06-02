@@ -43,7 +43,7 @@
     (loop for index from page to (+ page 256)
           do (let ((data (fetch memory index)))
                (ppu-write ppu #x2004 data)))
-    (setf (getf (ppu-result ppu) :oam-dma) t)))
+    (setf (getf (ppu-result ppu) :dma) t)))
 
 (defun swap-rom (memory rom-file)
   (let ((rom (load-rom (asset-path rom-file))))

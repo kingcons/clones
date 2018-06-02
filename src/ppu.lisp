@@ -12,26 +12,31 @@
                 :byte-vector
                 :make-byte-vector
                 :wrap-nametable
+                :wrap-palette-table
                 :wrap-palette)
-  (:export #:*cpu-cycles-per-scanline*
-           #:*cpu-cycles-per-frame*
-           #:*framebuffer*
+  (:export #:*framebuffer*
+           #:*cycles-per-frame*
            #:ppu
+           #:ppu-result
+           #:ppu-cycles
            #:make-ppu
            #:ppu-read
            #:ppu-write
            #:initialize-pattern-table
-           #:scanline-step))
+           #:sync))
 
 (in-package :clones.ppu)
 
-(defvar *cpu-cycles-per-scanline* 114)
-(defvar *cpu-cycles-per-frame*  29781)
+(defvar *cycles-per-scanline* 341)
+(defvar *cycles-per-frame*  89342)
+
+(defconstant +width+ 256)
+(defconstant +height+ 240)
 
 ;;; Core PPU Data Structures
 
-(defvar *framebuffer* (make-static-vector (* 256 240 3) :element-type 'ub8)
-  "A Framebuffer for graphics operations, 256x240 with 3 bytes for RGB.")
+(defvar *framebuffer* (make-static-vector (* +width+ +height+ 3) :element-type 'ub8)
+  "A Framebuffer for graphics operations with 3 bytes per pixel for RGB.")
 
 (define-constant +color-palette+
   #(#x7C #x7C #x7C  #xFC #x00 #x00  #xBC #x00 #x00  #xBC #x28 #x44
@@ -53,22 +58,23 @@
   :documentation "The color palette used by the graphics card." :test #'equalp)
 
 (defstruct ppu
-  (cycles        0     :type fixnum)
-  (scanline      0     :type fixnum)
-  (read-buffer   0     :type ub8)
-  (control       0     :type ub8)  ; 0x2000
-  (mask          0     :type ub8)  ; 0x2001
-  (status        0     :type ub8)  ; 0x2002
-  (oam-address   0     :type ub8)  ; 0x2003
-  (scroll-x      0     :type ub8)  ; 0x2005
-  (scroll-y      0     :type ub8)  ; 0x2005
-  (address       0     :type ub16) ; 0x2006
-  (scroll-dir    :x    :type keyword)
-  (address-byte  :high :type keyword)
-  (oam           (make-byte-vector #x100)  :type byte-vector)
-  (nametable     (make-byte-vector #x800)  :type byte-vector)
-  (palette-table (make-byte-vector #x020)  :type byte-vector)
-  (pattern-table (make-byte-vector #x2000) :type byte-vector))
+  (result        '(:new-frame nil :nmi nil :dma nil) :type cons)
+  (cycles        0                                   :type fixnum)
+  (scanline      0                                   :type fixnum)
+  (read-buffer   0                                   :type ub8)
+  (control       0                                   :type ub8)  ; 0x2000
+  (mask          0                                   :type ub8)  ; 0x2001
+  (status        0                                   :type ub8)  ; 0x2002
+  (oam-address   0                                   :type ub8)  ; 0x2003
+  (scroll-x      0                                   :type ub8)  ; 0x2005
+  (scroll-y      0                                   :type ub8)  ; 0x2005
+  (address       0                                   :type ub16) ; 0x2006
+  (scroll-dir    :x                                  :type keyword)
+  (address-byte  :high                               :type keyword)
+  (oam           (make-byte-vector #x100)            :type byte-vector)
+  (nametable     (make-byte-vector #x800)            :type byte-vector)
+  (palette-table (make-byte-vector #x020)            :type byte-vector)
+  (pattern-table (make-byte-vector #x2000)           :type byte-vector))
 
 (defmethod print-object ((ppu ppu) stream)
   (print-unreadable-object (ppu stream :type t)
@@ -91,8 +97,8 @@
            ,then
            ,else)))
 
-(defcontrol x-scroll-offset      0  0  256)
-(defcontrol y-scroll-offset      1  0  240)
+(defcontrol x-scroll-offset      0  0  +width+)
+(defcontrol y-scroll-offset      1  0  +height+)
 (defcontrol vram-step            2  1  #x20)
 (defcontrol sprite-pattern-addr  3  0  #x1000)
 (defcontrol bg-pattern-addr      4  0  #x1000)
@@ -118,7 +124,6 @@
 
 (defstatus set-sprite-overflow 5)
 (defstatus set-sprite-zero-hit 6)
-(defstatus set-in-vblank       7)
 
 (defmacro with-vblank (() &body body)
   `(symbol-macrolet ((vblank-status (ldb (byte 1 7) (ppu-status ppu)))
@@ -171,7 +176,7 @@
         ((< address #x3f00)
          (aref (ppu-nametable ppu) (wrap-nametable address)))
         ((< address #x4000)
-         (aref (ppu-palette-table ppu) (wrap-palette address)))))
+         (aref (ppu-palette-table ppu) (wrap-palette-table address)))))
 
 (defun write-vram (ppu value)
   (with-slots (address) ppu
@@ -180,7 +185,7 @@
           ((< address #x3f00)
            (setf (aref (ppu-nametable ppu) (wrap-nametable address)) value))
           ((< address #x4000)
-           (setf (aref (ppu-palette-table ppu) (wrap-palette address)) value)))))
+           (setf (aref (ppu-palette-table ppu) (wrap-palette-table address)) value)))))
 
 (defun buffered-read (ppu)
   (with-slots (address) ppu
@@ -209,23 +214,58 @@
       (:low (setf address (logior (logand address #xff00) value)
                   address-byte :high)))))
 
-;;; PPU Rendering Loop
+;;; PPU Rendering
 
-(defun render-scanline (ppu))
+(defun render-pixel (x y palette-index)
+  (let ((buffer-start (* (+ (* y +width+) x) 3))
+        (palette-start (* palette-index 3)))
+    (dotimes (i 3)
+      (setf (aref *framebuffer*   (+ buffer-start i))
+            (aref +color-palette+ (+ palette-start i))))))
 
-(defun scanline-step (ppu)
-  (let ((result '(:new-frame nil :vblank-nmi nil)))
-    (with-slots (scanline) ppu
-      (when (< scanline 240)
-        (render-scanline ppu))
-      (incf scanline)
-      (case scanline
-        (241 (with-vblank ()
-               (setf vblank-status 1)
-               (when (plusp vblank-nmi)
-                 (setf (getf result :vblank-nmi) t))))
-        (261 (with-vblank ()
-               (setf scanline 0
-                     vblank-status 0
-                     (getf result :new-frame) t)))))
+(defun render-scanline (ppu)
+  (with-slots (scanline) ppu
+    (let ((backdrop-index (wrap-palette (read-vram ppu #x3f00)))
+          (background-index nil)
+          (sprite-index nil))
+      (dotimes (tile-index 32)
+        ;; fetch-nametable(tile-index)
+        ;; fetch-attribute(tile-index)
+        ;; fetch-lo-pattern(tile-index)
+        ;; fetch-hi-pattern(tile-index)
+        ;; combine attribute and pattern table data to get palette index
+        )
+      ;; TODO: One overall scheme here is to loop across the scanline
+      ;; fetch the color data for each pixel and then have some priority
+      ;; logic figure out what was on top and output that pixel.
+      ;; This is somewhat inefficient as it repeats work for the 8x8 tiles.
+
+      ;; More important to me though is that the code is harder to follow in examples
+      ;; I've seen when organizing work on a per-pixel rather than per-tile level.
+
+      ;; So let's go with the "organize by tile" approach and just throw sprites
+      ;; on top later if we have to. Now to try and work this out from first principles,
+      ;; like go read about nametables or something. Mirroring is gonna kill me.
+      ;; Worry about optimization later. 32 tiles to a scanline, you can do this.
+      (render-pixel x scanline index))))
+
+(defun sync (ppu run-to-cycle)
+  (with-slots (scanline cycles result) ppu
+    (when (< run-to-cycle (+ cycles *cycles-per-scanline*))
+      (return-from sync result))
+    (when (< scanline +height+)
+      (render-scanline ppu))
+    (incf scanline)
+    (incf cycles *cycles-per-scanline*)
+    (case scanline
+      (241 (with-vblank ()
+             (setf vblank-status 1)
+             (when (plusp vblank-nmi)
+               (setf (getf result :nmi) t))))
+      (261 (with-vblank ()
+             (setf cycles (mod cycles *cycles-per-frame*)
+                   scanline 0
+                   vblank-status 0
+                   (getf result :new-frame) t))))
     result))
+
