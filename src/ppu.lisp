@@ -216,6 +216,23 @@
 
 ;;; Rendering Helpers
 
+(defun color-quadrant (scanline tile)
+  ;; Each attribute byte holds the two high bits of the palette index for 4 16x16 pixel areas.
+  ;; The two bit pairs are laid out in the byte from bit 0 to 8 like so: tl . tr . bl . br
+  ;; Where tl is top-left, tr is top-right, and so on. Since left/right and top/bottom
+  ;; alternate every 16 pixels, we can use the even divisibility of scanlines/16 and tiles/2.
+  (let ((vertical (if (evenp (floor scanline 16))
+                      :top
+                      :bottom))
+        (horizontal (if (evenp (floor tile 2))
+                        :left
+                        :right)))
+    (case (list vertical horizontal)
+      ((:top :left)     0)
+      ((:top :right)    2)
+      ((:bottom :left)  4)
+      ((:bottom :right) 6))))
+
 (defun base-nametable (ppu)
   (case (ldb (byte 2 0) (ppu-control ppu))
     (0 #x2000)
@@ -234,11 +251,16 @@
   (let ((scanline-offset (* 32 (floor scanline 8))))
     (read-vram ppu (+ (base-nametable ppu) scanline-offset tile))))
 
-(defun get-attribute-byte (ppu scanline tile)
+(defun get-attribute-bits (ppu scanline tile)
   ;; Attribute tables are 64 bytes with 1 byte for each 4x4 tile area.
   ;; So skip 8 bytes ahead for every 32 scanlines and 1 byte ahead for each 4 tiles.
-  (let ((scanline-offset (* 8 (floor scanline 32))))
-    (read-vram ppu (+ (base-attribute-table ppu) scanline-offset (round tile 4)))))
+  ;; However, only 2 bits of the attribute table are relevant per tile.
+  (let* ((scanline-offset (* 8 (floor scanline 32)))
+         (tile-offset (round tile 4))
+         (base-address (base-attribute-table ppu))
+         (attribute-byte (read-vram ppu (+ base-address scanline-offset tile-offset)))
+         (byte-position (color-quadrant scanline tile)))
+    (ldb (byte 2 byte-position) attribute-byte)))
 
 (defun get-bg-pattern-byte (ppu pattern-index byte-position)
   ;; The pattern table is 4k and each tile is 16 bytes so multiply the pattern-index by 16.
@@ -248,6 +270,19 @@
                        (:lo 0)
                        (:hi 8))))
     (read-vram ppu (+ base-address (* pattern-index 16) byte-offset))))
+
+(defun get-palette-index (index-high-bits low-byte high-byte bit-position)
+  ;; The attribute table byte determines the two high-bits of the four bit palette index.
+  ;; The pattern-table low-byte and high-byte determine the 0th and 1st bit in the index.
+  (let ((index-low-bits (+ (ldb (byte 1 bit-position) low-byte)
+                           (ash (ldb (byte 1 bit-position) high-byte) 1))))
+    (dpb index-high-bits (byte 2 2) index-low-bits)))
+
+(defun get-color (ppu type index)
+  (let ((base-address (ecase type
+                        (:bg     #x3f00)
+                        (:sprite #x3f10))))
+     (read-vram ppu (+ base-address index))))
 
 ;;; PPU Rendering
 
@@ -265,12 +300,16 @@
           (sprite-index nil))
       (dotimes (tile-index 32)
         (let* ((nametable-byte  (get-nametable-byte ppu scanline tile-index))
-               (attribute-byte  (get-attribute-byte ppu scanline tile-index))
+               (attribute-bits  (get-attribute-bits ppu scanline tile-index))
                (bg-low-byte     (get-bg-pattern-byte ppu nametable-byte :lo))
                (bg-high-byte    (get-bg-pattern-byte ppu nametable-byte :hi))
                (colors nil))
-          ;; combine attribute and pattern table data to get palette index
-          (loop for i from 0 to 8
+          (declare (dynamic-extent colors))
+          (loop for i from 8 downto 0
+                do (let* ((index (get-palette-index attribute-bits bg-low-byte bg-high-byte i))
+                          (color (get-color ppu :bg index)))
+                     (push color colors)))
+          (loop for i from 0 upto 8
                 for color in colors
                 do (let ((x (+ (* tile-index 8) i))
                          (y scanline))
