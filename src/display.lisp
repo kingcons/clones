@@ -20,13 +20,11 @@
 
 (defun init-display ()
   (sdl2:in-main-thread ()
-    (sdl2:init :everything)
     (setf *display*  (sdl2:create-window :title "Clones"
                                          :w *screen-width*
                                          :h *screen-height*)
-          *renderer* (sdl2:create-renderer *display*
-                                           :flags '(:accelerated))
-          *texture*  (sdl2:create-texture renderer :rgb24 :streaming 256 240))))
+          *renderer* (sdl2:create-renderer *display* nil '(:accelerated))
+          *texture*  (sdl2:create-texture *renderer* :rgb24 :streaming 256 240))))
 
 (defun display-frame ()
   (sdl2:in-main-thread ()

@@ -33,6 +33,7 @@
   (reset *nes*))
 
 (defun play ()
+  (sdl2:init :everything)
   (init-display)
   (with-slots (ppu apu) (cpu-memory *nes*)
     (loop
