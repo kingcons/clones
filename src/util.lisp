@@ -16,7 +16,8 @@
            #:wrap-palette-table
            #:wrap-palette
            #:flip-bit
-           #:page-crossed-p))
+           #:page-crossed-p
+           #:slot->))
 
 (in-package :clones.util)
 
@@ -86,3 +87,8 @@
 (defun page-crossed-p (start final)
   (/= (logand start #xff00)
       (logand final #xff00)))
+
+(defmacro slot-> (object &rest slots)
+  (if (null slots)
+      object
+      `(slot-> (slot-value ,object ',(car slots)) ,@(rest slots))))
