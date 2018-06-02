@@ -37,4 +37,4 @@
     (sdl2:render-present *renderer*)
     (when *last-frame-at*
       (format t "Frame drawn in ~A milliseconds~%" (- (get-internal-real-time) *last-frame-at*)))
-    (setf *last-frame-at* (get-internal-real-time)))))
+    (setf *last-frame-at* (get-internal-real-time))))
