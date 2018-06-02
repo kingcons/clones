@@ -97,13 +97,13 @@
            ,then
            ,else)))
 
-(defcontrol x-scroll-offset      0  0  +width+)
-(defcontrol y-scroll-offset      1  0  +height+)
-(defcontrol vram-step            2  1  #x20)
-(defcontrol sprite-pattern-addr  3  0  #x1000)
-(defcontrol bg-pattern-addr      4  0  #x1000)
-(defcontrol sprite-size          5  8  16)
-(defcontrol vblank-nmi           7 nil t)
+(defcontrol x-scroll-offset         0  0  +width+)
+(defcontrol y-scroll-offset         1  0  +height+)
+(defcontrol vram-step               2  1  #x20)
+(defcontrol sprite-pattern-address  3  0  #x1000)
+(defcontrol bg-pattern-address      4  0  #x1000)
+(defcontrol sprite-size             5  8  16)
+(defcontrol vblank-nmi              7 nil t)
 
 (defmacro defmask (name bit-position)
   `(define-ppu-bit ,name ()
@@ -240,6 +240,15 @@
   (let ((scanline-offset (* 8 (floor scanline 32))))
     (read-vram ppu (+ (base-attribute-table ppu) scanline-offset (round tile 4)))))
 
+(defun get-bg-pattern-byte (ppu pattern-index byte-position)
+  ;; The pattern table is 4k and each tile is 16 bytes so multiply the pattern-index by 16.
+  ;; Note that there is a high byte and low byte for each tile spaced 8 bytes apart.
+  (let ((base-address (bg-pattern-address ppu))
+        (byte-offset (ecase byte-position
+                       (:lo 0)
+                       (:hi 8))))
+    (read-vram ppu (+ base-address (* pattern-index 16) byte-offset))))
+
 ;;; PPU Rendering
 
 (defun render-pixel (x y palette-index)
@@ -255,10 +264,11 @@
           (background-index nil)
           (sprite-index nil))
       (dotimes (tile-index 32)
-        (let* ((nametable-byte (get-nametable-byte ppu scanline tile-index))
-               (attribute-byte (get-attribute-byte ppu scanline tile-index)))
-          ;; fetch-lo-pattern(tile-index)
-          ;; fetch-hi-pattern(tile-index)
+        (let* ((nametable-byte  (get-nametable-byte ppu scanline tile-index))
+               (attribute-byte  (get-attribute-byte ppu scanline tile-index))
+               (bg-low-byte     (get-bg-pattern-byte ppu nametable-byte :lo))
+               (bg-high-byte    (get-bg-pattern-byte ppu nametable-byte :hi))
+               (colors nil))
           ;; combine attribute and pattern table data to get palette index
           (loop for i from 0 to 8
                 for color in colors
