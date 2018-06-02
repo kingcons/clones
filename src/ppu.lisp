@@ -227,11 +227,9 @@
         (horizontal (if (evenp (floor tile 2))
                         :left
                         :right)))
-    (case (alexandria:symbolicate vertical "-" horizontal)
-      (top-left     0)
-      (top-right    2)
-      (bottom-left  4)
-      (bottom-right 6))))
+    (if (eq vertical :top)
+        (if (eq horizontal :left) 0 2)
+        (if (eq horizontal :left) 4 6))))
 
 (defun base-nametable (ppu)
   (case (ldb (byte 2 0) (ppu-control ppu))
@@ -308,7 +306,7 @@
                 do (let* ((index (get-palette-index attribute-bits bg-low-byte bg-high-byte i))
                           (color (get-color ppu :bg index)))
                      (push color colors)))
-          (loop for i from 0 upto 8
+          (loop for i from 0 upto 7
                 for color in colors
                 do (let ((x (+ (* tile-index 8) i))
                          (y scanline))
