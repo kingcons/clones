@@ -2,8 +2,6 @@
 
 (defpackage :clones.instructions
   (:use :cl :clones.addressing :clones.cpu)
-  (:import-from :clones.cpu
-                :cycles)
   (:import-from :clones.memory
                 :fetch
                 :store
