@@ -8,16 +8,17 @@
   (:import-from :clones.cpu
                 :make-cpu
                 :cpu-memory
+                :cycles
                 :reset
+                :nmi
                 :dma)
   (:import-from :clones.ppu
-                :ppu-cycles
                 :*cycles-per-frame*
                 :sync)
   (:import-from :clones.instructions
                 :single-step)
   (:import-from :clones.memory
-                :memory-ppu
+                :ppu
                 :swap-rom)
   (:import-from :clones.util
                 :slot->))
@@ -39,8 +40,8 @@
     (loop
       (let ((cycle-count (single-step *nes*)))
         (when *trace*
-          (format t *nes*)
-          (clones.disassembler:now))
+          (print *nes*)
+          (clones.disassembler:now *nes*))
         (let ((ppu-result (sync ppu (* cycle-count 3))))
           (when (getf ppu-result :dma)
             (dma *nes*))
@@ -52,4 +53,4 @@
               (setf cycles (mod cycles (round *cycles-per-frame* 3)))
               (when *trace*
                 (format t "CPU Cycles: ~5d  PPU Cycles: ~5d~%"
-                        cycles (slot-> *nes* memory ppu cycles))))))))))
+                        cycles (slot-> *nes* memory ppu clones.ppu::cycles))))))))))
