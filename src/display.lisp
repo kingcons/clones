@@ -12,9 +12,11 @@
 
 (defvar *screen-width* 256)
 (defvar *screen-height* 240)
+
 (defvar *display* nil)
 (defvar *renderer* nil)
 (defvar *texture* nil)
+(defvar *last-frame-at* nil)
 
 (defun init-display ()
   (sdl2:in-main-thread ()
@@ -28,10 +30,11 @@
 
 (defun display-frame ()
   (sdl2:in-main-thread ()
-    (let ((start-of-frame (get-internal-real-time)))
-      (sdl2:update-texture *texture* (static-vector-pointer *framebuffer*)
-                           :rect (cffi:null-pointer)
-                           :width (* 3 *screen-width*))
-      (sdl2:render-copy *renderer* *texture*)
-      (sdl2:render-present *renderer*)
-      (format t "Frame drawn in ~A milliseconds~%" (- (get-internal-real-time) start-of-frame)))))
+    (sdl2:update-texture *texture* (static-vector-pointer *framebuffer*)
+                         :rect (cffi:null-pointer)
+                         :width (* 3 *screen-width*))
+    (sdl2:render-copy *renderer* *texture*)
+    (sdl2:render-present *renderer*)
+    (when *last-frame-at*
+      (format t "Frame drawn in ~A milliseconds~%" (- (get-internal-real-time) *last-frame-at*)))
+    (setf *last-frame-at* (get-internal-real-time)))))
