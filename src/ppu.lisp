@@ -102,7 +102,7 @@
 (defcontrol vram-step            2  1  #x20)
 (defcontrol sprite-pattern-addr  3  0  #x1000)
 (defcontrol bg-pattern-addr      4  0  #x1000)
-(defcontrol sprite-size          5  8  #x10)
+(defcontrol sprite-size          5  8  16)
 (defcontrol vblank-nmi           7 nil t)
 
 (defmacro defmask (name bit-position)
@@ -214,6 +214,32 @@
       (:low (setf address (logior (logand address #xff00) value)
                   address-byte :high)))))
 
+;;; Rendering Helpers
+
+(defun base-nametable (ppu)
+  (case (ldb (byte 2 0) (ppu-control ppu))
+    (0 #x2000)
+    (1 #x2400)
+    (2 #x2800)
+    (3 #x2c00)))
+
+(declaim (inline base-attribute-table))
+(defun base-attribute-table (ppu)
+  ;; Attribute tables always start #x3c0 bytes into a nametable.
+  (+ (base-nametable ppu) #x3c0))
+
+(defun get-nametable-byte (ppu scanline tile)
+  ;; A nametable of 8x8 tiles for a 256x240 screen is laid out 32x30.
+  ;; So skip 32 bytes ahead for every 8 scanlines and 1 byte ahead for each tile.
+  (let ((scanline-offset (* 32 (floor scanline 8))))
+    (read-vram ppu (+ (base-nametable ppu) scanline-offset tile))))
+
+(defun get-attribute-byte (ppu scanline tile)
+  ;; Attribute tables are 64 bytes with 1 byte for each 4x4 tile area.
+  ;; So skip 8 bytes ahead for every 32 scanlines and 1 byte ahead for each 4 tiles.
+  (let ((scanline-offset (* 8 (floor scanline 32))))
+    (read-vram ppu (+ (base-attribute-table ppu) scanline-offset (round tile 4)))))
+
 ;;; PPU Rendering
 
 (defun render-pixel (x y palette-index)
@@ -229,25 +255,16 @@
           (background-index nil)
           (sprite-index nil))
       (dotimes (tile-index 32)
-        ;; fetch-nametable(tile-index)
-        ;; fetch-attribute(tile-index)
-        ;; fetch-lo-pattern(tile-index)
-        ;; fetch-hi-pattern(tile-index)
-        ;; combine attribute and pattern table data to get palette index
-        )
-      ;; TODO: One overall scheme here is to loop across the scanline
-      ;; fetch the color data for each pixel and then have some priority
-      ;; logic figure out what was on top and output that pixel.
-      ;; This is somewhat inefficient as it repeats work for the 8x8 tiles.
-
-      ;; More important to me though is that the code is harder to follow in examples
-      ;; I've seen when organizing work on a per-pixel rather than per-tile level.
-
-      ;; So let's go with the "organize by tile" approach and just throw sprites
-      ;; on top later if we have to. Now to try and work this out from first principles,
-      ;; like go read about nametables or something. Mirroring is gonna kill me.
-      ;; Worry about optimization later. 32 tiles to a scanline, you can do this.
-      (render-pixel x scanline index))))
+        (let* ((nametable-byte (get-nametable-byte ppu scanline tile-index))
+               (attribute-byte (get-attribute-byte ppu scanline tile-index)))
+          ;; fetch-lo-pattern(tile-index)
+          ;; fetch-hi-pattern(tile-index)
+          ;; combine attribute and pattern table data to get palette index
+          (loop for i from 0 to 8
+                for color in colors
+                do (let ((x (+ (* tile-index 8) i))
+                         (y scanline))
+                     (render-pixel x y color))))))))
 
 (defun sync (ppu run-to-cycle)
   (with-slots (scanline cycles result) ppu
@@ -268,4 +285,3 @@
                    vblank-status 0
                    (getf result :new-frame) t))))
     result))
-
