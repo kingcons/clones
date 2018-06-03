@@ -6,9 +6,12 @@
                 :with-gensyms)
   (:import-from :clones.memory
                 :memory
+                :memory-ppu
                 :make-memory
                 :fetch
                 :store)
+  (:import-from :clones.ppu
+                :ppu-result)
   (:import-from :clones.util
                 :ub8
                 :ub16
@@ -86,7 +89,8 @@
 
 (defun dma (cpu)
   (declare (type cpu cpu))
-  (setf (cpu-waiting cpu) 512))
+  (setf (cpu-waiting cpu) 512)
+  (setf (getf (ppu-result (memory-ppu (cpu-memory cpu))) :dma) nil))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)

@@ -315,6 +315,8 @@
 
 (defun sync (ppu run-to-cycle)
   (with-slots (scanline cycles result) ppu
+    (setf (getf result :nmi) nil
+          (getf result :new-frame) nil)
     (when (< run-to-cycle (+ cycles *cycles-per-scanline*))
       (return-from sync result))
     (when (< scanline +height+)
