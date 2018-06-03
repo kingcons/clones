@@ -291,6 +291,13 @@
       (setf (aref *framebuffer*   (+ buffer-start i))
             (aref +color-palette+ (+ palette-start i))))))
 
+(defun compute-bg-colors (ppu nametable-byte attribute-bits)
+  (let ((low-byte  (get-bg-pattern-byte ppu nametable-byte :lo))
+        (high-byte (get-bg-pattern-byte ppu nametable-byte :hi)))
+    (loop for bit from 0 upto 7
+          for index = (get-palette-index attribute-bits low-byte high-byte bit)
+          collect (get-color ppu :bg index))))
+
 (defun render-scanline (ppu)
   (with-slots (scanline) ppu
     (let ((backdrop-index (wrap-palette (read-vram ppu #x3f00)))
@@ -299,15 +306,9 @@
       (dotimes (tile-index 32)
         (let* ((nametable-byte  (get-nametable-byte ppu scanline tile-index))
                (attribute-bits  (get-attribute-bits ppu scanline tile-index))
-               (bg-low-byte     (get-bg-pattern-byte ppu nametable-byte :lo))
-               (bg-high-byte    (get-bg-pattern-byte ppu nametable-byte :hi))
-               (colors nil))
-          (loop for i from 8 downto 0
-                do (let* ((index (get-palette-index attribute-bits bg-low-byte bg-high-byte i))
-                          (color (get-color ppu :bg index)))
-                     (push color colors)))
+               (bg-colors (compute-bg-colors ppu nametable-byte attribute-bits)))
           (loop for i from 0 upto 7
-                for color in colors
+                for color in bg-colors
                 do (let ((x (+ (* tile-index 8) i))
                          (y scanline))
                      (render-pixel x y color))))))))
@@ -316,8 +317,8 @@
   (with-slots (scanline cycles result) ppu
     (when (< run-to-cycle (+ cycles *cycles-per-scanline*))
       (return-from sync result))
-    ;; (when (< scanline +height+)
-    ;;   (render-scanline ppu))
+    (when (< scanline +height+)
+      (render-scanline ppu))
     (incf scanline)
     (incf cycles *cycles-per-scanline*)
     (case scanline
