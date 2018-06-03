@@ -316,8 +316,8 @@
   (with-slots (scanline cycles result) ppu
     (when (< run-to-cycle (+ cycles *cycles-per-scanline*))
       (return-from sync result))
-    (when (< scanline +height+)
-      (render-scanline ppu))
+    ;; (when (< scanline +height+)
+    ;;   (render-scanline ppu))
     (incf scanline)
     (incf cycles *cycles-per-scanline*)
     (case scanline

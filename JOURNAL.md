@@ -183,10 +183,24 @@ Anyway:
 
 1. Implement DMA. *DONE*
 2. Redo syncing / stepping. *DONE*
-3. Finish tile rendering (just for backgrounds).
+3. Finish tile rendering (just for backgrounds). *DONE?*
 4. Implement controller input / SDL polling.
 
 If we get all that done, it will be a very good Saturday.
 
 Dumb micro-optimization: We could avoid computing `old-cycles` every step by
 rotating `new-cycles` / keeping that outside the loop, etc.
+
+### Notes after rendering work (06/02)
+
+Well, it hurts my soul that this doesn't seem to _quite_ work yet.
+But I'm proud of the work I got done on scanline rendering.
+
+I'm confident we're computing the various nametable, palette, etc addresses correctly.
+But when I render I only get a gray screen. Performance seems acceptable, with most frames
+drawing in under 5 seconds. But I'll be more pleased with that when something meaningful
+is actually getting on the screen. That said, my brain is pretty fried and I've spent almost
+no time with Norma today despite her being home for 7 hours now. It's time to sign off.
+
+I wrote a simple TEST-FRAME function and got the expected color palette / results.
+It seems likely that the problem is translating the `*FRAMEBUFFER*` to SDL / `RENDER-PIXEL`.

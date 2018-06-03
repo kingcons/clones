@@ -48,7 +48,7 @@
           (when (getf ppu-result :nmi)
             (nmi *nes*))
           (when (getf ppu-result :new-frame)
-            (display-frame)
+            (clones.display::test-frame)
             (with-slots (cycles) *nes*
               (setf cycles (mod cycles (round *cycles-per-frame* 3)))
               (when *trace*
