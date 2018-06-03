@@ -9,6 +9,7 @@
                 :make-cpu
                 :cpu-memory
                 :cycles
+                :memory
                 :reset
                 :nmi
                 :dma)
@@ -48,9 +49,9 @@
           (when (getf ppu-result :nmi)
             (nmi *nes*))
           (when (getf ppu-result :new-frame)
-            (clones.display::test-frame)
+            (display-frame)
             (with-slots (cycles) *nes*
-              (setf cycles (mod cycles (round *cycles-per-frame* 3)))
+              (setf cycles (mod cycles (floor *cycles-per-frame* 3)))
               (when *trace*
                 (format t "CPU Cycles: ~5d  PPU Cycles: ~5d~%"
                         cycles (slot-> *nes* memory ppu clones.ppu::cycles))))))))))

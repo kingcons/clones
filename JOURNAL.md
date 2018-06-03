@@ -204,3 +204,15 @@ no time with Norma today despite her being home for 7 hours now. It's time to si
 
 I wrote a simple TEST-FRAME function and got the expected color palette / results.
 It seems likely that the problem is translating the `*FRAMEBUFFER*` to SDL / `RENDER-PIXEL`.
+Actually no, the palette is never getting set. That's pretty weird. :thinking:
+
+### Notes on busted ass SYNC (06/03)
+
+It's blindingly obvious once you see it, of course. I was too busy focusing on the
+scanline rendering to notice I'd refactored `SYNC` such that once `NMI` or `NEW-FRAME` are set,
+they never become unset. Resulting in NMI occurring every PPU step instead of once a frame.
+That could explain why the palette never gets filled. Before the CPU has a chance to touch it,
+we've already forced it to jump back to the NMI vector. Similarly, we're rendering frames nonstop
+but the `*FRAMEBUFFER*` contents aren't really changing. *Sigh*.
+
+A couple of fixes later and ... well, _something_ is rendering. It's a start.

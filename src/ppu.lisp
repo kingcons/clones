@@ -11,6 +11,7 @@
                 :ub16
                 :byte-vector
                 :make-byte-vector
+                :wrap-byte
                 :wrap-nametable
                 :wrap-palette-table
                 :wrap-palette)
@@ -167,8 +168,9 @@
 
 (defun write-oam (ppu value)
   (with-slots (oam oam-address) ppu
-    (setf (aref oam oam-address) value)
-    (incf oam-address)))
+    (setf (aref oam oam-address) value
+          oam-address (wrap-byte (1+ oam-address)))))
+
 
 (defun read-vram (ppu address)
   (cond ((< address #x2000)
@@ -294,7 +296,7 @@
 (defun compute-bg-colors (ppu nametable-byte attribute-bits)
   (let ((low-byte  (get-bg-pattern-byte ppu nametable-byte :lo))
         (high-byte (get-bg-pattern-byte ppu nametable-byte :hi)))
-    (loop for bit from 0 upto 7
+    (loop for bit from 0 to 7
           for index = (get-palette-index attribute-bits low-byte high-byte bit)
           collect (get-color ppu :bg index))))
 
@@ -307,7 +309,7 @@
         (let* ((nametable-byte  (get-nametable-byte ppu scanline tile-index))
                (attribute-bits  (get-attribute-bits ppu scanline tile-index))
                (bg-colors (compute-bg-colors ppu nametable-byte attribute-bits)))
-          (loop for i from 0 upto 7
+          (loop for i from 0 to 7
                 for color in bg-colors
                 do (let ((x (+ (* tile-index 8) i))
                          (y scanline))
