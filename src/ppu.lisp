@@ -171,7 +171,6 @@
     (setf (aref oam oam-address) value
           oam-address (wrap-byte (1+ oam-address)))))
 
-
 (defun read-vram (ppu address)
   (cond ((< address #x2000)
          (aref (ppu-pattern-table ppu) address))
@@ -302,18 +301,15 @@
 
 (defun render-scanline (ppu)
   (with-slots (scanline) ppu
-    (let ((backdrop-index (wrap-palette (read-vram ppu #x3f00)))
-          (background-index nil)
-          (sprite-index nil))
+    (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
       (dotimes (tile-index 32)
         (let* ((nametable-byte  (get-nametable-byte ppu scanline tile-index))
                (attribute-bits  (get-attribute-bits ppu scanline tile-index))
                (bg-colors (compute-bg-colors ppu nametable-byte attribute-bits)))
           (loop for i from 0 to 7
                 for color in bg-colors
-                do (let ((x (+ (* tile-index 8) i))
-                         (y scanline))
-                     (render-pixel x y color))))))))
+                do (let ((x (+ (* tile-index 8) i)))
+                     (render-pixel x scanline color))))))))
 
 (defun sync (ppu run-to-cycle)
   (with-slots (scanline cycles result) ppu
