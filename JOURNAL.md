@@ -216,3 +216,50 @@ we've already forced it to jump back to the NMI vector. Similarly, we're renderi
 but the `*FRAMEBUFFER*` contents aren't really changing. *Sigh*.
 
 A couple of fixes later and ... well, _something_ is rendering. It's a start.
+
+### Why do this? (06/04)
+
+There's something really funny about clones. For one, there are many better
+emulators out there. FCEUX notably has both better debugging tools than clones
+will likely _ever_ have and is much more accurate and performant than clones
+even aspires to be. But the funnier thing to me is thinking about the market.
+Ideally, I'm trying to write an emulator that makes the _inner workings_ of games
+accessible to the people that love them. Not for the purposes of speedruns so much
+as to make them easy to remix or use as a pedagogical tool for computing.
+
+Now there are two demographics that immediately brings to mind:
+
+1) People that grew up with the NES.
+2) Kids today learning about how computers and games work.
+
+The folks in group 1 are mostly in their mid-30s to early-40s.
+If they wanted to get into computers (or game programming specifically)
+they either already have or moved on to other things. For many,
+the things they moved on to are careers and families. And the
+ones who _did_ get into game development will be put off by Lisp, ironically.
+They already learned C, C++, or C#/Java/Lua to pursue their interest.
+
+The folks in group 2 have no special attachment to the NES or its games.
+They already have 3DS titles or iPad games that they grew up with.
+And the learning tools available to them to see how computers work are,
+relative to my childhood anyway, abundant. PICO-8 is a better product
+in that scenario and the more explicit aim of getting folks into game
+development is a valuable one.
+
+And yet, I still want to do this for me. At least to get emulation (audio + video)
+working to the point that I can play all the way through Mega Man 2.
+I know **deeply** that this goal is arbitrary. The end product may be pointless.
+And yet here I am anyway. I guess some things just can't be explained.
+
+Well... the closest thing to a fast, accurate, cross-platform emulator whose
+_codebase_ supports learning and whose _debugging tools_ facilitate
+explaration is probably Mesen. But it doesn't actually run on Mac OS at all
+currently because it's heavily based on C# and WinForms isn't up to date in Mono
+and apparently the latest Xcode/llvm/clang don't support `std::filesystem` well
+enough and jesus christ this is _exactly_ the reason I have any interest in a
+simple, static model of computing like the NES in the first place. :-/
+
+And now Apple has announced that they're deprecating OpenGL. It's a "legacy
+technology", apparently. Maybe I love Common Lisp because it's an ecosystem
+that moves slowly and cares about its own history a little. Of course, clones
+is binding to SDL and C libraries so that won't save us.
