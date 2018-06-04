@@ -50,6 +50,7 @@
             (nmi *nes*))
           (when (getf ppu-result :new-frame)
             (display-frame)
+            ; (handle-input)
             (with-slots (cycles) *nes*
               (setf cycles (mod cycles (floor *cycles-per-frame* 3)))
               (when *trace*

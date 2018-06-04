@@ -12,6 +12,9 @@
                 :mapper
                 :mapper-rom
                 :load-rom)
+  (:import-from :clones.input
+                :gamepad
+                :make-gamepad)
   (:import-from :clones.util
                 :asset-path
                 :ub8
@@ -34,6 +37,7 @@
   (ram (make-byte-vector #x800) :type byte-vector)
   (ppu (make-ppu) :type ppu)
   (apu nil)
+  (gamepad (make-gamepad) :type gamepad)
   (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
 
 (declaim (inline %oam-dma))
@@ -57,6 +61,8 @@
          (aref (memory-ram memory) (logand address #x7ff)))
         ((< address #x4000)
          (ppu-read (memory-ppu memory) address))
+        ((= address #x4016)
+         0) ;; TODO: read input
         ((< address #x8000)
          0)
         (t
@@ -71,6 +77,8 @@
          (ppu-write (memory-ppu memory) address value))
         ((= address #x4014)
          (%oam-dma memory value))
+        ((= address #x4016)
+         0) ;; TODO: write input
         ((< address #x8000)
          0)
         (t
