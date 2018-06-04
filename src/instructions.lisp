@@ -312,5 +312,5 @@
   (declare (type cpu cpu))
   (when (plusp (cpu-waiting cpu))
     (decf (cpu-waiting cpu))
-    (return-from single-step 1))
+    (return-from single-step (incf (cpu-cycles cpu))))
   (jump-table (fetch (cpu-memory cpu) (cpu-pc cpu))))

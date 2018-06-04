@@ -34,6 +34,18 @@
   (swap-rom (cpu-memory *nes*) rom-file)
   (reset *nes*))
 
+(defun step-frame ()
+  (let ((result nil))
+    (loop until (getf result :new-frame)
+          do (let ((cycle-count (single-step *nes*)))
+               (clones.disassembler:now *nes*)
+               (with-slots (ppu) (cpu-memory *nes*)
+                 (setf result (sync ppu (* cycle-count 3)))
+                 (when (getf result :dma)
+                   (dma *nes*))
+                 (when (getf result :nmi)
+                   (nmi *nes*)))))))
+
 (defun play ()
   (sdl2:init :everything)
   (init-display)
