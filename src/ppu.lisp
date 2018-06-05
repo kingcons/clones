@@ -326,9 +326,8 @@
              (setf vblank-status 1)
              (when (plusp vblank-nmi)
                (setf (getf result :nmi) t))))
-      (261 (with-vblank ()
-             (setf cycles (mod cycles *cycles-per-frame*)
-                   scanline 0
+      (262 (with-vblank ()
+             (setf scanline 0
                    vblank-status 0
                    (getf result :new-frame) t))))
     result))
