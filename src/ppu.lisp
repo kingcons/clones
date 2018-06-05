@@ -80,7 +80,7 @@
 (defmethod print-object ((ppu ppu) stream)
   (print-unreadable-object (ppu stream :type t)
     (with-slots (scanline control mask status address) ppu
-      (format stream "Scanline: ~D   Ctrl: ~B  Mask: ~B  Status: ~B  Address: ~4,'0x"
+      (format stream "Scanline:~3d  Ctrl:~8,'0b  Mask:~8,'0b  Status:~8,'0b  Address:~4,'0x"
               scanline control mask status address))))
 
 ;;; PPU Register Helpers
