@@ -14,7 +14,9 @@
                 :load-rom)
   (:import-from :clones.input
                 :gamepad
-                :make-gamepad)
+                :make-gamepad
+                :fetch-strobe
+                :reset-strobe)
   (:import-from :clones.util
                 :asset-path
                 :ub8
@@ -62,7 +64,7 @@
         ((< address #x4000)
          (ppu-read (memory-ppu memory) address))
         ((= address #x4016)
-         0) ;; TODO: read input
+         (fetch-strobe (memory-gamepad memory)))
         ((< address #x8000)
          0)
         (t
@@ -78,7 +80,7 @@
         ((= address #x4014)
          (%oam-dma memory value))
         ((= address #x4016)
-         0) ;; TODO: write input
+         (reset-strobe (memory-gamepad memory)))
         ((< address #x8000)
          0)
         (t
