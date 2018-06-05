@@ -263,3 +263,45 @@ And now Apple has announced that they're deprecating OpenGL. It's a "legacy
 technology", apparently. Maybe I love Common Lisp because it's an ecosystem
 that moves slowly and cares about its own history a little. Of course, clones
 is binding to SDL and C libraries so that won't save us.
+
+### Notes on PPU debugging (06/05)
+
+Well, that was a tricky bug to track down. It basically was simmering on the back of
+my mind for 3 full days. It also clarifies that the part of writing a PPU I really
+dislike is not having great ways to check work as you go, or debug once you're "finished".
+
+The problem in this case wound up being that I forgot to bump the PPU VRAM address
+after every write. This is stated pretty clearly on the NESdev wiki in the registers
+section but .. well, whoops. In the course of writing 300 lines of code I forgot to
+bump a counter. Which caused a bunch of information to not get stored in the palette
+table (and elsewhere) for no obvious reason.
+
+The only way I really figured this out was by differential debugging. I dug up my old
+famiclom code (which was largely a port of sprocketnes' PPU that I'm still referring to)
+and set up tools to dump out various hardware state at points I was interested in. I made
+sure famiclom didn't exhibit this particular bug first, of course. I also used FCEUX just
+to have a PPU viewer and check the palette table after a few frames were drawn.
+
+Once I realized the palette table was staying empty and shouldn't be I just had to
+work backwards. Are the CPUs doing different things? Not really. What frame is this
+happening on? The third frame. Okay, what code sets the palette? VRAM writes (not to the palette)
+are near 0xF220. Okay, do they ever change the address? Not to the palette.
+So obviously the address needs to change in some other way. Then it was just a matter of
+comparing how I write to VRAM and update the address with some other emulators / NESdev.
+
+But that's a crappy debugging process, really. And I learned that FCEUX has
+great debugging tools but _only_ on Windows and the same is true for many other
+emulators as well.
+
+I guess my big takeaway is that it's difficult to say how you should test a PPU.
+In large part because of the different approaches taken to PPU emulation.
+If you think about the CPU, then a log from a "correct" emulator of the few minor
+pieces of state (registers + cycles) is enough. Make sure your CPU log matches up to
+the illegal opcodes for "partial accuracy" or all the way through for "full accuracy".
+
+For the PPU, you could probably get away with logging partial PPU state, say just registers
+instead of pattern tables, nametables, etc. But you have to decide a timing granularity.
+Per-scanline is _okay_ but wildly inaccurate, per-CPU instruction is inaccurate, per-CPU
+cycle is pretty accurate. Which raises the important point that it doesn't make sense to
+test against a PPU log without _also_ deciding on a CPU/PPU synchronization strategy and
+having a CPU log. Yuck. This is why writing a PPU is really no fun.
