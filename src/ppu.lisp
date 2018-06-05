@@ -186,7 +186,8 @@
           ((< address #x3f00)
            (setf (aref (ppu-nametable ppu) (wrap-nametable address)) value))
           ((< address #x4000)
-           (setf (aref (ppu-palette-table ppu) (wrap-palette-table address)) value)))))
+           (setf (aref (ppu-palette-table ppu) (wrap-palette-table address)) value)))
+    (incf address (vram-step ppu))))
 
 (defun buffered-read (ppu)
   (with-slots (address) ppu
