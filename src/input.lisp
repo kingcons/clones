@@ -68,8 +68,7 @@
 
 (defun fetch-strobe (pad)
   (with-slots (strobe) pad
-    (prog1 (slot-value pad strobe)
-      (pop strobe))))
+    (slot-value pad (pop strobe))))
 
 (defun reset-strobe (pad)
   (with-slots (strobe) pad
