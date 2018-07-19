@@ -40,7 +40,7 @@
            (setf (gamepad-up pad) state))
           ((sdl2:scancode= key (getf *keymap* :left))
            (setf (gamepad-left pad) state))
-          ((sdl2:scancode= key (getf *keymap :down))
+          ((sdl2:scancode= key (getf *keymap* :down))
            (setf (gamepad-down pad) state))
           ((sdl2:scancode= key (getf *keymap* :right))
            (setf (gamepad-right pad) state))
