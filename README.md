@@ -80,3 +80,6 @@ Copyright (c) 2018 Brit Butler (brit@kingcons.io)
 ## License
 
 Licensed under the LLGPL License.
+
+[sbcl]: http://sbcl.org/
+[ccl]: https://ccl.clozure.com/
