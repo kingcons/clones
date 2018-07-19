@@ -24,6 +24,20 @@ just try the following in a recent [SBCL][sbcl] or [CCL][ccl]:
 (sdl2:make-this-thread-main #'play)
 ```
 
+### Keybindings
+
+Currently hardcoded in `input.lisp` but you should have an easy time tweaking them.
+I'll get support for some kind of config file ... well, as soon as graphics and sound work.
+
+| up     | w      |
+| left   | a      |
+| down   | s      |
+| right  | d      |
+| a      | j      |
+| b      | k      |
+| select | space  |
+| start  | return |
+
 ## Installation
 
 Make sure you have sdl2-dev installed through apt, homebrew, etc.
