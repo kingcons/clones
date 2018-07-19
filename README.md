@@ -29,6 +29,8 @@ just try the following in a recent [SBCL][sbcl] or [CCL][ccl]:
 Currently hardcoded in `input.lisp` but you should have an easy time tweaking them.
 I'll get support for some kind of config file ... well, as soon as graphics and sound work.
 
+| nes    | pc     |
+|--------|--------|
 | up     | w      |
 | left   | a      |
 | down   | s      |
