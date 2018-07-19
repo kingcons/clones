@@ -6,6 +6,12 @@
 
 See: [Design](https://github.com/kingcons/clones/blob/master/DESIGN.md)
 
+## Playability
+
+![wip](http://redlinernotes.com/images/clones_progress.png)
+
+We'll say not there _just_ yet...
+
 ## Usage
 
 Not just yet...
