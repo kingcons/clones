@@ -9,7 +9,6 @@
                 :make-cpu
                 :cpu-memory
                 :cycles
-                :memory
                 :reset
                 :nmi
                 :dma)
@@ -22,6 +21,7 @@
                 :single-step)
   (:import-from :clones.memory
                 :ppu
+                :gamepad
                 :swap-rom)
   (:import-from :clones.util
                 :slot->))
@@ -50,12 +50,18 @@
 (defun step-frames (count)
   (dotimes (n count)
     (step-frame))
-  (sb-ext:quit))
+  (quit))
+
+(defun quit ()
+  (sdl2:quit)
+  (format t "Thanks for playing!~%~%")
+  #+sbcl (sb-ext:quit)
+  #+ccl (ccl:quit))
 
 (defun play ()
   (sdl2:init :everything)
   (init-display)
-  (with-slots (ppu apu) (cpu-memory *nes*)
+  (with-slots (ppu gamepad) (cpu-memory *nes*)
     (loop
       (let ((cycle-count (single-step *nes*)))
         (when *trace*
@@ -68,4 +74,7 @@
             (nmi *nes*))
           (when (getf ppu-result :new-frame)
             (display-frame)
-            (handle-input)))))))
+            (let ((input (handle-input gamepad)))
+              (when (eq :quit input)
+                (return nil))))))))
+  (quit))

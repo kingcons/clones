@@ -14,9 +14,19 @@ We'll say not there _just_ yet...
 
 ## Usage
 
-Not just yet...
+Sprite rendering isn't fully up and going but if you want to play around a bit,
+just try the following in a recent [SBCL][sbcl] or [CCL][ccl]:
+
+```lisp
+(ql:quickload :clones)
+(in-package :clones)
+(change-game "roms/color_test.nes")
+(sdl2:make-this-thread-main #'play)
+```
 
 ## Installation
+
+Make sure you have sdl2-dev installed through apt, homebrew, etc.
 
 Eventually, Clones will be installable through [Quicklisp](https://quicklisp.org).
 

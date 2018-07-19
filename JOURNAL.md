@@ -305,3 +305,11 @@ Per-scanline is _okay_ but wildly inaccurate, per-CPU instruction is inaccurate,
 cycle is pretty accurate. Which raises the important point that it doesn't make sense to
 test against a PPU log without _also_ deciding on a CPU/PPU synchronization strategy and
 having a CPU log. Yuck. This is why writing a PPU is really no fun.
+
+### Start on Input Handling (07/19)
+
+After a long time away, a twitter conversation with mrb prompted me to pick clones back up.
+For some reason I need to use `sdl2:make-this-thread-main #'play` when running clones.
+I had hoped doing `sdl2:in-main-thread` in the beginning of my input handler would be
+sufficient. Anyway, I've got input working for now. I can pick up the rest later...
+I guess I should do the PPU rewrite and get sprites working? :)

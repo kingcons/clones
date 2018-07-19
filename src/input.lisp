@@ -53,18 +53,27 @@
           ((sdl2:scancode= key (getf *keymap* :start))
            (setf (gamepad-start pad) state)))))
 
-;; TODO: Will this work or do I need the :background option or plain WITH-SDL-EVENT?
+(defun get-keysym (event)
+  (plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym))
+
+(defun get-key-name (keysym)
+  (sdl2:scancode-name (sdl2:scancode-value keysym)))
+
 (defun handle-input (gamepad)
-  (sdl2:with-event-loop (:method :poll)
-    (:keydown
-     (:keysym keysym)
-     (update-pad gamepad keysym 1))
-    (:keyup
-     (:keysym keysym)
-     (if (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
-         (sdl2:push-event :quit)
-         (update-pad gamepad keysym 0)))
-    (:quit () t)))
+  (sdl2:with-sdl-event (new-event)
+    (loop for event = (sdl2:next-event new-event)
+          until (zerop event)
+          do (let ((event-type (sdl2:get-event-type new-event)))
+               (case event-type
+                 (:keydown
+                  (let ((keysym (get-keysym new-event)))
+                    ; (format t "Pressed key: ~S~%" (get-key-name keysym))
+                    (update-pad gamepad keysym 1)))
+                 (:keyup
+                  (let ((keysym (get-keysym new-event)))
+                    (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
+                      (return :quit))
+                    (update-pad gamepad keysym 0))))))))
 
 (defun fetch-strobe (pad)
   (with-slots (strobe) pad
