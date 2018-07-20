@@ -306,10 +306,28 @@ cycle is pretty accurate. Which raises the important point that it doesn't make 
 test against a PPU log without _also_ deciding on a CPU/PPU synchronization strategy and
 having a CPU log. Yuck. This is why writing a PPU is really no fun.
 
-### Start on Input Handling (07/19)
+### Input Handling and Background Palettes (07/19)
 
 After a long time away, a twitter conversation with mrb prompted me to pick clones back up.
 For some reason I need to use `sdl2:make-this-thread-main #'play` when running clones.
 I had hoped doing `sdl2:in-main-thread` in the beginning of my input handler would be
 sufficient. Anyway, I've got input working for now. I can pick up the rest later...
 I guess I should do the PPU rewrite and get sprites working? :)
+
+Today was a good day. Input handling is up and running and didn't take long to implement.
+I had to drop down to using raw `sdl2:with-sdl-event` instead of the `with-event-loop`
+convenience macro but I didn't want to stuff the rest of my code into the idle handler.
+It turned out pretty reasonable I think. I tested on Mac and Linux and it worked well.
+Granted, I tested on my older mac laptop and it failed to load complaining about a symbol
+not being exported from cl-sdl2. Not going to worry about it for now.
+
+I also implemented the "background palette mirroring hack" and correctly implemented
+backdrops to get Super Mario Bros sky to be blue. I wish I could put something more
+intelligent in the commit message though. My PPU is getting more accurate but ...
+I wonder if I'll actually be able to explain each line of code by the time I finish.
+
+Finally, I noticed the graphics were much closer to correct when I reversed the traversal
+order of colors in a tile. There's a good reason for that and I think it has to do with
+the order of data in the pattern table entries but I can't find a reference that makes it
+stand out clearly to me. Ah, well. If I can get sprite 0 detection working and then fine-x/y
+I should be able to play games. Onward! :)
