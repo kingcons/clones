@@ -305,7 +305,9 @@
         (high-byte (get-bg-pattern-byte ppu nametable-byte :hi)))
     (loop for bit from 0 to 7
           for index = (get-palette-index attribute-bits low-byte high-byte bit)
-          collect (get-color ppu :bg index))))
+          collect (if (zerop (logand index #x3))
+                      nil
+                      (get-color ppu :bg index)))))
 
 (defun render-scanline (ppu)
   (with-slots (scanline) ppu
@@ -315,9 +317,11 @@
                (attribute-bits  (get-attribute-bits ppu scanline tile-index))
                (bg-colors (compute-bg-colors ppu nametable-byte attribute-bits)))
           (loop for i from 0 to 7
-                for color in bg-colors
+                for bg-color in bg-colors
                 do (let ((x (+ (* tile-index 8) i)))
-                     (render-pixel x scanline color))))))))
+                     (if (null bg-color)
+                         (render-pixel x scanline backdrop-color)
+                         (render-pixel x scanline bg-color)))))))))
 
 (defun sync (ppu run-to-cycle)
   (with-slots (scanline cycles result) ppu
