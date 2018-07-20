@@ -17,6 +17,7 @@
 (defvar *renderer* nil)
 (defvar *texture* nil)
 (defvar *last-frame-at* nil)
+(defvar *debug* nil)
 
 (defun init-display ()
   (sdl2:in-main-thread ()
@@ -34,7 +35,7 @@
     (sdl2:render-clear *renderer*)
     (sdl2:render-copy *renderer* *texture*)
     (sdl2:render-present *renderer*)
-    (when *last-frame-at*
+    (when (and *debug* *last-frame-at*)
       (format t "Frame drawn in ~A milliseconds~%" (- (get-internal-real-time) *last-frame-at*)))
     (setf *last-frame-at* (get-internal-real-time))))
 
