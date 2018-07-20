@@ -177,7 +177,7 @@
         ((< address #x3f00)
          (aref (ppu-nametable ppu) (wrap-nametable address)))
         ((< address #x4000)
-         (aref (ppu-palette-table ppu) (wrap-palette-table address)))))
+         (aref (ppu-palette-table ppu) (palette-index address)))))
 
 (defun write-vram (ppu value)
   (with-slots (address) ppu
@@ -186,7 +186,7 @@
           ((< address #x3f00)
            (setf (aref (ppu-nametable ppu) (wrap-nametable address)) value))
           ((< address #x4000)
-           (setf (aref (ppu-palette-table ppu) (wrap-palette-table address)) value)))
+           (setf (aref (ppu-palette-table ppu) (palette-index address)) value)))
     (incf address (vram-step ppu))))
 
 (defun buffered-read (ppu)
@@ -197,6 +197,13 @@
           (prog1 (ppu-read-buffer ppu)
             (setf (ppu-read-buffer ppu) result))
           result))))
+
+(defun palette-index (address)
+  (let ((result (if (and (> address #x3f0f)
+                         (zerop (mod address 4)))
+                    (- address 16)
+                    address)))
+    (wrap-palette-table result)))
 
 ;; TODO: Handle scroll offsets properly.
 (defun update-scroll (ppu value)
