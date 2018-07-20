@@ -316,7 +316,7 @@
         (let* ((nametable-byte  (get-nametable-byte ppu scanline tile-index))
                (attribute-bits  (get-attribute-bits ppu scanline tile-index))
                (bg-colors (compute-bg-colors ppu nametable-byte attribute-bits)))
-          (loop for i from 0 to 7
+          (loop for i from 7 downto 0
                 for bg-color in bg-colors
                 do (let ((x (+ (* tile-index 8) i)))
                      (if (null bg-color)
