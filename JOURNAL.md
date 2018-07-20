@@ -198,9 +198,10 @@ But I'm proud of the work I got done on scanline rendering.
 
 I'm confident we're computing the various nametable, palette, etc addresses correctly.
 But when I render I only get a gray screen. Performance seems acceptable, with most frames
-drawing in under 5 seconds. But I'll be more pleased with that when something meaningful
-is actually getting on the screen. That said, my brain is pretty fried and I've spent almost
-no time with Norma today despite her being home for 7 hours now. It's time to sign off.
+drawing in under 5 milliseconds. But I'll be more pleased with that when something
+meaningful is actually getting on the screen. That said, my brain is pretty fried and
+I've spent almost no time with Norma today despite her being home for 7 hours now.
+It's time to sign off.
 
 I wrote a simple TEST-FRAME function and got the expected color palette / results.
 It seems likely that the problem is translating the `*FRAMEBUFFER*` to SDL / `RENDER-PIXEL`.
