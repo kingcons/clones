@@ -263,7 +263,6 @@
 (defun get-attribute-byte (ppu scanline quad)
   ;; Attribute table is 64 bytes with 1 byte for each 4x4 tile area (quad).
   ;; So skip 8 bytes ahead for every 32 scanlines and 1 byte ahead per quad.
-  ;; However, only 2 bits of the attribute table are relevant per tile.
   (let* ((scanline-offset (* 8 (floor scanline 32)))
          (base-address (base-attribute-table ppu)))
     (read-vram ppu (+ base-address scanline-offset quad))))
@@ -277,20 +276,23 @@
                        (:hi 8))))
     (read-vram ppu (+ base-address (* pattern-index 16) byte-offset))))
 
-(defun get-palette-index (palette-high-bits palette-low-bits)
-  ;; The attribute table byte determines the two high-bits of the four bit palette index.
-  ;; The pattern-table low-byte and high-byte determine the 0th and 1st bit in the index.
-  (dpb palette-high-bits (byte 2 2) palette-low-bits))
+(defun get-palette-index (attribute-bits pattern-bits)
+  ;; The attribute byte determines the two high-bits of the palette index.
+  ;; The pattern-table low-byte and high-byte determine the 0th and 1st bit.
+  (dpb attribute-bits (byte 2 2) pattern-bits))
 
 (defun get-palette-index-high (scanline tile attribute-byte)
+  ;; Retrieve the 2 high bits of the palette index from the attribute byte.
   (let ((bit-position (color-quadrant scanline tile)))
     (ldb (byte 2 bit-position) attribute-byte)))
 
 (defun get-palette-index-low (pattern-low-byte pattern-high-byte bit)
+  ;; Retrieve the 0th and 1st bit of the palette index from the pattern bytes.
   (+ (ldb (byte 1 bit) pattern-low-byte)
      (ash (ldb (byte 1 bit) pattern-high-byte) 1)))
 
 (defun get-color (ppu type index)
+  ;; Retrieve a color from the palette table based on the pixel type and index.
   (let ((base-address (ecase type
                         (:bg     #x3f00)
                         (:sprite #x3f10))))
