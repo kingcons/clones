@@ -10,8 +10,8 @@
 
 (in-package :clones.display)
 
-(defvar *screen-width* 256)
-(defvar *screen-height* 240)
+(defvar *screen-width* 512)
+(defvar *screen-height* 480)
 
 (defvar *display* nil)
 (defvar *renderer* nil)
@@ -32,7 +32,7 @@
   (sdl2:in-main-thread ()
     (sdl2:update-texture *texture* (static-vector-pointer *framebuffer*)
                          :rect (cffi:null-pointer)
-                         :width (* 3 *screen-width*))
+                         :width (* 3 256))
     (sdl2:render-clear *renderer*)
     (sdl2:render-copy *renderer* *texture*)
     (sdl2:render-present *renderer*)
