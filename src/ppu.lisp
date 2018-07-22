@@ -72,10 +72,12 @@
   (address       0                                   :type ub16) ; 0x2006
   (scroll-dir    :x                                  :type keyword)
   (address-byte  :high                               :type keyword)
-  (oam           (make-byte-vector #x100)            :type byte-vector)
-  (nametable     (make-byte-vector #x800)            :type byte-vector)
-  (palette-table (make-byte-vector #x020)            :type byte-vector)
-  (pattern-table (make-byte-vector #x2000)           :type byte-vector))
+  (nt-buffer     (make-byte-vector #x20)             :type (byte-vector 32))
+  (at-buffer     (make-byte-vector #x08)             :type (byte-vector 08))
+  (oam           (make-byte-vector #x100)            :type (byte-vector 256))
+  (nametable     (make-byte-vector #x800)            :type (byte-vector 2048))
+  (palette-table (make-byte-vector #x020)            :type (byte-vector 32))
+  (pattern-table (make-byte-vector #x2000)           :type (byte-vector 8192)))
 
 (defmethod print-object ((ppu ppu) stream)
   (print-unreadable-object (ppu stream :type t)
@@ -258,16 +260,13 @@
   (let ((scanline-offset (* 32 (floor scanline 8))))
     (read-vram ppu (+ (base-nametable ppu) scanline-offset tile))))
 
-(defun get-attribute-bits (ppu scanline tile)
-  ;; Attribute tables are 64 bytes with 1 byte for each 4x4 tile area.
-  ;; So skip 8 bytes ahead for every 32 scanlines and 1 byte ahead for each 4 tiles.
+(defun get-attribute-byte (ppu scanline quad)
+  ;; Attribute table is 64 bytes with 1 byte for each 4x4 tile area (quad).
+  ;; So skip 8 bytes ahead for every 32 scanlines and 1 byte ahead per quad.
   ;; However, only 2 bits of the attribute table are relevant per tile.
   (let* ((scanline-offset (* 8 (floor scanline 32)))
-         (tile-offset (round tile 4))
-         (base-address (base-attribute-table ppu))
-         (attribute-byte (read-vram ppu (+ base-address scanline-offset tile-offset)))
-         (byte-position (color-quadrant scanline tile)))
-    (ldb (byte 2 byte-position) attribute-byte)))
+         (base-address (base-attribute-table ppu)))
+    (read-vram ppu (+ base-address scanline-offset quad))))
 
 (defun get-bg-pattern-byte (ppu pattern-index byte-position)
   ;; The pattern table is 4k and each tile is 16 bytes so multiply the pattern-index by 16.
@@ -278,12 +277,18 @@
                        (:hi 8))))
     (read-vram ppu (+ base-address (* pattern-index 16) byte-offset))))
 
-(defun get-palette-index (index-high-bits low-byte high-byte bit-position)
+(defun get-palette-index (palette-high-bits palette-low-bits)
   ;; The attribute table byte determines the two high-bits of the four bit palette index.
   ;; The pattern-table low-byte and high-byte determine the 0th and 1st bit in the index.
-  (let ((index-low-bits (+ (ldb (byte 1 bit-position) low-byte)
-                           (ash (ldb (byte 1 bit-position) high-byte) 1))))
-    (dpb index-high-bits (byte 2 2) index-low-bits)))
+  (dpb palette-high-bits (byte 2 2) palette-low-bits))
+
+(defun get-palette-index-high (scanline tile attribute-byte)
+  (let ((bit-position (color-quadrant scanline tile)))
+    (ldb (byte 2 bit-position) attribute-byte)))
+
+(defun get-palette-index-low (pattern-low-byte pattern-high-byte bit)
+  (+ (ldb (byte 1 bit) pattern-low-byte)
+     (ash (ldb (byte 1 bit) pattern-high-byte) 1)))
 
 (defun get-color (ppu type index)
   (let ((base-address (ecase type
@@ -300,25 +305,44 @@
       (setf (aref *framebuffer*   (+ buffer-start i))
             (aref +color-palette+ (+ palette-start i))))))
 
-(defun compute-bg-colors (ppu nametable-byte attribute-bits)
-  (let ((low-byte  (get-bg-pattern-byte ppu nametable-byte :lo))
-        (high-byte (get-bg-pattern-byte ppu nametable-byte :hi)))
-    (loop for bit from 0 to 7
-          for index = (get-palette-index attribute-bits low-byte high-byte bit)
-          collect (if (zerop (logand index #x3))
-                      nil
-                      (get-color ppu :bg index)))))
+(defun compute-bg-colors (ppu scanline tile)
+  (with-slots (nt-buffer at-buffer) ppu
+    (let* ((nt-byte   (aref nt-buffer tile))
+           (at-byte   (aref at-buffer (floor tile 4)))
+           (low-byte  (get-bg-pattern-byte ppu nt-byte :lo))
+           (high-byte (get-bg-pattern-byte ppu nt-byte :hi))
+           (palette-high-bits (get-palette-index-high scanline tile at-byte)))
+      (loop for bit from 0 to 7
+            for palette-low-bits = (get-palette-index-low low-byte high-byte bit)
+            for index = (get-palette-index palette-high-bits palette-low-bits)
+            collect (if (zerop (logand index #x3))
+                        nil
+                        (get-color ppu :bg index))))))
+
+(defun fill-name-table-buffer (ppu scanline)
+  (with-slots (nt-buffer) ppu
+    (dotimes (tile 32)
+      (setf (aref nt-buffer tile) (get-nametable-byte ppu scanline tile)))))
+
+(defun fill-attribute-table-buffer (ppu scanline)
+  (with-slots (at-buffer) ppu
+    (dotimes (quad 8)
+      (setf (aref at-buffer quad) (get-attribute-byte ppu scanline quad)))))
 
 (defun render-scanline (ppu)
-  (with-slots (scanline) ppu
+  (with-slots (scanline nt-buffer at-buffer) ppu
     (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
-      (dotimes (tile-index 32)
-        (let* ((nametable-byte  (get-nametable-byte ppu scanline tile-index))
-               (attribute-bits  (get-attribute-bits ppu scanline tile-index))
-               (bg-colors (compute-bg-colors ppu nametable-byte attribute-bits)))
+      (when (zerop (mod scanline 8))
+        (fill-name-table-buffer ppu scanline))
+      (when (zerop (mod scanline 32))
+        (fill-attribute-table-buffer ppu scanline))
+      (dotimes (tile 32)
+        (let ((bg-colors (compute-bg-colors ppu scanline tile)))
+;          (format t "Line ~3D, Tile ~2D, NB: ~2,'0X, AB: ~2,'0X~%"
+;                  scanline tile-index (aref nt-buffer tile) (aref at-buffer (floor tile 4)))
           (loop for i from 7 downto 0
                 for bg-color in bg-colors
-                do (let ((x (+ (* tile-index 8) i)))
+                do (let ((x (+ (* tile 8) i)))
                      (if (null bg-color)
                          (render-pixel x scanline backdrop-color)
                          (render-pixel x scanline bg-color)))))))))

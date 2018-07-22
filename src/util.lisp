@@ -48,7 +48,7 @@
 (deftype ub16 () '(unsigned-byte 16))
 (deftype ub32 () '(unsigned-byte 32))
 (deftype byte-vector (&optional (length '*))
-  `(simple-array ub8 ,length))
+  `(simple-array ub8 ,(if (eq length '*) '* (list length))))
 
 (defun make-byte-vector (size)
   "Make a byte vector of length SIZE."
