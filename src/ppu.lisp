@@ -194,7 +194,7 @@
 (defun buffered-read (ppu)
   (with-slots (address) ppu
     (let ((result (read-vram ppu address)))
-      (incf (ppu-address ppu) (vram-step ppu))
+      (incf address (vram-step ppu))
       (if (< address #x3f00)
           (prog1 (ppu-read-buffer ppu)
             (setf (ppu-read-buffer ppu) result))
