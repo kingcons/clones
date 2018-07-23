@@ -257,24 +257,31 @@
 (defun get-nametable-byte (ppu scanline tile)
   ;; A nametable of 8x8 tiles for a 256x240 screen is laid out 32x30.
   ;; So skip 32 bytes ahead for every 8 scanlines and 1 byte ahead for each tile.
-  (let ((scanline-offset (* 32 (floor scanline 8))))
-    (read-vram ppu (+ (base-nametable ppu) scanline-offset tile))))
+  (let* ((scanline-offset (* 32 (floor scanline 8)))
+         (address (+ (base-nametable ppu) scanline-offset tile)))
+    (read-vram ppu address)))
 
 (defun get-attribute-byte (ppu scanline quad)
   ;; Attribute table is 64 bytes with 1 byte for each 4x4 tile area (quad).
   ;; So skip 8 bytes ahead for every 32 scanlines and 1 byte ahead per quad.
   (let* ((scanline-offset (* 8 (floor scanline 32)))
-         (base-address (base-attribute-table ppu)))
-    (read-vram ppu (+ base-address scanline-offset quad))))
+         (base-address (base-attribute-table ppu))
+         (address (+ base-address scanline-offset quad)))
+    (read-vram ppu address)))
 
-(defun get-bg-pattern-byte (ppu pattern-index byte-position)
-  ;; The pattern table is 4k and each tile is 16 bytes so multiply the pattern-index by 16.
+(defun get-bg-pattern-byte (ppu scanline pattern-index byte-position)
+  ;; The pattern table is 4k and each tile is 16 bytes. Multiply the pattern index
+  ;; from the nametable by 16 to get a starting offset. Then, each horizontal row
+  ;; in the tile is represented by 1 byte, so use (scanline % 8) to get the final offset.
   ;; Note that there is a high byte and low byte for each tile spaced 8 bytes apart.
-  (let ((base-address (bg-pattern-address ppu))
-        (byte-offset (ecase byte-position
-                       (:lo 0)
-                       (:hi 8))))
-    (read-vram ppu (+ base-address (* pattern-index 16) byte-offset))))
+  (let* ((base-address (bg-pattern-address ppu))
+         (tile-offset (* pattern-index 16))
+         (line-offset (mod scanline 8))
+         (byte-offset (ecase byte-position
+                        (:lo 0)
+                        (:hi 8)))
+         (address (+ base-address tile-offset line-offset byte-offset)))
+    (read-vram ppu address)))
 
 (defun get-palette-index (attribute-bits pattern-bits)
   ;; The attribute byte determines the two high-bits of the palette index.
@@ -311,8 +318,8 @@
   (with-slots (nt-buffer at-buffer) ppu
     (let* ((nt-byte   (aref nt-buffer tile))
            (at-byte   (aref at-buffer (floor tile 4)))
-           (low-byte  (get-bg-pattern-byte ppu nt-byte :lo))
-           (high-byte (get-bg-pattern-byte ppu nt-byte :hi))
+           (low-byte  (get-bg-pattern-byte ppu scanline nt-byte :lo))
+           (high-byte (get-bg-pattern-byte ppu scanline nt-byte :hi))
            (palette-high-bits (get-palette-index-high scanline tile at-byte)))
       (loop for bit from 0 to 7
             for palette-low-bits = (get-palette-index-low low-byte high-byte bit)
@@ -340,9 +347,6 @@
         (fill-attribute-table-buffer ppu scanline))
       (dotimes (tile 32)
         (let ((bg-colors (compute-bg-colors ppu scanline tile)))
-;          (when (zerop (mod scanline 8))
-;            (format t "Line ~3D, Tile ~2D, NB: ~2,'0X, AB: ~2,'0X~%"
-;                    scanline tile (aref nt-buffer tile) (aref at-buffer (floor tile 4))))
           (loop for i from 7 downto 0
                 for bg-color in bg-colors
                 do (let ((x (+ (* tile 8) i)))
@@ -365,7 +369,7 @@
              (setf vblank-status 1)
              (when (plusp vblank-nmi)
                (setf (getf result :nmi) t))))
-      (262 (with-vblank ()
+      (261 (with-vblank ()
              (setf scanline 0
                    vblank-status 0
                    (getf result :new-frame) t))))

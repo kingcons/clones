@@ -354,3 +354,39 @@ code, the only possible explanation for this is that my modeling of the internal
 the PPU_scrolling entry on nesdev before bed and see if I can't fix things some tomorrow.
 Being able to compare internal state from a correct-ish PPU at particular points is a godsend.
 Printf debugging can be great if you know the right place and thing to print. :P
+
+### More Differential Debugging (07/23)
+
+I dumped the complete pattern table and name tables from clones and ANESE after
+60 frames of rendering mario and compared them. They're identical. So at least I know
+the data is getting set correctly. The _timing_ could be off but that shouldn't account
+for the glitches I'm seeing.
+
+I did a side-by-side diff of the Nametable Address fetched for every tile on every 8th scanline.
+They start at address 0x2002 instead of 0x2000 because the PPUADDR is 2. As a consequence, the last
+two tiles on every scanline of my emulator differ from theirs. That being said ... if this is the
+glitch I'm not sure why. It would seem to only effect the rightmost edge of the screen / end of a
+scanline and I'm seeing way more issues than that. Perhaps I should dig deeper.
+
+Before making a complete log of the attribute table for Clones and ANESE and comparing them,
+I decided to simply _randomize_ the portion of the attribute table byte we currently had.
+Naturally, this made the palette used for each tile random but didn't actually effect the
+geometry at all, which is our real issue. So, duh, the Attribute Table only governs the palette
+(i.e. colors) which is not the problem we're seeing. The bytes _in_ the pattern table are correct
+but I must be computing the addresses for them correctly. ...
+
+Yep, that was it. Each tile is represented by 16 bytes in the pattern table, 2 bytes spaced 8 bytes
+apart for each row of 8 pixels. My stupid ass was jumping to the right tile but then never switching
+rows based on which scanline we were on. So I always used the pixel data for the first row in a tile.
+Everything hurts inside and yet I'm still so happy I found the damn bug. And simultaneously kind of
+embarrassed? Like "look at my amazing NES emulator in lisp that only renders backgrounds which only
+took me a month to find this bug where I forgot to add an offset somewhere". T_T
+
+That said, this is a win. And I honestly think the part of my PPU code that is most valuable is the
+stupid equations and comments for computing the index/byte to grab from the nametable,
+attribute table, pattern table, palette, etc. I'm not the first person to write this up but all the
+explanations I've seen don't refer to it in terms of "for pixel x,y" which seems so obviously the
+right place to start. *sigh*
+
+Okay, time to go home and have a beer.
+
