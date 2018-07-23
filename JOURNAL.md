@@ -332,3 +332,25 @@ order of colors in a tile. There's a good reason for that and I think it has to 
 the order of data in the pattern table entries but I can't find a reference that makes it
 stand out clearly to me. Ah, well. If I can get sprite 0 detection working and then fine-x/y
 I should be able to play games. Onward! :)
+
+### Refactoring and Differential Debugging (07/22)
+
+Everything valuable I've done in the last 24 hours has been the result of differential
+debugging. At this stage, I know the PPU has glitches. There are test roms but for the basic
+issues I'm having (i.e getting the background rendering) there's nothing to tell me what I
+did wrong. While using printf logging in ANESE and clones I realized that I was fetching
+the nametable and attribute bytes on every scanline when I could be reusing them.
+A single attribute byte covers 32 scanlines and a nametable byte covers 8 scanlines,
+so I created buffers which get refilled when needed rather than refetching.
+
+While it increased the code size by ~20 lines and is a good optimization,
+the bigger win is the improved clarity of the data flow. The behavior is better captured.
+I also tweaked the Display code to scale the image by 2x since it was easy to do so.
+
+Doing some comparative logging between ANESE and clones, I found that the Nametable bytes
+in ANESE are different than the ones clones sees even for a simple demo. Based on the ANESE
+code, the only possible explanation for this is that my modeling of the internal v register
+(which is shared by PPUADDR and PPUSCROLL) is inaccurate or incomplete. I'll try and read
+the PPU_scrolling entry on nesdev before bed and see if I can't fix things some tomorrow.
+Being able to compare internal state from a correct-ish PPU at particular points is a godsend.
+Printf debugging can be great if you know the right place and thing to print. :P

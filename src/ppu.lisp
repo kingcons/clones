@@ -340,8 +340,9 @@
         (fill-attribute-table-buffer ppu scanline))
       (dotimes (tile 32)
         (let ((bg-colors (compute-bg-colors ppu scanline tile)))
-;          (format t "Line ~3D, Tile ~2D, NB: ~2,'0X, AB: ~2,'0X~%"
-;                  scanline tile-index (aref nt-buffer tile) (aref at-buffer (floor tile 4)))
+;          (when (zerop (mod scanline 8))
+;            (format t "Line ~3D, Tile ~2D, NB: ~2,'0X, AB: ~2,'0X~%"
+;                    scanline tile (aref nt-buffer tile) (aref at-buffer (floor tile 4))))
           (loop for i from 7 downto 0
                 for bg-color in bg-colors
                 do (let ((x (+ (* tile 8) i)))
