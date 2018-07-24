@@ -5,12 +5,11 @@
   (:import-from :clones.cpu
                 :make-cpu
                 :cpu-memory
-                :cycles
-                :reset
-                :nmi
-                :dma)
+                :reset)
   (:import-from :clones.ppu
-                :*cycles-per-frame*
+                :ppu-dma-result
+                :ppu-nmi-result
+                :ppu-new-frame
                 :sync)
   (:import-from :clones.input
                 :handle-input)
@@ -46,16 +45,16 @@
         (when *trace*
           (print nes)
           (clones.disassembler:now nes))
-        (let ((ppu-result (sync ppu (* cycle-count 3))))
-          (when (getf ppu-result :dma)
-            (dma nes))
-          (when (getf ppu-result :nmi)
-            (nmi nes))
-          (when (getf ppu-result :new-frame)
-            (when headless (return nil))
-            (let ((input (handle-input gamepad)))
-              (when (eq :quit input) (return nil))
-              (clones.display:display-frame))))))))
+        (sync ppu (* cycle-count 3))
+        (when (ppu-dma-result ppu)
+          (clones.cpu:dma nes))
+        (when (ppu-nmi-result ppu)
+          (clones.cpu:nmi nes))
+        (when (ppu-new-frame ppu)
+          (when headless (return nil))
+          (let ((input (handle-input gamepad)))
+            (when (eq :quit input) (return nil))
+            (clones.display:display-frame)))))))
 
 (defun step-frames (frame-count)
   (dotimes (i frame-count)

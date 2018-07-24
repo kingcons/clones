@@ -4,8 +4,8 @@
   (:use :cl :clones.mappers)
   (:import-from :clones.ppu
                 :ppu
-                :ppu-result
                 :ppu-cartridge
+                :ppu-dma-result
                 :make-ppu
                 :ppu-read
                 :ppu-write)
@@ -50,7 +50,7 @@
     (loop for index from page to (+ page #xff)
           do (let ((data (fetch memory index)))
                (ppu-write ppu #x2004 data)))
-    (setf (getf (ppu-result ppu) :dma) t)))
+    (setf (ppu-dma-result ppu) t)))
 
 (defun swap-rom (memory rom-file)
   (let ((rom (load-rom (asset-path rom-file))))

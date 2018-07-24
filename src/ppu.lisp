@@ -64,25 +64,27 @@
   :documentation "The color palette used by the graphics card." :test #'equalp)
 
 (defstruct ppu
-  (result        '(:new-frame nil :nmi nil :dma nil) :type cons)
-  (cycles        0                                   :type fixnum)
-  (scanline      0                                   :type fixnum)
-  (read-buffer   0                                   :type ub8)
-  (control       0                                   :type ub8)  ; 0x2000
-  (mask          0                                   :type ub8)  ; 0x2001
-  (status        0                                   :type ub8)  ; 0x2002
-  (oam-address   0                                   :type ub8)  ; 0x2003
-  (scroll-x      0                                   :type ub8)  ; 0x2005
-  (scroll-y      0                                   :type ub8)  ; 0x2005
-  (address       0                                   :type ub16) ; 0x2006
-  (scroll-dir    :x                                  :type keyword)
-  (address-byte  :high                               :type keyword)
-  (nt-buffer     (make-byte-vector #x20)             :type (byte-vector 32))
-  (at-buffer     (make-byte-vector #x08)             :type (byte-vector 08))
-  (oam           (make-byte-vector #x100)            :type (byte-vector 256))
-  (nametable     (make-byte-vector #x800)            :type (byte-vector 2048))
-  (palette-table (make-byte-vector #x020)            :type (byte-vector 32))
-  (cartridge     nil                                 :type (or null mapper)))
+  (dma-result    nil                       :type boolean)
+  (nmi-result    nil                       :type boolean)
+  (new-frame     nil                       :type boolean)
+  (cycles        0                         :type fixnum)
+  (scanline      0                         :type fixnum)
+  (read-buffer   0                         :type ub8)
+  (control       0                         :type ub8)  ; 0x2000
+  (mask          0                         :type ub8)  ; 0x2001
+  (status        0                         :type ub8)  ; 0x2002
+  (oam-address   0                         :type ub8)  ; 0x2003
+  (scroll-x      0                         :type ub8)  ; 0x2005
+  (scroll-y      0                         :type ub8)  ; 0x2005
+  (address       0                         :type ub16) ; 0x2006
+  (scroll-dir    :x                        :type keyword)
+  (address-byte  :high                     :type keyword)
+  (nt-buffer     (make-byte-vector #x20)   :type (byte-vector 32))
+  (at-buffer     (make-byte-vector #x08)   :type (byte-vector 08))
+  (oam           (make-byte-vector #x100)  :type (byte-vector 256))
+  (nametable     (make-byte-vector #x800)  :type (byte-vector 2048))
+  (palette-table (make-byte-vector #x020)  :type (byte-vector 32))
+  (cartridge     nil                       :type (or null mapper)))
 
 (defmethod print-object ((ppu ppu) stream)
   (print-unreadable-object (ppu stream :type t)
@@ -368,11 +370,11 @@
 (defun sync (ppu run-to-cycle)
   (with-accessors ((scanline ppu-scanline)
                    (cycles ppu-cycles)
-                   (result ppu-result)) ppu
-    (setf (getf result :nmi) nil
-          (getf result :new-frame) nil)
+                   (nmi-result ppu-nmi-result)
+                   (new-frame ppu-new-frame)) ppu
+    (setf nmi-result nil new-frame nil)
     (when (< run-to-cycle (+ cycles *cycles-per-scanline*))
-      (return-from sync result))
+      (return-from sync))
     (when (< scanline +height+)
       (render-scanline ppu))
     (incf scanline)
@@ -381,9 +383,8 @@
       (241 (with-vblank ()
              (setf vblank-status 1)
              (when (plusp vblank-nmi)
-               (setf (getf result :nmi) t))))
+               (setf nmi-result t))))
       (261 (with-vblank ()
              (setf scanline 0
                    vblank-status 0
-                   (getf result :new-frame) t))))
-    result))
+                   new-frame t))))))

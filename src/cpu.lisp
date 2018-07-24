@@ -11,7 +11,7 @@
                 :fetch
                 :store)
   (:import-from :clones.ppu
-                :ppu-result)
+                :ppu-dma-result)
   (:import-from :clones.util
                 :ub8
                 :ub16
@@ -85,7 +85,7 @@
 
 (defun dma (cpu)
   (setf (cpu-waiting cpu) 512)
-  (setf (getf (ppu-result (memory-ppu (cpu-memory cpu))) :dma) nil))
+  (setf (ppu-dma-result (memory-ppu (cpu-memory cpu))) nil))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)
