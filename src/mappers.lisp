@@ -85,11 +85,11 @@
 
 (defstruct (mmc1 (:include mapper))
   ;; TODO: Implement PRG RAM of 8kb from 0x6000 -> 0x8000.
-  (prg-bank    0 :type ub8)
-  (chr-bank-1  0 :type ub8)
-  (chr-bank-2  0 :type ub8)
-  (accumulator 0 :type ub8)
-  (write-count 0 :type ub8)
+  (prg-bank    0    :type ub8)
+  (chr-bank-1  0    :type ub8)
+  (chr-bank-2  0    :type ub8)
+  (write-count 0    :type ub8)
+  (accumulator 0    :type ub8)
   (mirroring   :lower      :type keyword)
   (chr-mode    :switch-one :type keyword)
   (prg-mode    :switch-low :type keyword))
@@ -119,17 +119,21 @@
 
 (defmethod update-register ((mapper mmc1) address)
   (declare (type ub16 address))
-  (with-slots (accumulator write-count prg-bank chr-bank-1 chr-bank-2) mapper
-    (cond ((< address #xA000)
-           (set-modes mapper accumulator))
-          ((< address #xC000)
-           (setf chr-bank-1 accumulator))
-          ((< address #xE000)
-           (setf chr-bank-2 accumulator))
-          (t
-           (setf prg-bank accumulator)))
-    (setf write-count 0
-          accumulator 0)))
+  (with-slots (accumulator write-count prg-bank chr-bank-1 chr-bank-2 rom) mapper
+    (let* ((chr-count (rom-chr-count rom))
+           (chr-bank (if (< chr-count 3)
+                         (logand accumulator 1)
+                         accumulator)))
+      (cond ((< address #xA000)
+             (set-modes mapper accumulator))
+            ((< address #xC000)
+             (setf chr-bank-1 chr-bank))
+            ((< address #xE000)
+             (setf chr-bank-2 chr-bank))
+            (t
+             (setf prg-bank accumulator))))
+    (setf accumulator 0
+          write-count 0)))
 
 (defmethod load-prg ((mapper mmc1) address)
   #f
