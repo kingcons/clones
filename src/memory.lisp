@@ -26,6 +26,7 @@
                 :make-byte-vector)
   (:export #:memory
            #:memory-ppu
+           #:memory-gamepad
            #:make-memory
            #:swap-rom
            #:fetch
