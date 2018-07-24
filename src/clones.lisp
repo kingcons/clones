@@ -53,7 +53,6 @@
   (quit))
 
 (defun quit ()
-  (sdl2:quit)
   (format t "Thanks for playing!~%~%")
   #+sbcl (sb-ext:quit)
   #+ccl (ccl:quit))
@@ -76,4 +75,5 @@
             (display-frame)
             (let ((input (handle-input gamepad)))
               (when (eq :quit input)
-                (return nil)))))))))
+                (return nil))))))))
+  (sdl2:quit))
