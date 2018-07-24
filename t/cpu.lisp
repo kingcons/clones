@@ -12,7 +12,6 @@
 (in-package :clones-test.cpu)
 
 (defun debug-log (cpu)
-  (declare (type cpu cpu))
   (list (cpu-pc cpu)
         (cpu-accum cpu)
         (cpu-x-reg cpu)

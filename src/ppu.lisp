@@ -95,7 +95,6 @@
 (defmacro define-ppu-bit (name (&rest args) &body body)
   `(progn
      (defun ,name ,(append '(ppu) args)
-       (declare (type ppu ppu))
        ,@body)))
 
 (defmacro defcontrol (name bit-position then else)

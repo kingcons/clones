@@ -39,7 +39,6 @@
 (defmacro defaddress (name (&key writer) &body body)
   `(progn
      (defun ,name (cpu)
-       (declare (type cpu cpu))
        (symbol-macrolet ((memory          (cpu-memory cpu))
                          (program-counter (cpu-pc cpu))
                          (accumulator     (cpu-accum cpu))

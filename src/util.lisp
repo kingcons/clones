@@ -87,7 +87,6 @@
 (defmacro flip-bit (position value)
   `(logxor ,(expt 2 position) ,value))
 
-(declaim (ftype (function (ub16 ub16) boolean) page-crossed-p))
 (defun page-crossed-p (start final)
   (/= (logand start #xff00)
       (logand final #xff00)))

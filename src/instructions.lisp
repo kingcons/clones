@@ -206,7 +206,6 @@
     (set-flags-zn cpu result)))
 
 (define-instruction lsr ()
-  (declare (type fixnum argument))
   (let ((result (ash argument -1)))
     (set-flag-if cpu :carry (logbitp 0 argument))
     (set-flags-zn cpu result)
@@ -233,7 +232,6 @@
   (setf (cpu-status cpu) (logandc2 (logior (stack-pop cpu) #x20) #x10)))
 
 (define-instruction rol ()
-  (declare (type fixnum argument))
   (let ((result (wrap-byte (ash argument 1))))
     (when (flag-set-p cpu :carry)
       (setf result (logior result #x01)))
@@ -242,7 +240,6 @@
     (update address result)))
 
 (define-instruction ror ()
-  (declare (type fixnum argument))
   (let ((result (wrap-byte (ash argument -1))))
     (when (flag-set-p cpu :carry)
       (setf result (logior result #x80)))

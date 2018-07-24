@@ -60,8 +60,6 @@
 (defstruct (nrom (:include mapper)))
 
 (defmethod load-prg ((mapper nrom) address)
-  #f
-  (declare (type ub16 address))
   (let* ((rom (mapper-rom mapper))
          (end-of-rom (1- (rom-prg-size rom)))
          (wrapped-address (logand address end-of-rom)))
@@ -72,8 +70,6 @@
   0)
 
 (defmethod load-chr ((mapper nrom) address)
-  #f
-  (declare (type ub16 address))
   (let ((rom (mapper-rom mapper)))
     (aref (rom-chr rom) address)))
 
@@ -124,7 +120,6 @@
             chr-mode new-chr-mode))))
 
 (defmethod update-register ((mapper mmc1) address)
-  (declare (type ub16 address))
   (with-slots (accumulator write-count prg-bank chr-bank-1 chr-bank-2 rom) mapper
     (let* ((chr-count (rom-chr-count rom))
            (chr-bank (if (< chr-count 3)
@@ -142,8 +137,6 @@
           write-count 0)))
 
 (defmethod load-prg ((mapper mmc1) address)
-  #f
-  (declare (type ub16 address))
   (with-slots (prg-mode prg-bank rom) mapper
     (flet ((get-low-bank ()
              (case prg-mode
@@ -162,7 +155,6 @@
         (aref (rom-prg rom) (+ bank-offset (wrap-prg address)))))))
 
 (defmethod store-prg ((mapper mmc1) address value)
-  (declare (type ub8 value))
   (if (logbitp 7 value)
       (reset mapper)
       (with-slots (accumulator write-count) mapper
@@ -186,8 +178,6 @@
   (switched-bank 0 :type ub8))
 
 (defmethod load-prg ((mapper unrom) address)
-  #f
-  (declare (type ub16 address))
   (with-slots (switched-bank rom) mapper
     (let* ((bank (if (< address #xC000)
                      switched-bank
@@ -200,8 +190,6 @@
   (setf (unrom-switched-bank mapper) (wrap-byte value)))
 
 (defmethod load-chr ((mapper unrom) address)
-  #f
-  (declare (type ub16 address))
   (let ((rom (mapper-rom mapper)))
     (aref (rom-chr rom) address)))
 

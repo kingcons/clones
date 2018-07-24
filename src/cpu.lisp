@@ -67,7 +67,6 @@
 
 (defun reset (cpu)
   "Jump to the address at the Reset Vector (0xFFFC)."
-  (declare (type cpu cpu))
   (with-slots (memory pc) cpu
     (setf pc (clones.memory:fetch-word memory #xFFFC))))
 
@@ -78,16 +77,13 @@
     (setf pc (clones.memory:fetch-word memory vector))))
 
 (defun nmi (cpu)
-  (declare (type cpu cpu))
   (interrupt-goto cpu #xFFFA))
 
 (defun irq (cpu)
-  (declare (type cpu cpu))
   (when (flag-set-p cpu :interrupt)
     (interrupt-goto cpu #xFFFE)))
 
 (defun dma (cpu)
-  (declare (type cpu cpu))
   (setf (cpu-waiting cpu) 512)
   (setf (getf (ppu-result (memory-ppu (cpu-memory cpu))) :dma) nil))
 
@@ -110,50 +106,37 @@
   `(set-flag ,cpu ,flag (if ,test 1 0)))
 
 (defun set-flags-zn (cpu value)
-  (declare (type cpu cpu)
-           (type fixnum value))
   (set-flag-if cpu :zero (zerop value))
   (set-flag-if cpu :negative (logbitp 7 value)))
 
 (defun compare (cpu register memory)
-  (declare (type cpu cpu)
-           (type ub8 register memory))
   (let ((result (- register memory)))
     (set-flag-if cpu :carry (>= result 0))
     (set-flags-zn cpu result)))
 
-(declaim (ftype (function (cpu ub8) ub8) stack-push))
 (defun stack-push (cpu value)
-  (declare (type cpu cpu))
   (store (cpu-memory cpu) (+ (cpu-stack cpu) #x100) value)
   (setf (cpu-stack cpu) (wrap-byte (1- (cpu-stack cpu)))))
 
 (defun stack-push-word (cpu value)
-  (declare (type ub16 value))
   (stack-push cpu (ash value -8))
   (stack-push cpu (wrap-byte value)))
 
-(declaim (ftype (function (cpu) ub8) stack-pop))
 (defun stack-pop (cpu)
-  (declare (type cpu cpu))
   (setf (cpu-stack cpu) (wrap-byte (1+ (cpu-stack cpu))))
   (fetch (cpu-memory cpu) (+ (cpu-stack cpu) #x100)))
 
-(declaim (ftype (function (cpu) ub16) stack-pop-word))
 (defun stack-pop-word (cpu)
   (let ((low-byte (stack-pop cpu))
         (high-byte (stack-pop cpu)))
-    (declare (type ub8 low-byte high-byte))
     (+ low-byte (ash high-byte 8))))
 
-(declaim (ftype (function (fixnum ub8 ub8) boolean) overflow-p))
 (defun overflow-p (result augend addend)
   (flet ((sign-bit (x) (logbitp 7 x)))
     (let ((result-sign (sign-bit result)))
       (not (or (eql result-sign (sign-bit augend))
                (eql result-sign (sign-bit addend)))))))
 
-(declaim (ftype (function (cpu ub16 ub16)) maybe-update-cycle-count))
 (defun maybe-update-cycle-count (cpu start final)
   (when (page-crossed-p start final)
     (incf (cpu-cycles cpu))))
