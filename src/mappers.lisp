@@ -104,18 +104,24 @@
 
 (defmethod set-modes ((mapper mmc1) value)
   (with-slots (mirroring chr-mode prg-mode) mapper
-    (case (ldb (byte 2 0) value)
-      (0 :lower)
-      (1 :upper)
-      (2 :vertical)
-      (3 :horizontal))
-    (case (ldb (byte 2 2) value)
-      ((0 1) :switch-both)
-      (2     :switch-high)
-      (3     :switch-low))
-    (case (ldb (byte 1 4) value)
-      (0 :switch-one)
-      (1 :switch-two))))
+    (let ((new-mirror
+            (case (ldb (byte 2 0) value)
+              (0 :lower)
+              (1 :upper)
+              (2 :vertical)
+              (3 :horizontal)))
+          (new-prg-mode
+            (case (ldb (byte 2 2) value)
+              ((0 1) :switch-both)
+              (2     :switch-high)
+              (3     :switch-low)))
+          (new-chr-mode
+            (case (ldb (byte 1 4) value)
+              (0 :switch-one)
+              (1 :switch-two))))
+      (setf mirroring new-mirror
+            prg-mode new-prg-mode
+            chr-mode new-chr-mode))))
 
 (defmethod update-register ((mapper mmc1) address)
   (declare (type ub16 address))
