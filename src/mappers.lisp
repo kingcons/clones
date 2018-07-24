@@ -8,7 +8,8 @@
                 :ub16
                 :ub8
                 :wrap-byte
-                :wrap-bank)
+                :wrap-prg
+                :wrap-chr)
   (:export #:mapper
            #:load-prg
            #:store-prg
@@ -45,7 +46,8 @@
   (let* ((rom (parse-rom pathname))
          (mapper (rom-mapper-name rom)))
     (case mapper
-      (:nrom (make-nrom :rom rom))
+      (:nrom  (make-nrom :rom rom))
+      (:mmc1  (make-mmc1 :rom rom))
       (:unrom (make-unrom :rom rom))
       (otherwise (error 'unsupported-mapper :mapper-name mapper :rom rom)))))
 
@@ -79,6 +81,95 @@
   (declare (ignore address value))
   0)
 
+;;; Mapper 1 - MMC1
+
+(defstruct (mmc1 (:include mapper))
+  ;; TODO: Implement PRG RAM of 8kb from 0x6000 -> 0x8000.
+  (prg-bank    0 :type ub8)
+  (chr-bank-1  0 :type ub8)
+  (chr-bank-2  0 :type ub8)
+  (accumulator 0 :type ub8)
+  (write-count 0 :type ub8)
+  (mirroring   :lower      :type keyword)
+  (chr-mode    :switch-one :type keyword)
+  (prg-mode    :switch-low :type keyword))
+
+(defmethod reset ((mapper mmc1))
+  (with-slots (accumulator write-count chr-mode prg-mode mirroring) mapper
+    (setf chr-mode  :switch-one
+          prg-mode  :switch-low
+          mirroring :lower
+          accumulator 0
+          write-count 0)))
+
+(defmethod set-modes ((mapper mmc1) value)
+  (with-slots (mirroring chr-mode prg-mode) mapper
+    (case (ldb (byte 2 0) value)
+      (0 :lower)
+      (1 :upper)
+      (2 :vertical)
+      (3 :horizontal))
+    (case (ldb (byte 2 2) value)
+      ((0 1) :switch-both)
+      (2     :switch-high)
+      (3     :switch-low))
+    (case (ldb (byte 1 4) value)
+      (0 :switch-one)
+      (1 :switch-two))))
+
+(defmethod update-register ((mapper mmc1) address)
+  (declare (type ub16 address))
+  (with-slots (accumulator write-count prg-bank chr-bank-1 chr-bank-2) mapper
+    (cond ((< address #xA000)
+           (set-modes mapper accumulator))
+          ((< address #xC000)
+           (setf chr-bank-1 accumulator))
+          ((< address #xE000)
+           (setf chr-bank-2 accumulator))
+          (t
+           (setf prg-bank accumulator)))
+    (setf write-count 0
+          accumulator 0)))
+
+(defmethod load-prg ((mapper mmc1) address)
+  #f
+  (declare (type ub16 address))
+  (with-slots (prg-mode prg-bank rom) mapper
+    (flet ((get-low-bank ()
+             (case prg-mode
+               (:switch-both (error 'not-yet-implemented))
+               (:switch-low prg-bank)
+               (:switch-high 0)))
+           (get-high-bank ()
+             (case prg-mode
+               (:switch-both (error 'not-yet-implemented))
+               (:switch-low (1- (rom-prg-count rom)))
+               (:switch-high prg-bank))))
+      (let* ((bank (if (< address #xC000)
+                       (get-low-bank)
+                       (get-high-bank)))
+             (bank-offset (* #x4000 bank)))
+        (aref (rom-prg rom) (+ bank-offset (wrap-prg address)))))))
+
+(defmethod store-prg ((mapper mmc1) address value)
+  (declare (type ub8 value))
+  (if (logbitp 7 value)
+      (reset mapper)
+      (with-slots (accumulator write-count) mapper
+        (setf (ldb (byte 1 write-count) accumulator) (logand value 1))
+        (incf write-count)
+        (when (= write-count 5)
+          (update-register mapper address)))))
+
+(defmethod load-chr ((mapper mmc1) address)
+  (with-slots (chr-bank-1 chr-bank-2 rom) mapper
+    (let ((bank (if (< address #x1000) chr-bank-1 chr-bank-2)))
+      (aref (rom-chr rom) (+ (* bank #x1000) (wrap-chr address))))))
+
+(defmethod store-chr ((mapper mmc1) address value)
+  (declare (ignore address value))
+  0)
+
 ;;; Mapper 2 - UNROM
 
 (defstruct (unrom (:include mapper))
@@ -92,7 +183,7 @@
                      switched-bank
                      (1- (rom-prg-count rom))))
            (bank-offset (* bank #x4000)))
-      (aref (rom-prg rom) (+ bank-offset (wrap-bank address))))))
+      (aref (rom-prg rom) (+ bank-offset (wrap-prg address))))))
 
 (defmethod store-prg ((mapper unrom) address value)
   (declare (ignore address))
