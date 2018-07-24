@@ -15,6 +15,7 @@
            #:wrap-nametable
            #:wrap-palette-table
            #:wrap-palette
+           #:wrap-bank
            #:flip-bit
            #:page-crossed-p
            #:slot->))
@@ -78,6 +79,11 @@
 (defun wrap-palette (number)
   "Constrain a number to (integer 0 63)."
   (logand number #x3f))
+
+(declaim (inline wrap-bank))
+(defun wrap-bank (number)
+  "Constrain a number to (integer 0 16383)."
+  (logand number #x4000))
 
 (defmacro flip-bit (position value)
   `(logxor ,(expt 2 position) ,value))

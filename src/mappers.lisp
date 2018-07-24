@@ -5,7 +5,9 @@
   (:import-from :clones.conditions
                 :unsupported-mapper)
   (:import-from :clones.util
-                :ub16)
+                :ub16
+                :ub8
+                :wrap-bank)
   (:export #:mapper
            #:load-prg
            #:store-prg
@@ -43,11 +45,14 @@
          (mapper (rom-mapper-name rom)))
     (case mapper
       (:nrom (make-nrom :rom rom))
+      (:unrom (make-unrom :rom rom))
       (otherwise (error 'unsupported-mapper :mapper-name mapper :rom rom)))))
 
 ;;; End of Mapper Protocol, Concrete implementations follow...
 
 (defstruct mapper rom)
+
+;;; Mapper 0 - NROM
 
 (defstruct (nrom (:include mapper)))
 
@@ -70,5 +75,34 @@
     (aref (rom-chr rom) address)))
 
 (defmethod store-chr ((mapper nrom) address value)
+  (declare (ignore address value))
+  0)
+
+;;; Mapper 2 - UNROM
+
+(defstruct (unrom (:include mapper))
+  (switched-bank 0 :type ub8))
+
+(defmethod load-prg ((mapper unrom) address)
+  #f
+  (declare (type ub16 address))
+  (with-slots (switched-bank rom) mapper
+    (let* ((bank (if (< address #xC000)
+                     switched-bank
+                     (1- (rom-prg-count rom))))
+           (bank-offset (* bank #x4000)))
+      (aref (rom-prg rom) (+ bank-offset (wrap-bank address))))))
+
+(defmethod store-prg ((mapper unrom) address value)
+  (declare (ignore address))
+  (setf (unrom-switched-bank mapper) (wrap-byte value)))
+
+(defmethod load-chr ((mapper unrom) address)
+  #f
+  (declare (type ub16 address))
+  (let ((rom (mapper-rom mapper)))
+    (aref (rom-chr rom) address)))
+
+(defmethod store-chr ((mapper unrom) address value)
   (declare (ignore address value))
   0)
