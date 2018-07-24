@@ -93,7 +93,6 @@
 
 (defmacro define-ppu-bit (name (&rest args) &body body)
   `(progn
-     (declaim (inline ,name))
      (defun ,name ,(append '(ppu) args)
        (declare (type ppu ppu))
        ,@body)))
@@ -139,7 +138,6 @@
 
 ;;; PPU Memory Map
 
-(declaim (inline read-status))
 (defun read-status (ppu)
   (setf (ppu-scroll-dir ppu) :x
         (ppu-address-byte ppu) :high)
@@ -249,7 +247,6 @@
     (2 #x2800)
     (3 #x2c00)))
 
-(declaim (inline base-attribute-table))
 (defun base-attribute-table (ppu)
   ;; Attribute tables always start #x3c0 bytes into a nametable.
   (+ (base-nametable ppu) #x3c0))

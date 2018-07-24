@@ -56,37 +56,30 @@
   "Make a byte vector of length SIZE."
   (make-array size :element-type 'ub8))
 
-(declaim (inline wrap-byte))
 (defun wrap-byte (number)
   "Constrain a number to (integer 0 255)."
   (logand number #xff))
 
-(declaim (inline wrap-word))
 (defun wrap-word (number)
   "Constrain a number to (integer 0 65535)."
   (logand number #xffff))
 
-(declaim (inline wrap-nametable))
 (defun wrap-nametable (number)
   "Constrain a number to (integer 0 2047)."
   (logand number #x7ff))
 
-(declaim (inline wrap-palette-table))
 (defun wrap-palette-table (number)
   "Constrain a number to (integer 0 31)."
   (logand number #x1f))
 
-(declaim (inline wrap-palette))
 (defun wrap-palette (number)
   "Constrain a number to (integer 0 63)."
   (logand number #x3f))
 
-(declaim (inline wrap-prg))
 (defun wrap-prg (number)
   "Constrain a number to (integer 0 16383)."
   (logand number #x3fff))
 
-(declaim (inline wrap-chr))
 (defun wrap-chr (number)
   "Constrain a number to (integer 0 4095)."
   (logand number #xfff))
@@ -94,7 +87,6 @@
 (defmacro flip-bit (position value)
   `(logxor ,(expt 2 position) ,value))
 
-(declaim (inline page-crossed-p))
 (declaim (ftype (function (ub16 ub16) boolean) page-crossed-p))
 (defun page-crossed-p (start final)
   (/= (logand start #xff00)

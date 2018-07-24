@@ -71,7 +71,6 @@
   (with-slots (memory pc) cpu
     (setf pc (clones.memory:fetch-word memory #xFFFC))))
 
-(declaim (inline interrupt-goto))
 (defun interrupt-goto (cpu vector)
   (with-slots (memory pc status) cpu
     (stack-push-word cpu pc)
@@ -110,7 +109,6 @@
 (defmacro set-flag-if (cpu flag test)
   `(set-flag ,cpu ,flag (if ,test 1 0)))
 
-(declaim (inline set-flags-zn))
 (defun set-flags-zn (cpu value)
   (declare (type cpu cpu)
            (type fixnum value))

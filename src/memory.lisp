@@ -43,7 +43,6 @@
   (gamepad (make-gamepad) :type gamepad)
   (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
 
-(declaim (inline %oam-dma))
 (defun %oam-dma (memory value)
   (let ((ppu (memory-ppu memory))
         (page (ash value 8)))
