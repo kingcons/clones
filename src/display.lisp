@@ -37,17 +37,6 @@
     (sdl2:render-copy *renderer* *texture*)
     (sdl2:render-present *renderer*)
     (incf *frame-count*)
-    (when *debug*
-      (format t "Frame: ~D~%" *frame-count*))
+    (when (and *debug* *last-frame-at*)
+      (format t "Frame drawn in ~A milliseconds~%" (- (get-internal-real-time) *last-frame-at*)))
     (setf *last-frame-at* (get-internal-real-time))))
-
-(defun test-frame ()
-  (let* ((base (* 3 (random 64)))
-         (red (aref clones.ppu::+color-palette+ (+ base 0)))
-         (blue (aref clones.ppu::+color-palette+ (+ base 1)))
-         (green (aref clones.ppu::+color-palette+ (+ base 2))))
-    (loop for i from 0 upto (1- (* 256 240))
-          do (setf (aref *framebuffer* (+ (* i 3) 0)) red
-                   (aref *framebuffer* (+ (* i 3) 1)) blue
-                   (aref *framebuffer* (+ (* i 3) 2)) green))
-    (display-frame)))

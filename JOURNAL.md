@@ -390,3 +390,25 @@ right place to start. *sigh*
 
 Okay, time to go home and have a beer.
 
+### Reflections on Background Rendering (07/23)
+
+An appropriate way to TDD background rendering follows.
+
+Assume you have a JSON dump of hardware state after the first frame of SMB is rendered.
+All you would need is: pattern table, 1 name table w/ attribute table, and the palette.
+
+1. Start with tests for basic PPU state / register behavior.
+2. Write a test that checks the pattern table matches because this is done at power on.
+3. Write a test that checks the nametable and palette values after the first frame.
+
+Now you've verified the data in memory, you need to test traversing it during rendering.
+You could test the traversal via X/Y pixel coordinates or Tile/Scanline coordinates.
+Produce JSON dumps that map Tile/Scanline to: `[nametable_index, attribute_index, pattern_index]`.
+
+Now you can test your lookup functions and worry about the easy stuff like:
+* Palettes/Coloring
+* Sprites
+* Mappers
+* APU
+
+Lol, just kidding, this is all hard, good luck!
