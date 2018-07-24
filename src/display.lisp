@@ -6,7 +6,9 @@
                 :*framebuffer*)
   (:import-from :static-vectors
                 :static-vector-pointer)
-  (:export #:init-display))
+  (:export #:init-display
+           #:display-frame
+           #:*frame-count*))
 
 (in-package :clones.display)
 
@@ -38,5 +40,5 @@
     (sdl2:render-present *renderer*)
     (incf *frame-count*)
     (when (and *debug* *last-frame-at*)
-      (format t "Frame drawn in ~A milliseconds~%" (- (get-internal-real-time) *last-frame-at*)))
+      (format t "Frame ~D drawn in ~A milliseconds~%" *frame-count* (- (get-internal-real-time) *last-frame-at*)))
     (setf *last-frame-at* (get-internal-real-time))))
