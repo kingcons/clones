@@ -5,6 +5,7 @@
   (:import-from :clones.ppu
                 :ppu
                 :ppu-result
+                :ppu-cartridge
                 :make-ppu
                 :ppu-read
                 :ppu-write)
@@ -53,8 +54,9 @@
 
 (defun swap-rom (memory rom-file)
   (let ((rom (load-rom (asset-path rom-file))))
-    (setf (memory-mapper memory) rom)
-    (clones.ppu:initialize-pattern-table (memory-ppu memory) (clones.mappers::mapper-rom rom))))
+    (with-slots (mapper ppu) memory
+      (setf mapper rom
+            (ppu-cartridge ppu) rom))))
 
 (declaim (ftype (function (memory ub16) ub8) fetch))
 (defun fetch (memory address)

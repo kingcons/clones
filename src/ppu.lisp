@@ -6,6 +6,10 @@
                 :define-constant)
   (:import-from :static-vectors
                 :make-static-vector)
+  (:import-from :clones.mappers
+                :mapper
+                :load-chr
+                :store-chr)
   (:import-from :clones.util
                 :ub8
                 :ub16
@@ -20,10 +24,10 @@
            #:ppu
            #:ppu-result
            #:ppu-cycles
+           #:ppu-cartridge
            #:make-ppu
            #:ppu-read
            #:ppu-write
-           #:initialize-pattern-table
            #:sync))
 
 (in-package :clones.ppu)
@@ -77,7 +81,7 @@
   (oam           (make-byte-vector #x100)            :type (byte-vector 256))
   (nametable     (make-byte-vector #x800)            :type (byte-vector 2048))
   (palette-table (make-byte-vector #x020)            :type (byte-vector 32))
-  (pattern-table (make-byte-vector #x2000)           :type (byte-vector 8192)))
+  (cartridge     nil                                 :type (or null mapper)))
 
 (defmethod print-object ((ppu ppu) stream)
   (print-unreadable-object (ppu stream :type t)
@@ -135,10 +139,6 @@
 
 ;;; PPU Memory Map
 
-;; KLUDGE: Just copy the CHR into PPU at boot time until we figure out bank switching.
-(defun initialize-pattern-table (ppu rom)
-  (setf (ppu-pattern-table ppu) (clones.rom::rom-chr rom)))
-
 (declaim (inline read-status))
 (defun read-status (ppu)
   (setf (ppu-scroll-dir ppu) :x
@@ -175,7 +175,7 @@
 
 (defun read-vram (ppu address)
   (cond ((< address #x2000)
-         (aref (ppu-pattern-table ppu) address))
+         (load-chr (ppu-cartridge ppu) address))
         ((< address #x3f00)
          (aref (ppu-nametable ppu) (wrap-nametable address)))
         ((< address #x4000)
@@ -184,7 +184,7 @@
 (defun write-vram (ppu value)
   (with-slots (address) ppu
     (cond ((< address #x2000)
-           (setf (aref (ppu-pattern-table ppu) address) value))
+           (store-chr (ppu-cartridge ppu) address value))
           ((< address #x3f00)
            (setf (aref (ppu-nametable ppu) (wrap-nametable address)) value))
           ((< address #x4000)
