@@ -63,6 +63,13 @@
     #x00 #xFC #xFC  #xF8 #xD8 #xF8  #x00 #x00 #x00  #x00 #x00 #x00)
   :documentation "The color palette used by the graphics card." :test #'equalp)
 
+(defstruct context
+  (nt-buffer (make-byte-vector #x20) :type (byte-vector 32))
+  (at-buffer (make-byte-vector #x08) :type (byte-vector 08))
+  (bg-buffer #(0 0 0 0 0 0 0 0)      :type simple-vector))
+
+(defvar *render-context* (make-context))
+
 (defstruct ppu
   (dma-result    nil                       :type boolean)
   (nmi-result    nil                       :type boolean)
@@ -325,47 +332,49 @@
       (setf (aref *framebuffer*   (+ buffer-start i))
             (aref +color-palette+ (+ palette-start i))))))
 
-(defun compute-bg-colors (ppu scanline tile bg-buffer)
+(defun compute-bg-colors (ppu scanline tile)
   (declare (optimize speed))
-  (let* ((nt-byte   (aref (ppu-nt-buffer ppu) tile))
-         (at-byte   (aref (ppu-at-buffer ppu) (floor tile 4)))
-         (low-byte  (get-bg-pattern-byte ppu scanline nt-byte :lo))
-         (high-byte (get-bg-pattern-byte ppu scanline nt-byte :hi))
-         (palette-high-bits (get-palette-index-high scanline tile at-byte)))
-    (loop for bit from 0 to 7
-          for palette-low-bits = (get-palette-index-low low-byte high-byte bit)
-          for index = (get-palette-index palette-high-bits palette-low-bits)
-          do (setf (nth bit bg-buffer) (if (zerop (logand index #x3))
-                                           nil
-                                           (get-color ppu :bg index))))
-    bg-buffer))
+  (with-accessors ((at-buffer context-at-buffer)
+                   (nt-buffer context-nt-buffer)
+                   (bg-buffer context-bg-buffer)) *render-context*
+    (let* ((nt-byte   (aref nt-buffer tile))
+           (at-byte   (aref at-buffer (floor tile 4)))
+           (low-byte  (get-bg-pattern-byte ppu scanline nt-byte :lo))
+           (high-byte (get-bg-pattern-byte ppu scanline nt-byte :hi))
+           (palette-high-bits (get-palette-index-high scanline tile at-byte)))
+      (loop for bit from 0 to 7
+            for palette-low-bits = (get-palette-index-low low-byte high-byte bit)
+            for index = (get-palette-index palette-high-bits palette-low-bits)
+            do (setf (aref bg-buffer bit) (if (zerop (logand index #x3))
+                                              0
+                                              (get-color ppu :bg index)))))))
 
 (defun fill-name-table-buffer (ppu scanline)
-  (with-accessors ((nt-buffer ppu-nt-buffer)) ppu
+  (with-accessors ((nt-buffer context-nt-buffer)) *render-context*
     (dotimes (tile 32)
       (setf (aref nt-buffer tile) (get-nametable-byte ppu scanline tile)))))
 
 (defun fill-attribute-table-buffer (ppu scanline)
-  (with-accessors ((at-buffer ppu-at-buffer)) ppu
+  (with-accessors ((at-buffer context-at-buffer)) *render-context*
     (dotimes (quad 8)
       (setf (aref at-buffer quad) (get-attribute-byte ppu scanline quad)))))
 
 (defun render-scanline (ppu)
   (let ((scanline (ppu-scanline ppu)))
-    (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00)))
-          (bg-buffer '(0 0 0 0 0 0 0 0)))
-      (when (zerop (mod scanline 8))
-        (fill-name-table-buffer ppu scanline))
-      (when (zerop (mod scanline 32))
-        (fill-attribute-table-buffer ppu scanline))
-      (dotimes (tile 32)
-        (compute-bg-colors ppu scanline tile bg-buffer)
-        (loop for i from 7 downto 0
-              for bg-color in bg-buffer
-              do (let ((x (+ (* tile 8) i)))
-                   (if (null bg-color)
-                       (render-pixel x scanline backdrop-color)
-                       (render-pixel x scanline bg-color))))))))
+    (when (zerop (mod scanline 8))
+      (fill-name-table-buffer ppu scanline))
+    (when (zerop (mod scanline 32))
+      (fill-attribute-table-buffer ppu scanline))
+    (with-accessors ((bg-buffer context-bg-buffer)) *render-context*
+      (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
+        (dotimes (tile 32)
+          (compute-bg-colors ppu scanline tile)
+          (loop for i from 7 downto 0
+                for bg-color across bg-buffer
+                do (let ((x (+ (* tile 8) i)))
+                     (if (zerop bg-color)
+                         (render-pixel x scanline backdrop-color)
+                         (render-pixel x scanline bg-color)))))))))
 
 (defun sync (ppu run-to-cycle)
   (with-accessors ((scanline ppu-scanline)
