@@ -283,16 +283,22 @@
     (read-vram ppu address)))
 
 (defun get-palette-index (attribute-bits pattern-bits)
+  (declare (optimize speed)
+           (type ub8 attribute-bits pattern-bits))
   ;; The attribute byte determines the two high-bits of the palette index.
   ;; The pattern-table low-byte and high-byte determine the 0th and 1st bit.
   (dpb attribute-bits (byte 2 2) pattern-bits))
 
 (defun get-palette-index-high (scanline tile attribute-byte)
+  (declare (optimize speed)
+           (type ub8 attribute-byte))
   ;; Retrieve the 2 high bits of the palette index from the attribute byte.
   (let ((bit-position (color-quadrant scanline tile)))
     (ldb (byte 2 bit-position) attribute-byte)))
 
 (defun get-palette-index-low (pattern-low-byte pattern-high-byte bit)
+  (declare (optimize speed)
+           (type ub8 pattern-low-byte pattern-high-byte))
   ;; Retrieve the 0th and 1st bit of the palette index from the pattern bytes.
   (+ (ldb (byte 1 bit) pattern-low-byte)
      (ash (ldb (byte 1 bit) pattern-high-byte) 1)))
