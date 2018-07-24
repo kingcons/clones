@@ -76,5 +76,4 @@
             (display-frame)
             (let ((input (handle-input gamepad)))
               (when (eq :quit input)
-                (return nil))))))))
-  (quit))
+                (return nil)))))))))

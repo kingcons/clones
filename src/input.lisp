@@ -34,6 +34,12 @@
   (start   0 :type bit)
   (strobe  '#0=(a b select start up down left right . #0#) :type cons))
 
+(defmethod print-object ((gamepad gamepad) stream)
+  (print-unreadable-object (gamepad stream :type t)
+    (with-slots (up left down right a b select start) gamepad
+      (format stream "↑:~d ↓:~d ←:~d →:~d A:~d B:~d Select:~d Start:~d"
+              up down left right a b select start))))
+
 (defun update-pad (pad keycode state)
   (let ((key (sdl2:scancode-value keycode)))
     (cond ((sdl2:scancode= key (getf *keymap* :up))

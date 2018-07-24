@@ -7,6 +7,7 @@
   (:import-from :clones.util
                 :ub16
                 :ub8
+                :wrap-byte
                 :wrap-bank)
   (:export #:mapper
            #:load-prg
