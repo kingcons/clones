@@ -137,7 +137,9 @@
           write-count 0)))
 
 (defmethod load-prg ((mapper mmc1) address)
-  (with-slots (prg-mode prg-bank rom) mapper
+  (with-accessors ((prg-mode mmc1-prg-mode)
+                   (prg-bank mmc1-prg-bank)
+                   (rom mapper-rom)) mapper
     (flet ((get-low-bank ()
              (case prg-mode
                (:switch-both (error 'not-yet-implemented))
@@ -164,7 +166,9 @@
           (update-register mapper address)))))
 
 (defmethod load-chr ((mapper mmc1) address)
-  (with-slots (chr-bank-1 chr-bank-2 rom) mapper
+  (with-accessors ((chr-bank-1 mmc1-chr-bank-1)
+                   (chr-bank-2 mmc1-chr-bank-2)
+                   (rom mapper-rom)) mapper
     (let ((bank (if (< address #x1000) chr-bank-1 chr-bank-2)))
       (aref (rom-chr rom) (+ (* bank #x1000) (wrap-chr address))))))
 
@@ -178,7 +182,7 @@
   (switched-bank 0 :type ub8))
 
 (defmethod load-prg ((mapper unrom) address)
-  (with-slots (switched-bank rom) mapper
+  (with-accessors ((switched-bank unrom-switched-bank) (rom mapper-rom)) mapper
     (let* ((bank (if (< address #xC000)
                      switched-bank
                      (1- (rom-prg-count rom))))

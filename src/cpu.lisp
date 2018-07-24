@@ -67,11 +67,11 @@
 
 (defun reset (cpu)
   "Jump to the address at the Reset Vector (0xFFFC)."
-  (with-slots (memory pc) cpu
+  (with-accessors ((memory cpu-memory) (pc cpu-pc)) cpu
     (setf pc (clones.memory:fetch-word memory #xFFFC))))
 
 (defun interrupt-goto (cpu vector)
-  (with-slots (memory pc status) cpu
+  (with-accessors ((memory cpu-memory) (pc cpu-pc) (status cpu-status)) cpu
     (stack-push-word cpu pc)
     (stack-push cpu status)
     (setf pc (clones.memory:fetch-word memory vector))))

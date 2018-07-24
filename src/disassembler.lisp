@@ -6,8 +6,8 @@
                 :fetch
                 :fetch-range)
   (:import-from :clones.cpu
-                :memory
-                :pc)
+                :cpu-memory
+                :cpu-pc)
   (:export #:disasm
            #:now))
 
@@ -44,7 +44,7 @@
              (incf index size))))
 
 (defun now (cpu)
-  (with-slots (pc memory) cpu
+  (with-accessors ((pc cpu-pc) (memory cpu-memory)) cpu
     (let* ((opcode (fetch memory pc))
            (size (second (aref *opcodes* opcode))))
       (disasm memory pc (+ pc (1- size))))))

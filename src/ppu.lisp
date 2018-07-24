@@ -163,11 +163,11 @@
     (otherwise 0)))
 
 (defun read-oam (ppu)
-  (with-slots (oam oam-address) ppu
+  (with-accessors ((oam ppu-oam) (oam-address ppu-oam-address)) ppu
     (aref oam oam-address)))
 
 (defun write-oam (ppu value)
-  (with-slots (oam oam-address) ppu
+  (with-accessors ((oam ppu-oam) (oam-address ppu-oam-address)) ppu
     (setf (aref oam oam-address) value
           oam-address (wrap-byte (1+ oam-address)))))
 
@@ -182,7 +182,7 @@
          (aref (ppu-palette-table ppu) (palette-index address)))))
 
 (defun write-vram (ppu value)
-  (with-slots (address) ppu
+  (with-accessors ((address ppu-address)) ppu
     (cond ((< address #x2000)
            (store-chr (ppu-cartridge ppu) address value))
           ((< address #x3f00)
@@ -192,7 +192,7 @@
     (incf address (vram-step ppu))))
 
 (defun buffered-read (ppu)
-  (with-slots (address) ppu
+  (with-accessors ((address ppu-address)) ppu
     (let ((result (read-vram ppu address)))
       (incf address (vram-step ppu))
       (if (< address #x3f00)
@@ -209,7 +209,9 @@
 
 ;; TODO: Handle scroll offsets properly.
 (defun update-scroll (ppu value)
-  (with-slots (scroll-x scroll-y scroll-dir) ppu
+  (with-accessors ((scroll-x ppu-scroll-x)
+                   (scroll-y ppu-scroll-y)
+                   (scroll-dir ppu-scroll-dir)) ppu
     (case scroll-dir
       (:x (setf scroll-x value
                 scroll-dir :y))
@@ -218,7 +220,7 @@
 
 ;; TODO: Handle scroll offsets properly.
 (defun update-address (ppu value)
-  (with-slots (address address-byte) ppu
+  (with-accessors ((address ppu-address) (address-byte ppu-address-byte)) ppu
     (case address-byte
       (:high (setf address (logior (logand address #xff) (ash value 8))
                    address-byte :low))

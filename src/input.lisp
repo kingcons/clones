@@ -82,10 +82,10 @@
                     (update-pad gamepad keysym 0))))))))
 
 (defun fetch-strobe (pad)
-  (with-slots (strobe) pad
+  (with-accessors ((strobe gamepad-strobe)) pad
     (slot-value pad (pop strobe))))
 
 (defun reset-strobe (pad)
-  (with-slots (strobe) pad
+  (with-accessors ((strobe gamepad-strobe)) pad
     (loop for button = (pop strobe)
           until (eq button 'right))))

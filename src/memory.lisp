@@ -54,7 +54,7 @@
 
 (defun swap-rom (memory rom-file)
   (let ((rom (load-rom (asset-path rom-file))))
-    (with-slots (mapper ppu) memory
+    (with-accessors ((mapper memory-mapper) (ppu memory-ppu)) memory
       (setf mapper rom
             (ppu-cartridge ppu) rom))))
 
