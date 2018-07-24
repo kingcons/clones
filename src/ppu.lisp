@@ -40,6 +40,7 @@
 
 ;;; Core PPU Data Structures
 
+(declaim (type (byte-vector 184320) *framebuffer*))
 (defvar *framebuffer* (make-static-vector (* +width+ +height+ 3) :element-type 'ub8)
   "A Framebuffer for graphics operations with 3 bytes per pixel for RGB.")
 
@@ -172,6 +173,8 @@
           oam-address (wrap-byte (1+ oam-address)))))
 
 (defun read-vram (ppu address)
+  (declare (optimize speed)
+           (type ub16 address))
   (cond ((< address #x2000)
          (load-chr (ppu-cartridge ppu) address))
         ((< address #x3f00)
@@ -305,6 +308,8 @@
 ;;; PPU Rendering
 
 (defun render-pixel (x y palette-index)
+  (declare (optimize speed)
+           (type ub8 x y palette-index))
   (let ((buffer-start (* (+ (* y +width+) x) 3))
         (palette-start (* palette-index 3)))
     (dotimes (i 3)
