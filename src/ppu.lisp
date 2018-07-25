@@ -76,7 +76,7 @@
   (nmi-result    nil                       :type boolean)
   (new-frame     nil                       :type boolean)
   (cycles        0                         :type fixnum)
-  (scanline      0                         :type fixnum)
+  (scanline      0                         :type (integer 0 262))
   (read-buffer   0                         :type ub8)
   (control       0                         :type ub8)  ; 0x2000
   (mask          0                         :type ub8)  ; 0x2001
@@ -370,12 +370,24 @@
       (dotimes (i 64)
         ;; We bump Y here because we're considering sprites for the _next_ scanline.
         (let ((sprite-y (1+ (aref oam (* i 4)))))
-          (declare (type (integer 0 262) sprite-y scanline size))
+          (declare (type ub8 sprite-y scanline size))
           (when (< sprite-y scanline (+ sprite-y size))
             (if (= count 8)
                 (return (set-sprite-overflow ppu 1))
                 (setf (aref sprite-buffer count) i
                       count (1+ count)))))))))
+
+(defun render-tile (ppu scanline tile)
+  (with-accessors ((bg-buffer context-bg-buffer)
+                   (sprite-buffer context-sprite-buffer)) *render-context*
+    (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
+      (compute-bg-colors ppu scanline tile)
+      (loop for i from 7 downto 0
+            for bg-color across bg-buffer
+            do (let ((x (+ (* tile 8) i)))
+                 (if (zerop bg-color)
+                     (render-pixel x scanline backdrop-color)
+                     (render-pixel x scanline bg-color)))))))
 
 (defun render-scanline (ppu)
   (let ((scanline (ppu-scanline ppu)))
@@ -383,17 +395,8 @@
       (fill-name-table-buffer ppu scanline))
     (when (zerop (mod scanline 32))
       (fill-attribute-table-buffer ppu scanline))
-    (with-accessors ((bg-buffer context-bg-buffer)
-                     (sprite-buffer context-sprite-buffer)) *render-context*
-      (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
-        (dotimes (tile 32)
-          (compute-bg-colors ppu scanline tile)
-          (loop for i from 7 downto 0
-                for bg-color across bg-buffer
-                do (let ((x (+ (* tile 8) i)))
-                     (if (zerop bg-color)
-                         (render-pixel x scanline backdrop-color)
-                         (render-pixel x scanline bg-color)))))))
+    (dotimes (tile 32)
+      (render-tile ppu scanline tile))
     (prefill-sprite-buffer ppu scanline)))
 
 (defun sync (ppu run-to-cycle)
