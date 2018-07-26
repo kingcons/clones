@@ -8,9 +8,9 @@ See: [Design](https://github.com/kingcons/clones/blob/master/DESIGN.md)
 
 ## Playability
 
-![wip](http://redlinernotes.com/images/clones_progress2.png)
+![wip](http://redlinernotes.com/images/clones.png)
 
-We'll say not there _just_ yet...
+We're getting close...
 
 ## Usage
 
