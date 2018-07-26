@@ -416,7 +416,7 @@
              (setf vblank-status 1)
              (when (plusp vblank-nmi)
                (setf nmi-result t))))
-      (261 (with-vblank ()
+      (262 (with-vblank ()
              (setf scanline 0
                    vblank-status 0
                    new-frame t))))))
