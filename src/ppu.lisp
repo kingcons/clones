@@ -94,8 +94,6 @@
   (address       0                         :type ub16) ; 0x2006
   (scroll-dir    :x                        :type keyword)
   (address-byte  :high                     :type keyword)
-  (nt-buffer     (make-byte-vector #x20)   :type (byte-vector 32))
-  (at-buffer     (make-byte-vector #x08)   :type (byte-vector 08))
   (oam           (make-byte-vector #x100)  :type (byte-vector 256))
   (nametable     (make-byte-vector #x800)  :type (byte-vector 2048))
   (palette-table (make-byte-vector #x020)  :type (byte-vector 32))
