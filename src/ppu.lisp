@@ -72,6 +72,12 @@
 
 (defvar *render-context* (make-context))
 
+(defmacro clear-buffer (buffer)
+  "A fast, non-consing way to clear a nullable BUFFER inside WITH-ACCESSORS."
+  (alexandria:with-gensyms (index)
+    `(dotimes (,index (length ,buffer))
+       (setf (aref ,buffer ,index) nil))))
+
 (defstruct ppu
   (dma-result    nil                       :type boolean)
   (nmi-result    nil                       :type boolean)
@@ -321,7 +327,18 @@
   (let ((base-address (ecase type
                         (:bg     #x3f00)
                         (:sprite #x3f10))))
-     (read-vram ppu (+ base-address index))))
+    (read-vram ppu (+ base-address index))))
+
+(defun sprite-on-tile-p (tile sprite-x)
+  (declare (optimize speed)
+           (type ub8 tile sprite-x))
+  (let ((x (* tile 8)))
+    (< sprite-x x (+ sprite-x 8))))
+
+(defun sprite-on-scanline-p (scanline sprite-y size)
+  (declare (optimize speed)
+           (type ub8 scanline sprite-y size))
+  (< sprite-y scanline (+ sprite-y size)))
 
 ;;; PPU Rendering
 
@@ -339,6 +356,8 @@
   (with-accessors ((at-buffer context-at-buffer)
                    (nt-buffer context-nt-buffer)
                    (bg-buffer context-bg-buffer)) *render-context*
+    (unless (show-bg ppu)
+      (return-from compute-bg-colors (clear-buffer bg-buffer)))
     (let* ((nt-byte   (aref nt-buffer tile))
            (at-byte   (aref at-buffer (floor tile 4)))
            (low-byte  (get-bg-pattern-byte ppu scanline nt-byte :lo))
@@ -371,7 +390,7 @@
       ;; We bump sprite-y below because we're considering sprites for the _next_ scanline.
       (loop for i below 64
             for sprite-y = (1+ (aref oam (* i 4)))
-            when (< sprite-y scanline (+ sprite-y 8))
+            when (sprite-on-scanline-p scanline sprite-y size)
               do (if (< count 8)
                      (setf (aref candidates count) i
                            count (1+ count))
