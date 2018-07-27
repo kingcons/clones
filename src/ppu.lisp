@@ -66,7 +66,7 @@
 (defstruct context
   (nt-buffer     (make-byte-vector #x20) :type (byte-vector 32))
   (at-buffer     (make-byte-vector #x08) :type (byte-vector 08))
-  (bg-buffer     (make-byte-vector #x08) :type (byte-vector 08))
+  (bg-buffer     (make-array 8)          :type (simple-vector 8))
   (candidates    (make-array 8)          :type (simple-vector 8))
   (sprite-buffer (make-array 8)          :type (simple-vector 8)))
 
@@ -348,7 +348,7 @@
             for palette-low-bits = (get-palette-index-low low-byte high-byte bit)
             for index = (get-palette-index palette-high-bits palette-low-bits)
             do (setf (aref bg-buffer bit) (if (zerop (logand index #x3))
-                                              0
+                                              nil
                                               (get-color ppu :bg index)))))))
 
 (defun fill-name-table-buffer (ppu scanline)
@@ -369,7 +369,7 @@
       (dotimes (i (length candidates))
         (setf (aref candidates i) nil))
       ;; We bump sprite-y below because we're considering sprites for the _next_ scanline.
-      (loop for i from 0 to 64
+      (loop for i below 64
             for sprite-y = (1+ (aref oam (* i 4)))
             when (< sprite-y scanline (+ sprite-y 8))
               do (if (< count 8)
@@ -386,7 +386,7 @@
       (loop for i from 7 downto 0
             for bg-color across bg-buffer
             do (let ((x (+ (* tile 8) i)))
-                 (if (zerop bg-color)
+                 (if (null bg-color)
                      (render-pixel x scanline backdrop-color)
                      (render-pixel x scanline bg-color)))))))
 
