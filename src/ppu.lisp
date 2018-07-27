@@ -67,7 +67,8 @@
   (nt-buffer     (make-byte-vector #x20) :type (byte-vector 32))
   (at-buffer     (make-byte-vector #x08) :type (byte-vector 08))
   (bg-buffer     (make-byte-vector #x08) :type (byte-vector 08))
-  (sprite-buffer (make-byte-vector #x08) :type (byte-vector 08)))
+  (candidates    (make-array 8)          :type (simple-vector 8))
+  (sprite-buffer (make-array 8)          :type (simple-vector 8)))
 
 (defvar *render-context* (make-context))
 
@@ -360,28 +361,28 @@
     (dotimes (quad 8)
       (setf (aref at-buffer quad) (get-attribute-byte ppu scanline quad)))))
 
-(defun prefill-sprite-buffer (ppu scanline)
-  (with-accessors ((sprite-buffer context-sprite-buffer)) *render-context*
+(defun prefill-sprite-candidates (ppu scanline)
+  (with-accessors ((candidates context-candidates)) *render-context*
     (let ((oam (ppu-oam ppu))
           (size (sprite-size ppu))
           (count 0))
-      (dotimes (i (length sprite-buffer))
-        (setf (aref sprite-buffer i) 0))
-      (dotimes (i 64)
-        ;; We bump Y here because we're considering sprites for the _next_ scanline.
-        (let ((sprite-y (1+ (aref oam (* i 4)))))
-          (declare (type ub8 sprite-y scanline size))
-          (when (< sprite-y scanline (+ sprite-y size))
-            (if (= count 8)
-                (return (set-sprite-overflow ppu 1))
-                (setf (aref sprite-buffer count) i
-                      count (1+ count)))))))))
+      (dotimes (i (length candidates))
+        (setf (aref candidates i) nil))
+      ;; We bump sprite-y below because we're considering sprites for the _next_ scanline.
+      (loop for i from 0 to 64
+            for sprite-y = (1+ (aref oam (* i 4)))
+            when (< sprite-y scanline (+ sprite-y 8))
+              do (if (< count 8)
+                     (setf (aref candidates count) i
+                           count (1+ count))
+                     (return (set-sprite-overflow ppu 1)))))))
 
 (defun render-tile (ppu scanline tile)
   (with-accessors ((bg-buffer context-bg-buffer)
                    (sprite-buffer context-sprite-buffer)) *render-context*
     (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
       (compute-bg-colors ppu scanline tile)
+      ;; (compute-sprite-colors ppu scanline tile)
       (loop for i from 7 downto 0
             for bg-color across bg-buffer
             do (let ((x (+ (* tile 8) i)))
@@ -397,7 +398,7 @@
       (fill-attribute-table-buffer ppu scanline))
     (dotimes (tile 32)
       (render-tile ppu scanline tile))
-    (prefill-sprite-buffer ppu scanline)))
+    (prefill-sprite-candidates ppu scanline)))
 
 (defun sync (ppu run-to-cycle)
   (with-accessors ((scanline ppu-scanline)
