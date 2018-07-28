@@ -329,16 +329,53 @@
                         (:sprite #x3f10))))
     (read-vram ppu (+ base-address index))))
 
-(defun sprite-on-tile-p (tile sprite-x)
+(defun sprite-on-tile-p (tile-x sprite-x)
   (declare (optimize speed)
-           (type ub8 tile sprite-x))
-  (let ((x (* tile 8)))
-    (< sprite-x x (+ sprite-x 8))))
+           (type ub8 tile-x sprite-x))
+  (< sprite-x tile-x (+ sprite-x 8)))
 
 (defun sprite-on-scanline-p (scanline sprite-y size)
   (declare (optimize speed)
            (type ub8 scanline sprite-y size))
   (< sprite-y scanline (+ sprite-y size)))
+
+(defun get-sprite-pattern-index (ppu tile-index)
+  (let ((base-address (sprite-pattern-address ppu))
+        (size (sprite-size ppu)))
+    ;; The 8x16 sprite tile index is interesting: https://wiki.nesdev.com/w/index.php/PPU_OAM
+    (ecase size
+      (8 (+ base-address tile-index))
+      (16 (+ (if (logbitp 1 tile-index) #x1000 0)
+             (logand tile-index (lognot 1)))))))
+
+(declaim (inline sprite-color))
+(defun sprite-color (ppu x y oam oam-index)
+  (let* ((tile-byte (aref oam (+ (* oam-index 4) 1)))
+         (attr-byte (aref oam (+ (* oam-index 4) 2)))
+         (sprite-x  (aref oam (+ (* oam-index 4) 3)))
+         (sprite-y  (1+ (aref oam (* oam-index 4))))
+         (pattern-index (get-sprite-pattern-index ppu tile-byte))
+         (pattern-y (if (logbitp 7 attr-byte)
+                        (- 7 (- y sprite-y))
+                        (- y sprite-y)))
+         (pattern-lo (get-pattern-byte ppu pattern-y :sprite pattern-index :lo))
+         (pattern-hi (get-pattern-byte ppu pattern-y :sprite pattern-index :hi))
+         (pattern-x (if (logbitp 6 attr-byte)
+                        (- 7 (- x sprite-x))
+                        (- x sprite-x)))
+         (palette-low-bits (get-palette-index-low pattern-lo pattern-hi pattern-x)))
+    (get-color ppu :sprite (get-palette-index (ldb (byte 2 0) attr-byte)
+                                              palette-low-bits))))
+    ;; Currently, I'd like to run sprite zero hit check and priority handling outside in
+    ;; COMPUTE-SPRITE-COLORS or even RENDER-TILE. Is that possible?
+
+    ;; NOTE: I'm in a bit of trouble. I already want to reuse the get-pattern-byte
+    ;; machinery, but I also need the bitplane magic from get-palette-index-low-bits.
+    ;; Above and beyond that, we're fetching the pattern bytes for every pixel when we should
+    ;; only be replacing them if the current pixel found a different candidate.
+    ;; Maybe add sprite-tile, sprite-attr, and pattern-lo/pattern-hi to the render context?
+    ;; We could invalidate them by also storing the oam-index and checking it at beginning of
+    ;; sprite-color to see if it had changed. Or maybe COMPUTE-SPRITE-COLORS could do it.
 
 ;;; PPU Rendering
 
@@ -369,6 +406,29 @@
             do (setf (aref bg-buffer bit) (if (zerop palette-low-bits)
                                               nil
                                               (get-color ppu :bg index)))))))
+
+(defun compute-sprite-colors (ppu y tile)
+  (declare (optimize speed)
+           (type ub8 tile))
+  (with-accessors ((sprite-buffer context-sprite-buffer)) *render-context*
+    (unless (show-sprites ppu)
+      (return-from compute-sprite-colors (clear-buffer sprite-buffer)))
+    (let ((oam (ppu-oam ppu)))
+      (loop for i below 8
+            for x of-type ub8 = (+ (* tile 8) i)
+            for oam-index = (find-candidate oam x)
+            do (setf (aref sprite-buffer i) (if (null oam-index)
+                                                nil
+                                                (sprite-color ppu x y oam oam-index)))))))
+
+(defun find-candidate (oam tile-x)
+  (declare (optimize speed))
+  (with-accessors ((candidates context-candidates)) *render-context*
+    (loop for oam-index across candidates
+          while oam-index
+          for sprite-x = (aref oam (+ (* oam-index 4) 3))
+          when (sprite-on-tile-p tile-x sprite-x)
+            return oam-index)))
 
 (defun fill-name-table-buffer (ppu scanline)
   (with-accessors ((nt-buffer context-nt-buffer)) *render-context*
