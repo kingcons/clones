@@ -285,12 +285,14 @@
          (address (+ base-address scanline-offset quad)))
     (read-vram ppu address)))
 
-(defun get-bg-pattern-byte (ppu scanline pattern-index byte-position)
+(defun get-pattern-byte (ppu scanline type pattern-index byte-position)
   ;; The pattern table is 4k and each tile is 16 bytes. Multiply the pattern index
   ;; from the nametable by 16 to get a starting offset. Then, each horizontal row
   ;; in the tile is represented by 1 byte, so use (scanline % 8) to get the final offset.
   ;; Note that there is a high byte and low byte for each tile spaced 8 bytes apart.
-  (let* ((base-address (bg-pattern-address ppu))
+  (let* ((base-address (ecase type
+                         (:bg (bg-pattern-address ppu))
+                         (:sprite (sprite-pattern-address ppu))))
          (tile-offset (* pattern-index 16))
          (line-offset (mod scanline 8))
          (byte-offset (ecase byte-position
@@ -358,13 +360,13 @@
       (return-from compute-bg-colors (clear-buffer bg-buffer)))
     (let* ((nt-byte   (aref nt-buffer tile))
            (at-byte   (aref at-buffer (floor tile 4)))
-           (low-byte  (get-bg-pattern-byte ppu scanline nt-byte :lo))
-           (high-byte (get-bg-pattern-byte ppu scanline nt-byte :hi))
+           (low-byte  (get-pattern-byte ppu scanline :bg nt-byte :lo))
+           (high-byte (get-pattern-byte ppu scanline :bg nt-byte :hi))
            (palette-high-bits (get-palette-index-high scanline tile at-byte)))
       (loop for bit from 0 to 7
             for palette-low-bits = (get-palette-index-low low-byte high-byte bit)
             for index = (get-palette-index palette-high-bits palette-low-bits)
-            do (setf (aref bg-buffer bit) (if (zerop (logand index #x3))
+            do (setf (aref bg-buffer bit) (if (zerop palette-low-bits)
                                               nil
                                               (get-color ppu :bg index)))))))
 
