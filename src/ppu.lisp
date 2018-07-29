@@ -348,6 +348,8 @@
       (16 (+ (if (logbitp 1 tile-index) #x1000 0)
              (logand tile-index (lognot 1)))))))
 
+;;; PPU Rendering
+
 (declaim (inline sprite-color))
 (defun sprite-color (ppu x y oam oam-index buffer-index)
   (let* ((tile-byte (aref oam (+ (* oam-index 4) 1)))
@@ -379,8 +381,6 @@
     ;; Maybe add sprite-tile, sprite-attr, and pattern-lo/pattern-hi to the render context?
     ;; We could invalidate them by also storing the oam-index and checking it at beginning of
     ;; sprite-color to see if it had changed. Or maybe COMPUTE-SPRITE-COLORS could do it.
-
-;;; PPU Rendering
 
 (defun render-pixel (x y palette-index)
   (declare (optimize speed)
