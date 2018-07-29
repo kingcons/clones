@@ -21,8 +21,6 @@
     :select :scancode-space
     :start  :scancode-return))
 
-;; TODO: Would a better representation be a buttons bit-vector and strobe of indexes?
-
 (defstruct gamepad
   (up      0 :type bit)
   (left    0 :type bit)

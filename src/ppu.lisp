@@ -336,7 +336,7 @@
 
 (defun sprite-on-scanline-p (scanline sprite-y size)
   (declare (optimize speed)
-           (type ub8 scanline sprite-y size))
+           (type (integer 0 261) scanline sprite-y size))
   (< sprite-y scanline (+ sprite-y size)))
 
 (defun get-sprite-pattern-index (ppu tile-index)
