@@ -412,3 +412,30 @@ Now you can test your lookup functions and worry about the easy stuff like:
 * APU
 
 Lol, just kidding, this is all hard, good luck!
+
+### Thoughts on Sprites (07/28)
+
+I don't have sprites working correctly but I've made decent progress and enjoyed myself.
+Scrolling is still completely unimplemented, we're not even trying to fake it yet.
+The sprite code needs to be ripped up and refactored, in fact much of the PPU does.
+
+I've been thinking a lot about separating it out into two files, `ppu.lisp` and `render.lisp`.
+In that scenario, the rendering loop and data structures (`*FRAMEBUFFER*` and `*RENDER-CONTEXT*`)
+would be split out and only the memory map and state machine bits would stay in ppu.
+Not quite sold on it as it's a bit arbitrary and separate packages would be a hassle though.
+
+The _basic_ PPU operation is starting to come together in my head though which feels fantastic.
+Not to mention the fact that I can actually play Donkey Kong. It doesn't look great due to some
+sprite glitches but the milestone of a _playable game_ with working input loop still feels great.
+I can play SMB too but the scrolling is busted of course. :)
+
+There are other problems though. I have no way at present to limit the framerate.
+I ran some experiments with `SLEEP` for fractional portions of a second and that
+was not great. Speaking to `dto` in `#lispgames` it sounds like most folks farm that
+off to an underlying library like SDL. My main gripe with that is having to turn the
+main loop inside out. :-/
+
+I also still don't know why MMC1 and UNROM are being so fussy. They just render black screens
+at the moment. But that's a problem for after sprites and zero hit and scrolling. Whoo boy.
+Maybe tomorrow I should write up a blog post about what I've learned so far. Especially the
+basic similarities in the dataflow for the background rendering and sprite rendering.
