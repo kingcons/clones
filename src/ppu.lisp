@@ -349,7 +349,7 @@
              (logand tile-index (lognot 1)))))))
 
 (declaim (inline sprite-color))
-(defun sprite-color (ppu x y oam oam-index)
+(defun sprite-color (ppu x y oam oam-index buffer-index)
   (let* ((tile-byte (aref oam (+ (* oam-index 4) 1)))
          (attr-byte (aref oam (+ (* oam-index 4) 2)))
          (sprite-x  (aref oam (+ (* oam-index 4) 3)))
@@ -364,6 +364,9 @@
                         (- 7 (- x sprite-x))
                         (- x sprite-x)))
          (palette-low-bits (get-palette-index-low pattern-lo pattern-hi pattern-x)))
+    (when (and (zerop oam-index)
+               (aref (context-bg-buffer *render-context*) buffer-index))
+      (set-sprite-zero-hit ppu 1))
     (get-color ppu :sprite (get-palette-index (ldb (byte 2 0) attr-byte)
                                               palette-low-bits))))
     ;; Currently, I'd like to run sprite zero hit check and priority handling outside in
@@ -419,7 +422,7 @@
             for oam-index = (find-candidate oam x)
             do (setf (aref sprite-buffer i) (if (null oam-index)
                                                 nil
-                                                (sprite-color ppu x y oam oam-index)))))))
+                                                (sprite-color ppu x y oam oam-index i)))))))
 
 (defun find-candidate (oam tile-x)
   (declare (optimize speed))
@@ -457,17 +460,19 @@
                      (return (set-sprite-overflow ppu 1)))))))
 
 (defun render-tile (ppu scanline tile)
-  (with-accessors ((bg-buffer context-bg-buffer)
-                   (sprite-buffer context-sprite-buffer)) *render-context*
-    (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
-      (compute-bg-colors ppu scanline tile)
-      ;; (compute-sprite-colors ppu scanline tile)
+  (compute-bg-colors ppu scanline tile)
+  (compute-sprite-colors ppu scanline tile)
+  (let ((backdrop-color (wrap-palette (read-vram ppu #x3f00))))
+    (with-accessors ((bg-buffer context-bg-buffer)
+                     (sprite-buffer context-sprite-buffer)) *render-context*
       (loop for i from 7 downto 0
+            for x = (+ (* tile 8) i)
             for bg-color across bg-buffer
-            do (let ((x (+ (* tile 8) i)))
-                 (if (null bg-color)
-                     (render-pixel x scanline backdrop-color)
-                     (render-pixel x scanline bg-color)))))))
+            for sprite-color across sprite-buffer
+            ;; TODO: Actually do sprite priority right.
+            do (render-pixel x scanline (if sprite-color
+                                            sprite-color
+                                            (if (null bg-color) backdrop-color bg-color)))))))
 
 (defun render-scanline (ppu)
   (let ((scanline (ppu-scanline ppu)))
@@ -494,6 +499,7 @@
     (case scanline
       (241 (with-vblank ()
              (setf vblank-status 1)
+             (set-sprite-zero-hit ppu 0)
              (when (plusp vblank-nmi)
                (setf nmi-result t))))
       (262 (with-vblank ()
