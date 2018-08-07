@@ -301,6 +301,7 @@
   ;; from the nametable by 16 to get a starting offset. Then, each horizontal row
   ;; in the tile is represented by 1 byte, so use (scanline % 8) to get the final offset.
   ;; Note that there is a high byte and low byte for each tile spaced 8 bytes apart.
+  ;; TODO: Handle 8x16 sprites correctly.
   (let* ((base-address (ecase type
                          (:bg (bg-pattern-address ppu))
                          (:sprite (sprite-pattern-address ppu))))
@@ -350,15 +351,6 @@
            (type (integer 0 261) scanline sprite-y size))
   (< sprite-y scanline (+ sprite-y size)))
 
-(defun get-sprite-pattern-index (ppu tile-index)
-  (let ((base-address (sprite-pattern-address ppu))
-        (size (sprite-size ppu)))
-    ;; The 8x16 sprite tile index is interesting: https://wiki.nesdev.com/w/index.php/PPU_OAM
-    (ecase size
-      (8 (+ base-address tile-index))
-      (16 (+ (if (logbitp 1 tile-index) #x1000 0)
-             (logand tile-index (lognot 1)))))))
-
 ;;; PPU Rendering
 
 (declaim (inline sprite-color))
@@ -367,12 +359,11 @@
          (attr-byte (aref oam (+ (* oam-index 4) 2)))
          (sprite-x  (aref oam (+ (* oam-index 4) 3)))
          (sprite-y  (1+ (aref oam (* oam-index 4))))
-         (pattern-index (get-sprite-pattern-index ppu tile-byte))
          (pattern-y (if (logbitp 7 attr-byte)
                         (- 7 (- y sprite-y))
                         (- y sprite-y)))
-         (pattern-lo (get-pattern-byte ppu pattern-y :sprite pattern-index :lo))
-         (pattern-hi (get-pattern-byte ppu pattern-y :sprite pattern-index :hi))
+         (pattern-lo (get-pattern-byte ppu pattern-y :sprite tile-byte :lo))
+         (pattern-hi (get-pattern-byte ppu pattern-y :sprite tile-byte :hi))
          (pattern-x (if (logbitp 6 attr-byte)
                         (- 7 (- x sprite-x))
                         (- x sprite-x)))
