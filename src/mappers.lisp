@@ -74,8 +74,8 @@
     (aref (rom-chr rom) address)))
 
 (defmethod store-chr ((mapper nrom) address value)
-  (declare (ignore address value))
-  0)
+  (let ((rom (mapper-rom mapper)))
+    (setf (aref (rom-chr rom) address) value)))
 
 ;;; Mapper 1 - MMC1
 
@@ -173,8 +173,11 @@
       (aref (rom-chr rom) (+ (* bank #x1000) (wrap-chr address))))))
 
 (defmethod store-chr ((mapper mmc1) address value)
-  (declare (ignore address value))
-  0)
+  (with-accessors ((chr-bank-1 mmc1-chr-bank-1)
+                   (chr-bank-2 mmc1-chr-bank-2)
+                   (rom mapper-rom)) mapper
+    (let ((bank (if (< address #x1000) chr-bank-1 chr-bank-2)))
+      (setf (aref (rom-chr rom) (+ (* bank #x1000) (wrap-chr address))) value))))
 
 ;;; Mapper 2 - UNROM
 
@@ -198,5 +201,5 @@
     (aref (rom-chr rom) address)))
 
 (defmethod store-chr ((mapper unrom) address value)
-  (declare (ignore address value))
-  0)
+  (let ((rom (mapper-rom mapper)))
+    (setf (aref (rom-chr rom) address) value)))

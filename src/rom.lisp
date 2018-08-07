@@ -36,6 +36,7 @@
   (pathname    nil :read-only t   :type pathname)
   (prg         #() :read-only t   :type byte-vector)
   (chr         #() :read-only nil :type byte-vector)
+  (chr-ram     nil :read-only t   :type boolean)
   (prg-size      0 :read-only t   :type fixnum)
   (chr-size      0 :read-only t   :type fixnum)
   (prg-count     0 :read-only t   :type ub8)
@@ -59,18 +60,21 @@
          (prg-size (getf metadata :prg-size))
          (chr-size (getf metadata :chr-size))
          (prg (subseq bytes 16 (+ 16 prg-size)))
-         (chr (subseq bytes (+ 16 prg-size))))
+         (chr (subseq bytes (+ 16 prg-size)))
+         (chr-ram nil))
     (assert (= (length prg) prg-size))
     (assert (= (length chr) chr-size))
     ;; When there is no CHR ROM, assume CHR RAM is being used.
     (when (zerop chr-size)
-      (setf chr-size #x2000
+      (setf chr-ram t
+            chr-size #x2000
             chr (make-byte-vector #x2000)))
     (make-rom :pathname pathname
               :prg prg
               :chr chr
               :prg-size prg-size
               :chr-size chr-size
+              :chr-ram chr-ram
               :prg-count (getf metadata :prg-count)
               :chr-count (getf metadata :chr-count)
               :mirroring (getf metadata :mirroring)
