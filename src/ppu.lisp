@@ -371,8 +371,10 @@
     (when (and (zerop oam-index)
                (aref (context-bg-buffer *render-context*) buffer-index))
       (set-sprite-zero-hit ppu 1))
-    (get-color ppu :sprite (get-palette-index (ldb (byte 2 0) attr-byte)
-                                              palette-low-bits))))
+    (let ((palette-index (get-palette-index (ldb (byte 2 0) attr-byte) palette-low-bits)))
+      (if (zerop palette-index)
+          nil
+          (get-color ppu :sprite palette-index)))))
 
     ;; NOTE: We're fetching the pattern bytes for every pixel when we should
     ;; only be replacing them if the current pixel found a different candidate.
@@ -467,7 +469,7 @@
             for x = (+ (* tile 8) i)
             for bg-color across bg-buffer
             for sprite-color across sprite-buffer
-            ;; TODO: Actually do sprite priority right.
+            ;; TODO: Handle sprite background priority correctly.
             do (render-pixel x scanline (if sprite-color
                                             sprite-color
                                             (if (null bg-color) backdrop-color bg-color)))))))
