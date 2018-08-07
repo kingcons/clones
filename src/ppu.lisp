@@ -73,7 +73,7 @@
 (defvar *render-context* (make-context))
 
 (defmacro clear-buffer (buffer)
-  "A fast, non-consing way to clear a nullable BUFFER inside WITH-ACCESSORS."
+  "A fast, non-consing way to clear a BUFFER inside WITH-ACCESSORS."
   (alexandria:with-gensyms (index)
     `(dotimes (,index (length ,buffer))
        (setf (aref ,buffer ,index) nil))))
@@ -237,6 +237,8 @@
 (defun update-address (ppu value)
   (with-accessors ((address ppu-address) (address-byte ppu-address-byte)) ppu
     (case address-byte
+      ;; TODO: Based on the description of PPU internal registers on the nesdev scrolling page
+      ;; it seems like we should be only taking the _low_ 6 bytes of value. Is that right?
       (:high (setf address (logior (logand address #xff) (ash value 8))
                    address-byte :low))
       (:low (setf address (logior (logand address #xff00) value)
@@ -273,6 +275,15 @@
 (defun get-nametable-byte (ppu scanline tile)
   ;; A nametable of 8x8 tiles for a 256x240 screen is laid out 32x30.
   ;; So skip 32 bytes ahead for every 8 scanlines and 1 byte ahead for each tile.
+
+  ;; TODO: We could account for scrolling the background here by accessing scroll-x/scroll-y.
+  ;; Possibly also need to account for scrolling in get-pattern-byte but only for scroll-y?
+
+  ;; NOTE: Sprocketnes does this to fake scrolling without emulating the internal registers.
+  ;; It's unclear to me right now if they describe it as a hack because it won't work or
+  ;; because it's inelegant compared to emulating the internal registers.
+  ;; They update the "fake scroll" registers during writes to: PPUCTRL, PPUSCROLL, PPUADDR
+
   (let* ((scanline-offset (* 32 (floor scanline 8)))
          (address (+ (base-nametable ppu) scanline-offset tile)))
     (read-vram ppu address)))
@@ -371,12 +382,8 @@
       (set-sprite-zero-hit ppu 1))
     (get-color ppu :sprite (get-palette-index (ldb (byte 2 0) attr-byte)
                                               palette-low-bits))))
-    ;; Currently, I'd like to run sprite zero hit check and priority handling outside in
-    ;; COMPUTE-SPRITE-COLORS or even RENDER-TILE. Is that possible?
 
-    ;; NOTE: I'm in a bit of trouble. I already want to reuse the get-pattern-byte
-    ;; machinery, but I also need the bitplane magic from get-palette-index-low-bits.
-    ;; Above and beyond that, we're fetching the pattern bytes for every pixel when we should
+    ;; NOTE: We're fetching the pattern bytes for every pixel when we should
     ;; only be replacing them if the current pixel found a different candidate.
     ;; Maybe add sprite-tile, sprite-attr, and pattern-lo/pattern-hi to the render context?
     ;; We could invalidate them by also storing the oam-index and checking it at beginning of

@@ -439,3 +439,34 @@ I also still don't know why MMC1 and UNROM are being so fussy. They just render 
 at the moment. But that's a problem for after sprites and zero hit and scrolling. Whoo boy.
 Maybe tomorrow I should write up a blog post about what I've learned so far. Especially the
 basic similarities in the dataflow for the background rendering and sprite rendering.
+
+### Thoughts on Scrolling (08/06)
+
+I was planning to spend more time hacking so that scrolling and mega man 2 worked _by_ my birthday.
+Well, instead I watched EVO and had a lovely weekend with friends and ... a relaxing birthday.
+I've been reading about the PPU scrolling a bit to try and get the correct register behavior in
+my head. I'm not quite clear on cases when the `t` and `v` internal PPU registers would differ.
+
+
+Based on [this nesdev diagram][scroll-dia] I am clear on the following:
+
+1. The coarse X and Y scroll are exactly enough space to address all the bytes in 1 nametable.
+2. Ultimately, 18 bits are needed to store the complete scrolling info.
+  * 10 bits for coarse X and Y for the current tile being drawn.
+  * 6 bits for fine X and Y to know where in the tile the current pixel is.
+  * 2 bits to know which nametable to use for background data.
+3. While the internal register behavior of the CTRL and ADDR registers seems simple and like we've
+   implemented it correctly, the SCROLL register behavior is ... a bit nutty. We're way off.
+
+This is before even worrying about mirroring or wraparound. Still, I think it would be worth it to
+spend a little time just doing a scrolling hack a la sprocketnes before rearchitecting. Also, I'd
+like to try and factor out the similarities between sprite and tile rendering. In both cases we
+need a function to:
+
+* Get the tile byte and attribute byte
+* Use the tile byte and any coarse scrolling info to get the pattern bytes
+* Use the pattern bytes and any fine scrolling info to navigate the bitplanes
+* Compute a palette index to see if we're transparent or have a pixel
+* Get the color.
+
+[scroll-dia]: https://wiki.nesdev.com/w/index.php/PPU_scrolling#PPU_internal_registers
