@@ -8,6 +8,7 @@
                 :fetch-word)
   (:import-from :clones.util
                 :*standard-optimize-settings*
+                :page-crossed-p
                 :wrap-byte
                 :wrap-word
                 :flip-bit)
@@ -50,7 +51,8 @@
         (:read (if (member address-mode '(absolute-x absolute-y indirect-y))
                    `(multiple-value-bind (final start) (,address-mode cpu)
                       (let ((argument (fetch (cpu-memory cpu) final)))
-                        (maybe-update-cycle-count cpu start final)
+                        (when (page-crossed-p start final)
+                          (incf (cpu-cycles cpu)))
                         ,@body))
                    `(let ((argument (fetch (cpu-memory cpu) (,address-mode cpu))))
                       ,@body)))

@@ -2,8 +2,6 @@
 
 (defpackage :clones.cpu
   (:use :cl)
-  (:import-from :alexandria
-                :with-gensyms)
   (:import-from :clones.memory
                 :memory
                 :memory-ppu
@@ -16,8 +14,7 @@
                 :ub8
                 :ub16
                 :ub32
-                :wrap-byte
-                :page-crossed-p)
+                :wrap-byte)
   (:export #:cpu
            #:make-cpu
            #:cpu-memory
@@ -43,8 +40,7 @@
            #:stack-push-word
            #:stack-pop
            #:stack-pop-word
-           #:overflow-p
-           #:maybe-update-cycle-count))
+           #:overflow-p))
 
 (in-package :clones.cpu)
 
@@ -136,7 +132,3 @@
     (let ((result-sign (sign-bit result)))
       (not (or (eql result-sign (sign-bit augend))
                (eql result-sign (sign-bit addend)))))))
-
-(defun maybe-update-cycle-count (cpu start final)
-  (when (page-crossed-p start final)
-    (incf (cpu-cycles cpu))))
