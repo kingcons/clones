@@ -7,8 +7,7 @@
   (:import-from :static-vectors
                 :static-vector-pointer)
   (:export #:init-display
-           #:display-frame
-           #:*frame-count*))
+           #:display-frame))
 
 (in-package :clones.display)
 

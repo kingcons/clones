@@ -2,8 +2,7 @@
 
 (defpackage :clones.input
   (:use :cl)
-  (:export #:*keymap*
-           #:gamepad
+  (:export #:gamepad
            #:make-gamepad
            #:handle-input
            #:fetch-strobe
