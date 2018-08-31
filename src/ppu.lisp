@@ -40,9 +40,12 @@
            #:show-sprites-p
            #:emphasize-red-p
            #:emphasize-green-p
-           #:emphasize-blue-p))
+           #:emphasize-blue-p
+           #:ppu-read))
 
 (in-package :clones.ppu)
+
+;; PPU Structure
 
 (defstruct ppu
   (control       0                         :type ub8)            ; 0x2000
@@ -60,6 +63,8 @@
   (nametable     (make-byte-vector #x800)  :type (byte-vector 2048))
   (palette-table (make-byte-vector #x020)  :type (byte-vector 32))
   (pattern-table nil                       :type (or null mapper)))
+
+;; Register Bit Helpers
 
 (macrolet ((define-control-bit (name bit-position set unset)
              `(defun ,name (ppu)
@@ -85,3 +90,21 @@
   (define-mask-bit emphasize-red-p        5)
   (define-mask-bit emphasize-green-p      6)
   (define-mask-bit emphasize-blue-p       7))
+
+;; Register Behavior
+
+(defun ppu-read (ppu address)
+  (case (logand address 7)
+    (2 (read-status ppu))
+    (4 (read-oam ppu))
+    (7 (read-data ppu))
+    (otherwise 0)))
+
+(defun read-status (ppu)
+  (ppu-status ppu))
+
+(defun read-oam (ppu)
+  (aref (ppu-oam ppu) (ppu-oam-address ppu)))
+
+(defun read-data (ppu)
+  (ppu-data ppu))

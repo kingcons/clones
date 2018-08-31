@@ -2,7 +2,11 @@
 
 (defpackage :clones-test.ppu
   (:use :cl :clones.ppu :prove)
-  (:import-from :clones.ppu))
+  (:import-from :clones.mappers
+                :load-rom
+                :mapper)
+  (:import-from :clones.util
+                :asset-path))
 
 (in-package :clones-test.ppu)
 
@@ -82,6 +86,24 @@
     (setf (ppu-mask ppu) #b10000000)
     (is (emphasize-blue-p ppu) t)))
 
+(defun test-cart-swap ()
+  (let ((ppu (make-ppu)))
+    (setf (ppu-pattern-table ppu) (load-rom (asset-path "roms/color_test.nes")))
+    (is-type (ppu-pattern-table ppu) 'mapper)))
+
+(defun test-ppu-read ()
+  (let ((ppu (make-ppu))
+        (invalid-reads '(#x2000 #x2001 #x2003 #x2005 #x2006)))
+    (dolist (addr invalid-reads)
+      (is (ppu-read ppu addr) 0))
+    (setf (ppu-data ppu) 31
+          (ppu-status ppu) 42
+          (ppu-oam-address ppu) 53
+          (aref (ppu-oam ppu) 53) 64)
+    (is (ppu-read ppu #x2002) (ppu-status ppu))
+    (is (ppu-read ppu #x2004) (aref (ppu-oam ppu) (ppu-oam-address ppu)))
+    (is (ppu-read ppu #x2007) (ppu-data ppu))))
+
 (plan 1)
 
 (subtest "PPU Interface"
@@ -89,6 +111,8 @@
   (test-ppu-registers-init)
   (test-ppu-storage)
   (test-control-helpers)
-  (test-mask-helpers))
+  (test-mask-helpers)
+  (test-cart-swap)
+  (test-ppu-read))
 
 (finalize)
