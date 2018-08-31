@@ -32,7 +32,15 @@
            #:sprite-base-address
            #:background-base-address
            #:sprite-size
-           #:vblank-p))
+           #:vblank-p
+           #:grayscale-p
+           #:show-background-left-p
+           #:show-sprites-left-p
+           #:show-background-p
+           #:show-sprites-p
+           #:emphasize-red-p
+           #:emphasize-green-p
+           #:emphasize-blue-p))
 
 (in-package :clones.ppu)
 
@@ -87,3 +95,27 @@
   (if (zerop (logand (ppu-control ppu) 128))
       nil
       t))
+
+(defun grayscale-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 1))))
+
+(defun show-background-left-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 2))))
+
+(defun show-sprites-left-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 4))))
+
+(defun show-background-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 8))))
+
+(defun show-sprites-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 16))))
+
+(defun emphasize-red-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 32))))
+
+(defun emphasize-green-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 64))))
+
+(defun emphasize-blue-p (ppu)
+  (not (zerop (logand (ppu-mask ppu) 128))))
