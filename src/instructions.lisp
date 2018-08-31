@@ -1,7 +1,7 @@
 (in-package :cl-user)
 
 (defpackage :clones.instructions
-  (:use :cl :clones.addressing :clones.cpu)
+  (:use :cl :clones.addressing :clones.cpu :clones.instruction-data)
   (:import-from :clones.memory
                 :fetch
                 :store
@@ -12,10 +12,6 @@
                 :wrap-byte
                 :wrap-word
                 :flip-bit)
-  (:import-from :clones.instruction-data
-                :%build-op-name
-                :get-instruction-meta
-                :jump-table)
   (:export #:single-step
            #:scanline-step))
 
@@ -36,11 +32,11 @@
                                            :skip-pc ,skip-pc)
                             ,@body))
          ,@(loop for (opcode) in opcodes
-                 collect `(export ',(%build-op-name name opcode) 'clones.instructions))))))
+                 collect `(export ',(build-op-name name opcode) 'clones.instructions))))))
 
 (defmacro %define-opcode ((name opcode address-mode &key bytes cycles access-pattern skip-pc)
                          &body body)
-  `(defun ,(%build-op-name name opcode) (cpu)
+  `(defun ,(build-op-name name opcode) (cpu)
      (declare (type cpu cpu))
      (declare #.*standard-optimize-settings*)
      (incf (cpu-pc cpu))

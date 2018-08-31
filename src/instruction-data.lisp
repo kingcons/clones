@@ -7,7 +7,7 @@
   (:import-from :clones.conditions
                 :illegal-opcode)
   (:export #:*instructions*
-           #:%build-op-name
+           #:build-op-name
            #:get-instruction-meta
            #:jump-table))
 
@@ -201,7 +201,7 @@
                       (opcode-n bytes cycles addressing-mode))
                      description &key access-pattern skip-pc)")
 
-(defun %build-op-name (name opcode)
+(defun build-op-name (name opcode)
   "Build a symbol to name a function implementing a 6502 opcode."
   (symbolicate name '- (format nil "~2,'0X" opcode)))
 
@@ -213,7 +213,7 @@
 ;; TODO: Use ecase/tree later -> http://www.foldr.org/~michaelw/log/programming/lisp/icfp-contest-2006-vm
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %jump-clause (name op sym)
-    `(,(first op) (,(%build-op-name name (first op)) ,sym)))
+    `(,(first op) (,(build-op-name name (first op)) ,sym)))
 
   (defmacro jump-table (form &optional (package 'clones.cpu))
     (let* ((sym (find-symbol "CPU" package))
