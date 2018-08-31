@@ -25,6 +25,6 @@
     (is (rom-chr-size rom) #x2000)
     (is (rom-mirroring rom) :horizontal)
     (is (rom-mapper-name rom) :nrom)
-    (is-print (princ rom) "#<ROM nestest.nes :prg-size 16384 :chr-size 8192 :mapper-name NROM>")))
+    (is-print (princ rom) "#<ROM nestest.nes :prg-size 16384 :chr-size 8192 :mapper-name NROM :mirroring HORIZONTAL>")))
 
 (finalize)

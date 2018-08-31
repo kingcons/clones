@@ -46,13 +46,14 @@
 
 (defmethod print-object ((obj rom) stream)
   (print-unreadable-object (obj stream :type t)
-    (with-slots (pathname prg-size chr-size mapper-name) obj
-      (format stream "~A.~A :prg-size ~D :chr-size ~D :mapper-name ~A"
+    (with-slots (pathname prg-size chr-size mapper-name mirroring) obj
+      (format stream "~A.~A :prg-size ~D :chr-size ~D :mapper-name ~A :mirroring ~A"
               (pathname-name pathname)
               (pathname-type pathname)
               prg-size
               chr-size
-              mapper-name))))
+              mapper-name
+              mirroring))))
 
 (defun parse-rom (pathname)
   (let* ((bytes (read-file-into-byte-vector pathname))
