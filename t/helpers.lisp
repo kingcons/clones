@@ -26,3 +26,13 @@
     (let ((fields (split-sequence #\Space (delete #\Return line))))
       (append (mapcar (compose #'to-fixnum #'colon-value) (butlast fields))
               (list (to-fixnum (colon-value (last-elt fields)) :radix 10))))))
+
+(defun values-log (line)
+  (destructuring-bind (pc accum x y status stack cycles) (parse-log line)
+    `((clones.cpu:cpu-pc ,pc)
+      (clones.cpu:cpu-accum ,accum)
+      (clones.cpu:cpu-x-reg ,x)
+      (clones.cpu:cpu-y-reg ,y)
+      (clones.cpu:cpu-status ,status)
+      (clones.cpu:cpu-stack ,stack)
+      (clones.cpu:cpu-cycles ,cycles))))

@@ -7,33 +7,28 @@
   (:import-from :clones.util
                 :asset-path)
   (:import-from :clones-test.helpers
-                :parse-log))
+                :values-log))
 
 (in-package :clones-test.cpu)
 
-(defun debug-log (cpu)
-  (list (cpu-pc cpu)
-        (cpu-accum cpu)
-        (cpu-x-reg cpu)
-        (cpu-y-reg cpu)
-        (cpu-status cpu)
-        (cpu-stack cpu)
-        (cpu-cycles cpu)))
+(defvar *perfect-log*
+  (with-open-file (in (asset-path "roms/nestest_cpu.log"))
+    (loop for line = (read-line in nil)
+          until (string= (subseq line 0 4) "C6BD")
+          collecting (values-log line))))
 
 (defun run-legal-opcode-tests (cpu trace-asm)
   (setf (cpu-pc cpu) #xC000)
-  (with-open-file (in (asset-path "roms/nestest_cpu.log"))
-    (loop for line = (read-line in nil)
-          until (= (cpu-pc cpu) #xc6bd) ; first illegal opcode test
-          do (let ((log (debug-log cpu))
-                   (expected (parse-log line)))
-               (when trace-asm
-                 (clones.disassembler:now cpu))
-               (unless (equal log expected)
-                 (fail (format t "Expected: ~A, Actual: ~A" expected log))
-                 (return nil))
-               (single-step cpu))
-          finally (pass "Completed all legal opcode tests in nestest!"))))
+  (dolist (statement *perfect-log*)
+    (loop for (accessor expected) in statement
+          do (let ((value (funcall accessor cpu)))
+               (unless (= value expected)
+                 (fail (format t "Expected: ~A, Actual: ~A" expected value))
+                 (return-from run-legal-opcode-tests nil))))
+    (when trace-asm
+      (clones.disassembler:now cpu))
+    (single-step cpu))
+  (pass "Completed all legal opcode tests in nestest!"))
 
 (plan 2)
 
