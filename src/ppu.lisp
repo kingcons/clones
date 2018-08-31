@@ -61,61 +61,27 @@
   (palette-table (make-byte-vector #x020)  :type (byte-vector 32))
   (pattern-table nil                       :type (or null mapper)))
 
-(defun x-scroll-offset (ppu)
-  (if (zerop (logand (ppu-control ppu) 1))
-      0
-      256))
+(macrolet ((define-control-bit (name bit-position then else)
+             `(defun ,name (ppu)
+                (if (zerop (ldb (byte 1 ,bit-position) (ppu-control ppu)))
+                    ,then
+                    ,else))))
+  (define-control-bit x-scroll-offset         0  0  256)
+  (define-control-bit y-scroll-offset         1  0  240)
+  (define-control-bit vram-step               2  1  032)
+  (define-control-bit sprite-base-address     3  0  4096)
+  (define-control-bit background-base-address 4  0  4096)
+  (define-control-bit sprite-size             5  8  16)
+  (define-control-bit vblank-p                7 nil t))
 
-(defun y-scroll-offset (ppu)
-  (if (zerop (logand (ppu-control ppu) 2))
-      0
-      240))
-
-(defun vram-step (ppu)
-  (if (zerop (logand (ppu-control ppu) 4))
-      1
-      32))
-
-(defun sprite-base-address (ppu)
-  (if (zerop (logand (ppu-control ppu) 8))
-      0
-      4096))
-
-(defun background-base-address (ppu)
-  (if (zerop (logand (ppu-control ppu) 16))
-      0
-      4096))
-
-(defun sprite-size (ppu)
-  (if (zerop (logand (ppu-control ppu) 32))
-      8
-      16))
-
-(defun vblank-p (ppu)
-  (if (zerop (logand (ppu-control ppu) 128))
-      nil
-      t))
-
-(defun grayscale-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 1))))
-
-(defun show-background-left-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 2))))
-
-(defun show-sprites-left-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 4))))
-
-(defun show-background-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 8))))
-
-(defun show-sprites-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 16))))
-
-(defun emphasize-red-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 32))))
-
-(defun emphasize-green-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 64))))
-
-(defun emphasize-blue-p (ppu)
-  (not (zerop (logand (ppu-mask ppu) 128))))
+(macrolet ((define-mask-bit (name bit-position)
+             `(defun ,name (ppu)
+                (not (zerop (ldb (byte 1 ,bit-position) (ppu-mask ppu)))))))
+  (define-mask-bit grayscale-p            0)
+  (define-mask-bit show-background-left-p 1)
+  (define-mask-bit show-sprites-left-p    2)
+  (define-mask-bit show-background-p      3)
+  (define-mask-bit show-sprites-p         4)
+  (define-mask-bit emphasize-red-p        5)
+  (define-mask-bit emphasize-green-p      6)
+  (define-mask-bit emphasize-blue-p       7))
