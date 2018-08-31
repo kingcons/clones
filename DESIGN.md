@@ -29,18 +29,19 @@ be able to help others learn something too.
 
 ### High Level Goals
 
-I was asked about the project goals again today. I suppose it boils down to three things:
+I was asked about the project goals again today. I suppose it boils down to four things:
 
-1. Seeing how close I can get the emulator in speed to C without it looking _too much_ like C.
-2. Serving as good documentation and introduction to the _high level_ behavior of the NES.
-3. Supporting tools to debug or reverse engineer games _interactively_.
+1. "Correct enough" emulation, such that I can play through classics like Mega Man 2 or SMB3.
+2. Seeing how close I can get the emulator in speed to C without it looking _too much_ like C.
+3. Serving as good documentation and introduction to the _high level_ behavior of the NES.
+4. Supporting tools to debug or reverse engineer games _interactively_.
 
 The third point is definitely the murkiest and least well defined for me.
 To expand, here are some notes which are part project planning, part philosophical:
 
 1. Working emulation of the Nintendo Entertainment System.
   * "Working" means able to play many if not all games with "good enough" speed and accuracy.
-  * Anti-goals: Support for all mappers/games, glitch accuracy, 60 FPS/no latency blips, etc.
+  * Anti-goals: Support for all mappers/games, glitch accuracy, no latency blips, etc.
   * Bronze: Test roms / CPU interpreter, Silver: Donkey Kong / PPU, Gold: Mega Man 2 / CPU JIT?
 2. "Readable" lisp codebase, modern software practices.
   * Don't write Lisp like it is C. Use CI, test roms, and unit tests to ensure components work.
