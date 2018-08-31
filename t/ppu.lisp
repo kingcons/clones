@@ -1,7 +1,8 @@
 (in-package :cl-user)
 
 (defpackage :clones-test.ppu
-  (:use :cl :clones.ppu :prove))
+  (:use :cl :clones.ppu :prove)
+  (:import-from :clones.ppu))
 
 (in-package :clones-test.ppu)
 
@@ -30,11 +31,36 @@
     (is (length (ppu-palette-table ppu)) #x20)
     (is (ppu-pattern-table ppu) nil)))
 
+(defun test-control-helpers ()
+  (let ((ppu (make-ppu)))
+    (is (x-scroll-offset ppu) 0)
+    (setf (ppu-control ppu) #b00000001)
+    (is (x-scroll-offset ppu) 256)
+    (is (y-scroll-offset ppu) 0)
+    (setf (ppu-control ppu) #b00000010)
+    (is (y-scroll-offset ppu) 240)
+    (is (vram-step ppu) 1)
+    (setf (ppu-control ppu) #b00000100)
+    (is (vram-step ppu) 32)
+    (is (sprite-base-address ppu) 0)
+    (setf (ppu-control ppu) #b00001000)
+    (is (sprite-base-address ppu) #x1000)
+    (is (background-base-address ppu) 0)
+    (setf (ppu-control ppu) #b00010000)
+    (is (background-base-address ppu) #x1000)
+    (is (sprite-size ppu) 8)
+    (setf (ppu-control ppu) #b00100000)
+    (is (sprite-size ppu) 16)
+    (is (vblank-p ppu) nil)
+    (setf (ppu-control ppu) #b10000000)
+    (is (vblank-p ppu) t)))
+
 (plan 1)
 
 (subtest "PPU Interface"
   (test-ppu-construction)
   (test-ppu-registers-init)
-  (test-ppu-storage))
+  (test-ppu-storage)
+  (test-control-helpers))
 
 (finalize)
