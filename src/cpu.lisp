@@ -66,23 +66,6 @@
   (with-accessors ((memory cpu-memory) (pc cpu-pc)) cpu
     (setf pc (clones.memory:fetch-word memory #xFFFC))))
 
-(defun interrupt-goto (cpu vector)
-  (with-accessors ((memory cpu-memory) (pc cpu-pc) (status cpu-status)) cpu
-    (stack-push-word cpu pc)
-    (stack-push cpu status)
-    (setf pc (clones.memory:fetch-word memory vector))))
-
-(defun nmi (cpu)
-  (interrupt-goto cpu #xFFFA))
-
-(defun irq (cpu)
-  (when (flag-set-p cpu :interrupt)
-    (interrupt-goto cpu #xFFFE)))
-
-(defun dma (cpu)
-  (setf (cpu-waiting cpu) 512)
-  (setf (ppu-dma-result (memory-ppu (cpu-memory cpu))) nil))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)
     (let ((flags '(:carry :zero :interrupt :decimal
@@ -132,3 +115,20 @@
     (let ((result-sign (sign-bit result)))
       (not (or (eql result-sign (sign-bit augend))
                (eql result-sign (sign-bit addend)))))))
+
+(defun interrupt-goto (cpu vector)
+  (with-accessors ((memory cpu-memory) (pc cpu-pc) (status cpu-status)) cpu
+    (stack-push-word cpu pc)
+    (stack-push cpu status)
+    (setf pc (clones.memory:fetch-word memory vector))))
+
+(defun nmi (cpu)
+  (interrupt-goto cpu #xFFFA))
+
+(defun irq (cpu)
+  (when (flag-set-p cpu :interrupt)
+    (interrupt-goto cpu #xFFFE)))
+
+(defun dma (cpu)
+  (setf (cpu-waiting cpu) 512)
+  (setf (ppu-dma-result (memory-ppu (cpu-memory cpu))) nil))
