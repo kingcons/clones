@@ -19,13 +19,14 @@
   :depends-on (:alexandria :sdl2 :static-vectors)
   :components ((:module "src"
                 :components
-                ((:file "clones" :depends-on ("display" "disassembler" "instructions"))
-                 (:file "display" :depends-on ("ppu"))
-                 (:file "disassembler" :depends-on ("addressing" "instruction-data"))
-                 (:file "instructions" :depends-on ("ppu" "addressing"))
-                 (:file "addressing" :depends-on ("cpu" "memory"))
-                 (:file "cpu" :depends-on ("memory" "instruction-data"))
-                 (:file "memory" :depends-on ("mappers" "ppu" "input"))
+                (
+                 ; (:file "clones" :depends-on ("display" "disassembler" "instructions"))
+                 ; (:file "display" :depends-on ("ppu"))
+                 ; (:file "disassembler" :depends-on ("addressing" "instruction-data"))
+                 ; (:file "instructions" :depends-on ("ppu" "addressing"))
+                 ; (:file "addressing" :depends-on ("cpu" "memory"))
+                 ; (:file "cpu" :depends-on ("memory" "instruction-data"))
+                 ; (:file "memory" :depends-on ("mappers" "ppu" "input"))
                  (:file "ppu" :depends-on ("mappers"))
                  (:file "mappers" :depends-on ("rom" "conditions"))
                  (:file "input" :depends-on ("rom"))
