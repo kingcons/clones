@@ -3,23 +3,18 @@
 (defpackage :clones.addressing
   (:use :cl)
   (:import-from :clones.cpu
-                :cpu
                 :cpu-pc
                 :cpu-accum
                 :cpu-x-reg
                 :cpu-y-reg
-                :cpu-memory
-                :cpu-cycles
-                :page-crossed-p)
+                :cpu-memory)
   (:import-from :clones.memory
                 :fetch
                 :fetch-word
                 :fetch-indirect)
   (:import-from :clones.util
                 :wrap-byte
-                :wrap-word
-                :ub8
-                :ub16)
+                :wrap-word)
   (:export #:immediate
            #:accumulator
            #:zero-page
