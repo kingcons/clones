@@ -11,6 +11,7 @@
                 :wrap-prg
                 :wrap-chr)
   (:export #:mapper
+           #:mirroring
            #:load-prg
            #:store-prg
            #:load-chr
@@ -35,6 +36,10 @@
 
 (defgeneric store-chr (mapper address value)
   (:documentation "Store VALUE into the CHR banks of MAPPER at ADDRESS."))
+
+(defgeneric mirroring (mapper)
+  (:documentation "Return a keyword naming the mirroring scheme for MAPPER.")
+  (:method (mapper) (rom-mirroring (mapper-rom mapper))))
 
 (defun load-rom (pathname)
   "Builds a Mapper object from PATHNAME, raising conditions if:
@@ -89,6 +94,9 @@
   (mirroring   :lower      :type keyword)
   (chr-mode    :switch-one :type keyword)
   (prg-mode    :switch-low :type keyword))
+
+(defmethod mirroring ((mapper mmc1))
+  (mmc1-mirroring mapper))
 
 (defmethod reset ((mapper mmc1))
   (with-slots (accumulator write-count chr-mode prg-mode mirroring) mapper
