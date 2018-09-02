@@ -97,6 +97,7 @@
   (subtest "CPU Memory Map - Reads ..."
     (let ((ppu (make-ppu))
           (invalid-reads '(#x2000 #x2001 #x2003 #x2005 #x2006)))
+      (setf (ppu-pattern-table ppu) (load-rom (asset-path "roms/nestest.nes")))
       (dolist (addr invalid-reads)
         (is (fetch ppu addr) 0))
       (setf (ppu-data ppu) 31
@@ -144,6 +145,7 @@
 (defun test-register-reads ()
   (subtest "PPU Register Read Behavior ..."
     (let ((ppu (make-ppu)))
+      (setf (ppu-pattern-table ppu) (load-rom (asset-path "roms/nestest.nes")))
       (diag "Reading from PPUSTATUS clears the vblank bit.")
       (setf (ppu-status ppu) #b10001010)
       (fetch ppu #x2002)
@@ -152,7 +154,26 @@
       (setf (ppu-write-latch ppu) 1)
       (is (ppu-write-latch ppu) 1)
       (fetch ppu #x2002)
-      (is (ppu-write-latch ppu) 0))))
+      (is (ppu-write-latch ppu) 0)
+      (diag "Reading from PPUDATA returns a buffered value.")
+      (setf (ppu-address ppu) #x2020
+            (aref (ppu-nametable ppu) #x20) 42)
+      (is (ppu-data ppu) 0)
+      (is (fetch ppu #x2007) 0)
+      (is (ppu-data ppu) 42)
+      (diag "Reading the Palette through PPUDATA is unbuffered.")
+      (setf (ppu-address ppu) #x3f00
+            (aref (ppu-palette-table ppu) 0) 31)
+      (is (fetch ppu #x2007) 31)
+      ;; TODO: Technically the data should be set to the nametable "underneath" the palette.
+      (diag "Reading PPUDATA bumps the PPUADDR by the PPUCTRL step.")
+      (setf (ppu-address ppu) #x1020
+            (ppu-control ppu) #b00000000)
+      (fetch ppu #x2007)
+      (is (ppu-address ppu) #x1021)
+      (setf (ppu-control ppu) #b00000100)
+      (fetch ppu #x2007)
+      (is (ppu-address ppu) #x1041))))
 
 (plan nil)
 

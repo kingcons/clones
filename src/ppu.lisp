@@ -150,7 +150,13 @@
   (aref (ppu-oam ppu) (ppu-oam-address ppu)))
 
 (defun read-data (ppu)
-  (ppu-data ppu))
+  (with-accessors ((address ppu-address) (data ppu-data)) ppu
+    (let ((new-value (read-vram ppu address)))
+      (incf address (vram-step ppu))
+      (if (< address #x3f00)
+          (prog1 data
+            (setf data new-value))
+          new-value))))
 
 ;;; PPU Memory Map
 
