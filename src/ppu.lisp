@@ -9,6 +9,7 @@
                 :ub16
                 :byte-vector
                 :make-byte-vector
+                :wrap-byte
                 :wrap-nametable
                 :wrap-palette-table)
   (:import-from :clones.mappers
@@ -51,6 +52,7 @@
            #:emphasize-green-p
            #:emphasize-blue-p
            #:fetch
+           #:store
            #:read-vram))
 
 (in-package :clones.ppu)
@@ -158,6 +160,23 @@
           (prog1 data
             (setf data new-value))
           new-value))))
+
+(defmethod store ((ppu ppu) address value)
+  (case (logand address 7)
+    (0 (write-control ppu value))
+    (1 (setf (ppu-mask ppu) value))
+    (2 0)
+    (3 (setf (ppu-oam-address ppu) value))
+    (4 (write-oam ppu value))))
+
+(defun write-control (ppu value)
+  (setf (ppu-control ppu) value
+        (ppu-nt-index ppu) (logand value 3)))
+
+(defun write-oam (ppu value)
+  (with-accessors ((oam-address ppu-oam-address) (oam ppu-oam)) ppu
+    (setf (aref oam oam-address) value
+          oam-address (wrap-byte (1+ oam-address)))))
 
 ;;; PPU Memory Map
 

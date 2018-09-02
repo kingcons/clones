@@ -172,6 +172,23 @@
       (fetch ppu #x2007)
       (is (ppu-address ppu) #x1041))))
 
+(defun test-ppu-write ()
+  (subtest "CPU Memory Map - Writes ..."
+    (let ((ppu (make-ppu)))
+      (store ppu #x2000 #b10001010)
+      (is (ppu-control ppu) 138)
+      (is (ppu-nt-index ppu) #b10)
+      (store ppu #x2001 #b00011110)
+      (is (ppu-mask ppu) 30)
+      (store ppu #x2002 #b11111111)
+      (is (ppu-status ppu) 0)
+      (store ppu #x2003 42)
+      (is (ppu-oam-address ppu) 42)
+      (store ppu #x2003 #xff)
+      (store ppu #x2004 42)
+      (is (aref (ppu-oam ppu) #xff) 42)
+      (is (ppu-oam-address ppu) 0))))
+
 (plan nil)
 
 (subtest "PPU Interface"
@@ -182,6 +199,7 @@
   (test-ppu-read)
   (test-read-vram)
   (test-mirroring)
-  (test-register-reads))
+  (test-register-reads)
+  (test-ppu-write))
 
 (finalize)
