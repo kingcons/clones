@@ -12,9 +12,9 @@
                 :wrap-chr)
   (:export #:mapper
            #:mirroring
-           #:load-prg
-           #:store-prg
-           #:load-chr
+           #:fetch
+           #:store
+           #:fetch-chr
            #:store-chr
            #:load-rom))
 
@@ -25,14 +25,14 @@
 ;;; a particular mapper does not support the store operation.
 ;;; mapper-p is created by defstruct but unclear if we want to export it.
 
-(defgeneric load-prg (mapper address)
-  (:documentation "Load the value at ADDRESS from MAPPER."))
+(defgeneric fetch (memory address)
+  (:documentation "Retrieve the value at ADDRESS from MEMORY."))
 
-(defgeneric store-prg (mapper address value)
-  (:documentation "Store VALUE into MAPPER at the specified ADDRESS."))
+(defgeneric store (memory address value)
+  (:documentation "Place VALUE at the given ADDRESS in MEMORY."))
 
-(defgeneric load-chr (mapper address)
-  (:documentation "Load the value at ADDRESS from the CHR banks of MAPPER."))
+(defgeneric fetch-chr (mapper address)
+  (:documentation "Retrieve the value at ADDRESS from the CHR banks of MAPPER."))
 
 (defgeneric store-chr (mapper address value)
   (:documentation "Store VALUE into the CHR banks of MAPPER at ADDRESS."))
@@ -64,17 +64,17 @@
 
 (defstruct (nrom (:include mapper)))
 
-(defmethod load-prg ((mapper nrom) address)
+(defmethod fetch ((mapper nrom) address)
   (let* ((rom (mapper-rom mapper))
          (end-of-rom (1- (rom-prg-size rom)))
          (wrapped-address (logand address end-of-rom)))
     (aref (rom-prg rom) wrapped-address)))
 
-(defmethod store-prg ((mapper nrom) address value)
+(defmethod store ((mapper nrom) address value)
   (declare (ignore address value))
   0)
 
-(defmethod load-chr ((mapper nrom) address)
+(defmethod fetch-chr ((mapper nrom) address)
   (let ((rom (mapper-rom mapper)))
     (aref (rom-chr rom) address)))
 
@@ -144,7 +144,7 @@
     (setf accumulator 0
           write-count 0)))
 
-(defmethod load-prg ((mapper mmc1) address)
+(defmethod fetch ((mapper mmc1) address)
   (with-accessors ((prg-mode mmc1-prg-mode)
                    (prg-bank mmc1-prg-bank)
                    (rom mapper-rom)) mapper
@@ -164,7 +164,7 @@
              (bank-offset (* #x4000 bank)))
         (aref (rom-prg rom) (+ bank-offset (wrap-prg address)))))))
 
-(defmethod store-prg ((mapper mmc1) address value)
+(defmethod store ((mapper mmc1) address value)
   (if (logbitp 7 value)
       (reset mapper)
       (with-slots (accumulator write-count) mapper
@@ -173,7 +173,7 @@
         (when (= write-count 5)
           (update-register mapper address)))))
 
-(defmethod load-chr ((mapper mmc1) address)
+(defmethod fetch-chr ((mapper mmc1) address)
   (with-accessors ((chr-bank-1 mmc1-chr-bank-1)
                    (chr-bank-2 mmc1-chr-bank-2)
                    (rom mapper-rom)) mapper
@@ -192,7 +192,7 @@
 (defstruct (unrom (:include mapper))
   (switched-bank 0 :type ub8))
 
-(defmethod load-prg ((mapper unrom) address)
+(defmethod fetch ((mapper unrom) address)
   (with-accessors ((switched-bank unrom-switched-bank) (rom mapper-rom)) mapper
     (let* ((bank (if (< address #xC000)
                      switched-bank
@@ -200,11 +200,11 @@
            (bank-offset (* bank #x4000)))
       (aref (rom-prg rom) (+ bank-offset (wrap-prg address))))))
 
-(defmethod store-prg ((mapper unrom) address value)
+(defmethod store ((mapper unrom) address value)
   (declare (ignore address))
   (setf (unrom-switched-bank mapper) (wrap-byte value)))
 
-(defmethod load-chr ((mapper unrom) address)
+(defmethod fetch-chr ((mapper unrom) address)
   (let ((rom (mapper-rom mapper)))
     (aref (rom-chr rom) address)))
 

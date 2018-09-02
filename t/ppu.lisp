@@ -97,14 +97,14 @@
   (let ((ppu (make-ppu))
         (invalid-reads '(#x2000 #x2001 #x2003 #x2005 #x2006)))
     (dolist (addr invalid-reads)
-      (is (ppu-read ppu addr) 0))
+      (is (fetch ppu addr) 0))
     (setf (ppu-data ppu) 31
           (ppu-status ppu) 42
           (ppu-oam-address ppu) 53
           (aref (ppu-oam ppu) 53) 64)
-    (is (ppu-read ppu #x2002) (ppu-status ppu))
-    (is (ppu-read ppu #x2004) (aref (ppu-oam ppu) (ppu-oam-address ppu)))
-    (is (ppu-read ppu #x2007) (ppu-data ppu))))
+    (is (fetch ppu #x2002) (ppu-status ppu))
+    (is (fetch ppu #x2004) (aref (ppu-oam ppu) (ppu-oam-address ppu)))
+    (is (fetch ppu #x2007) (ppu-data ppu))))
 
 (defun test-read-vram ()
   (let ((ppu (make-ppu))
@@ -115,7 +115,7 @@
     (dotimes (i 4)
       (let ((index (random #x2000)))
         (is (read-vram ppu index)
-            (clones.mappers:load-chr rom index))))
+            (clones.mappers:fetch-chr rom index))))
     (setf (aref (ppu-nametable ppu) #x20) 42
           (aref (ppu-nametable ppu) #x420) 27)
     (is (read-vram ppu #x2020) 42)

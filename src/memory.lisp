@@ -6,13 +6,7 @@
                 :ppu
                 :ppu-cartridge
                 :ppu-dma-result
-                :make-ppu
-                :ppu-read
-                :ppu-write)
-  (:import-from :clones.mappers
-                :mapper
-                :mapper-rom
-                :load-rom)
+                :make-ppu)
   (:import-from :clones.input
                 :gamepad
                 :make-gamepad
@@ -58,23 +52,23 @@
       (setf mapper rom
             (ppu-cartridge ppu) rom))))
 
-(defun fetch (memory address)
+(defmethod fetch ((memory memory) address)
   (cond ((< address #x2000)
          (aref (memory-ram memory) (logand address #x7ff)))
         ((< address #x4000)
-         (ppu-read (memory-ppu memory) address))
+         (fetch (memory-ppu memory) address))
         ((= address #x4016)
          (fetch-strobe (memory-gamepad memory)))
         ((< address #x8000)
          0)
         (t
-         (load-prg (memory-mapper memory) address))))
+         (fetch (memory-mapper memory) address)))  )
 
-(defun store (memory address value)
+(defmethod store ((memory memory) address value)
   (cond ((< address #x2000)
          (setf (aref (memory-ram memory) (logand address #x7ff)) value))
         ((< address #x4000)
-         (ppu-write (memory-ppu memory) address value))
+         (store (memory-ppu memory) address value))
         ((= address #x4014)
          (%oam-dma memory value))
         ((= address #x4016)
@@ -82,7 +76,7 @@
         ((< address #x8000)
          0)
         (t
-         (store-prg (memory-mapper memory) address value))))
+         (store (memory-mapper memory) address value))))
 
 (defun fetch-word (memory address)
   (let ((low-byte  (fetch memory address))

@@ -14,9 +14,9 @@
     (is-type nestest 'mapper)
     (is-error (load-rom invalid-path) 'file-error)
     (is-error (load-rom aorom-path) 'clones.conditions:unsupported-mapper)
-    (is (load-prg nestest 4) 120)
-    (is (load-chr nestest 32) 128)
-    (is (load-prg nestest 16388) 120)
+    (is (fetch nestest 4) 120)
+    (is (fetch-chr nestest 32) 128)
+    (is (fetch nestest 16388) 120)
     (is (mirroring nestest) :horizontal)))
 
 (finalize)
