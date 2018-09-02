@@ -29,12 +29,16 @@
       (is (length (ppu-oam ppu)) #x100)
       (is (length (ppu-nametable ppu)) #x800)
       (is (length (ppu-palette-table ppu)) #x20)
-      (is (ppu-pattern-table ppu) nil))))
+      (is-type (ppu-pattern-table ppu) 'mapper))))
 
 (defun test-cart-swap ()
   (subtest "PPU Cartridge swapping ..."
     (let ((ppu (make-ppu)))
+      (is-type (ppu-pattern-table ppu) 'mapper)
+      (setf (ppu-pattern-table ppu) nil)
       (is (ppu-pattern-table ppu) nil)
+      (setf (ppu-pattern-table ppu) (clones.mappers:load-rom
+                                     (clones.util:asset-path "roms/color_test.nes")))
       (is-type (ppu-pattern-table ppu) 'mapper))))
 
 (defun test-control-helpers ()
@@ -112,7 +116,7 @@
       (dotimes (i 4)
         (let ((index (random #x2000)))
           (is (read-vram ppu index)
-              (clones.mappers:fetch-chr rom index))))
+              (clones.mappers:fetch-chr (ppu-pattern-table ppu) index))))
       (setf (aref (ppu-nametable ppu) #x20) 42
             (aref (ppu-nametable ppu) #x420) 27)
       (is (read-vram ppu #x2020) 42)
