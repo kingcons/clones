@@ -189,6 +189,19 @@
       (is (aref (ppu-oam ppu) #xff) 42)
       (is (ppu-oam-address ppu) 0))))
 
+(defun test-ppu-scroll-register ()
+  (subtest "PPUSCROLL Writes ..."
+    (let ((ppu (make-ppu)))
+      (is (ppu-write-latch ppu) 0)
+      (store ppu #x2005 #b00111011)
+      (is (ppu-write-latch ppu) 1)
+      (is (ppu-coarse-x ppu) #b00111)
+      (is (ppu-fine-x ppu) #b011)
+      (store ppu #x2005 #b11000100)
+      (is (ppu-write-latch ppu) 0)
+      (is (ppu-coarse-y ppu) #b11000)
+      (is (ppu-fine-y ppu) #b100))))
+
 (plan nil)
 
 (subtest "PPU Interface"
@@ -200,6 +213,7 @@
   (test-read-vram)
   (test-mirroring)
   (test-register-reads)
-  (test-ppu-write))
+  (test-ppu-write)
+  (test-ppu-scroll-register))
 
 (finalize)

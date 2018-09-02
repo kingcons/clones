@@ -167,7 +167,8 @@
     (1 (setf (ppu-mask ppu) value))
     (2 0)
     (3 (setf (ppu-oam-address ppu) value))
-    (4 (write-oam ppu value))))
+    (4 (write-oam ppu value))
+    (5 (write-scroll ppu value))))
 
 (defun write-control (ppu value)
   (setf (ppu-control ppu) value
@@ -177,6 +178,20 @@
   (with-accessors ((oam-address ppu-oam-address) (oam ppu-oam)) ppu
     (setf (aref oam oam-address) value
           oam-address (wrap-byte (1+ oam-address)))))
+
+(defun write-scroll (ppu value)
+  (with-accessors ((write-latch ppu-write-latch)
+                   (coarse-x    ppu-coarse-x)
+                   (coarse-y    ppu-coarse-y)
+                   (fine-x      ppu-fine-x)
+                   (fine-y      ppu-fine-y)) ppu
+    (if (zerop write-latch)
+        (setf write-latch 1
+              coarse-x (ldb (byte 5 3) value)
+              fine-x   (ldb (byte 3 0) value))
+        (setf write-latch 0
+              coarse-y (ldb (byte 5 3) value)
+              fine-y   (ldb (byte 3 0) value)))))
 
 ;;; PPU Memory Map
 
