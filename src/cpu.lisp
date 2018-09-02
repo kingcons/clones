@@ -8,8 +8,8 @@
                 :make-memory
                 :fetch
                 :store)
-  (:import-from :clones.ppu
-                :ppu-dma-result)
+  ;; (:import-from :clones.ppu
+  ;;               :ppu-dma-result)
   (:import-from :clones.util
                 :ub8
                 :ub16
@@ -129,6 +129,6 @@
   (when (flag-set-p cpu :interrupt)
     (interrupt-goto cpu #xFFFE)))
 
-(defun dma (cpu)
-  (setf (cpu-waiting cpu) 512)
-  (setf (ppu-dma-result (memory-ppu (cpu-memory cpu))) nil))
+;; (defun dma (cpu)
+;;   (setf (cpu-waiting cpu) 512)
+;;   (setf (ppu-dma-result (memory-ppu (cpu-memory cpu))) nil))

@@ -4,9 +4,9 @@
   (:use :cl :clones.mappers)
   (:import-from :clones.ppu
                 :ppu
-                :ppu-cartridge
-                :ppu-dma-result
-                :make-ppu)
+                :make-ppu
+                ;; :ppu-dma-result
+                :ppu-pattern-table)
   (:import-from :clones.input
                 :gamepad
                 :make-gamepad
@@ -38,19 +38,19 @@
   (gamepad (make-gamepad) :type gamepad)
   (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
 
-(defun %oam-dma (memory value)
-  (let ((ppu (memory-ppu memory))
-        (page (ash value 8)))
-    (loop for index from page to (+ page #xff)
-          do (let ((data (fetch memory index)))
-               (ppu-write ppu #x2004 data)))
-    (setf (ppu-dma-result ppu) t)))
+;; (defun %oam-dma (memory value)
+;;   (let ((ppu (memory-ppu memory))
+;;         (page (ash value 8)))
+;;     (loop for index from page to (+ page #xff)
+;;           do (let ((data (fetch memory index)))
+;;                (store ppu #x2004 data)))
+;;     (setf (ppu-dma-result ppu) t)))
 
-(defun swap-rom (memory rom-file)
-  (let ((rom (load-rom (asset-path rom-file))))
-    (with-accessors ((mapper memory-mapper) (ppu memory-ppu)) memory
-      (setf mapper rom
-            (ppu-cartridge ppu) rom))))
+;; (defun swap-rom (memory rom-file)
+;;   (let ((rom (load-rom (asset-path rom-file))))
+;;     (with-accessors ((mapper memory-mapper) (ppu memory-ppu)) memory
+;;       (setf mapper rom
+;;             (ppu-cartridge ppu) rom))))
 
 (defmethod fetch ((memory memory) address)
   (cond ((< address #x2000)
@@ -69,8 +69,8 @@
          (setf (aref (memory-ram memory) (logand address #x7ff)) value))
         ((< address #x4000)
          (store (memory-ppu memory) address value))
-        ((= address #x4014)
-         (%oam-dma memory value))
+        ;; ((= address #x4014)
+        ;;  (%oam-dma memory value))
         ((= address #x4016)
          (reset-strobe (memory-gamepad memory)))
         ((< address #x8000)

@@ -14,6 +14,7 @@
   (:import-from :clones.mappers
                 :mapper
                 :mirroring
+                :fetch
                 :fetch-chr)
   (:export #:ppu
            #:make-ppu

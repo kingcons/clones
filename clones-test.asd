@@ -16,10 +16,9 @@
                :split-sequence)
   :components ((:module "t"
                 :components
-                (
-                 ; (:file "helpers")
-                 ; (:test-file "cpu")
-                 ; (:test-file "memory")
+                ((:file "helpers")
+                 (:test-file "cpu")
+                 (:test-file "memory")
                  (:test-file "ppu")
                  (:test-file "mappers")
                  (:test-file "rom"))))

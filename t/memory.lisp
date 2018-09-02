@@ -5,7 +5,7 @@
 
 (in-package :clones-test.memory)
 
-(plan 2)
+(plan 3)
 
 (subtest "Storing and Fetching Data from RAM"
    (let* ((memory (make-memory)))
@@ -18,6 +18,11 @@
      (subtest "The same values are mirrored every 2K"
        (is (fetch memory #x800) 32)
        (is (fetch memory #xfff) 31))))
+
+(subtest "Storing and Fetching Data from PPU"
+  (let* ((memory (make-memory)))
+    (setf (clones.ppu:ppu-data (memory-ppu memory)) 42)
+    (is (fetch memory #x2007) 42)))
 
 (subtest "Storing and Fetching Data from Mapper (NROM)"
   (let* ((memory (make-memory)))
