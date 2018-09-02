@@ -3,11 +3,9 @@
 (defpackage :clones-test.ppu
   (:use :cl :clones.ppu :prove)
   (:import-from :clones.mappers
-                :load-rom
                 :mapper)
   (:import-from :clones.util
                 :wrap-palette-table
-                :asset-path
                 :ub8))
 
 (in-package :clones-test.ppu)
@@ -37,7 +35,6 @@
   (subtest "PPU Cartridge swapping ..."
     (let ((ppu (make-ppu)))
       (is (ppu-pattern-table ppu) nil)
-      (setf (ppu-pattern-table ppu) (load-rom (asset-path "roms/color_test.nes")))
       (is-type (ppu-pattern-table ppu) 'mapper))))
 
 (defun test-control-helpers ()
@@ -97,7 +94,6 @@
   (subtest "CPU Memory Map - Reads ..."
     (let ((ppu (make-ppu))
           (invalid-reads '(#x2000 #x2001 #x2003 #x2005 #x2006)))
-      (setf (ppu-pattern-table ppu) (load-rom (asset-path "roms/nestest.nes")))
       (dolist (addr invalid-reads)
         (is (fetch ppu addr) 0))
       (setf (ppu-data ppu) 31
@@ -110,9 +106,7 @@
 
 (defun test-read-vram ()
   (subtest "PPU Memory Map - Reads ..."
-    (let ((ppu (make-ppu))
-          (rom (load-rom (asset-path "roms/color_test.nes"))))
-      (setf (ppu-pattern-table ppu) rom)
+    (let ((ppu (make-ppu)))
       ;; It sucks to test the implementation here but I'm not
       ;; gonna sidetrack to mock or spy generic functions right now.
       (dotimes (i 4)
@@ -145,7 +139,6 @@
 (defun test-register-reads ()
   (subtest "PPU Register Read Behavior ..."
     (let ((ppu (make-ppu)))
-      (setf (ppu-pattern-table ppu) (load-rom (asset-path "roms/nestest.nes")))
       (diag "Reading from PPUSTATUS clears the vblank bit.")
       (setf (ppu-status ppu) #b10001010)
       (fetch ppu #x2002)

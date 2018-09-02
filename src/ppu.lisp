@@ -15,7 +15,8 @@
                 :mapper
                 :mirroring
                 :fetch
-                :fetch-chr)
+                :fetch-chr
+                :default-rom)
   (:export #:ppu
            #:make-ppu
            #:ppu-control
@@ -102,7 +103,7 @@
   (oam           (make-byte-vector #x100)  :type (byte-vector 256))
   (nametable     (make-byte-vector #x800)  :type (byte-vector 2048))
   (palette-table (make-byte-vector #x020)  :type (byte-vector 32))
-  (pattern-table nil                       :type (or null mapper)))
+  (pattern-table (default-rom)             :type (or null mapper)))
 
 ;; Register Bit Helpers
 

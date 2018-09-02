@@ -7,6 +7,7 @@
   (:import-from :clones.util
                 :ub16
                 :ub8
+                :asset-path
                 :wrap-byte
                 :wrap-prg
                 :wrap-chr)
@@ -16,7 +17,8 @@
            #:store
            #:fetch-chr
            #:store-chr
-           #:load-rom))
+           #:load-rom
+           #:default-rom))
 
 (in-package :clones.mappers)
 
@@ -55,6 +57,10 @@
       (:mmc1  (make-mmc1 :rom rom))
       (:unrom (make-unrom :rom rom))
       (otherwise (error 'unsupported-mapper :mapper-name mapper :rom rom)))))
+
+(defun default-rom ()
+  "Return the MAPPER for nestest.nes, a basic freely available ROM."
+  (load-rom (asset-path "roms/nestest.nes")))
 
 ;;; End of Mapper Protocol, Concrete implementations follow...
 
