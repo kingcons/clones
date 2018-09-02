@@ -29,6 +29,7 @@
            #:ppu-fine-x
            #:ppu-fine-y
            #:ppu-nt-index
+           #:ppu-write-latch
            #:ppu-oam
            #:ppu-nametable
            #:ppu-palette-table
@@ -53,7 +54,7 @@
 
 (in-package :clones.ppu)
 
-;;; PPU Structures
+;;; PPU Data Structures
 ;;;   PPU docs frequently refer to: Pattern Tables, Nametables, Attributes, Palette, and OAM.
 ;;;   Their functions and the way they make up the address space can be confusing though.
 ;;;
@@ -97,6 +98,7 @@
   (fine-x        0                         :type (integer 0 7))  ; 0x2005
   (fine-y        0                         :type (integer 0 7))  ; 0x2005
   (nt-index      0                         :type (integer 0 3))  ; 0x2005
+  (write-latch   0                         :type bit)
   (oam           (make-byte-vector #x100)  :type (byte-vector 256))
   (nametable     (make-byte-vector #x800)  :type (byte-vector 2048))
   (palette-table (make-byte-vector #x020)  :type (byte-vector 32))
@@ -139,7 +141,10 @@
     (otherwise 0)))
 
 (defun read-status (ppu)
-  (ppu-status ppu))
+  (with-accessors ((status ppu-status)) ppu
+    (setf (ppu-write-latch ppu) 0)
+    (prog1 status
+      (setf status (logand status #x7f)))))
 
 (defun read-oam (ppu)
   (aref (ppu-oam ppu) (ppu-oam-address ppu)))
