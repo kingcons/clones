@@ -49,8 +49,8 @@
   (logand number #xffff))
 
 (defun wrap-nametable (number)
-  "Constrain a number to (integer 0 2047)."
-  (logand number #x7ff))
+  "Constrain a number to (integer 0 1023)."
+  (logand number #x3ff))
 
 (defun wrap-palette-table (number)
   "Constrain a number to (integer 0 31)."

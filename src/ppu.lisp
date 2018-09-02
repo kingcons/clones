@@ -2,13 +2,19 @@
 
 (defpackage :clones.ppu
   (:use :cl)
+  (:import-from :alexandria
+                :define-constant)
   (:import-from :clones.util
                 :ub8
                 :ub16
                 :byte-vector
-                :make-byte-vector)
+                :make-byte-vector
+                :wrap-nametable
+                :wrap-palette-table)
   (:import-from :clones.mappers
-                :mapper)
+                :mapper
+                :mirroring
+                :load-chr)
   (:export #:ppu
            #:make-ppu
            #:ppu-control
@@ -41,9 +47,40 @@
            #:emphasize-red-p
            #:emphasize-green-p
            #:emphasize-blue-p
-           #:ppu-read))
+           #:ppu-read
+           #:read-vram))
 
 (in-package :clones.ppu)
+
+;;; PPU Structures
+;;;   PPU docs frequently refer to: Pattern Tables, Nametables, Attributes, Palette, and OAM.
+;;;   Their functions and the way they make up the address space can be confusing though.
+;;;
+;;;   The Pattern Table is simply 8k of graphics data stored on the game cartridge.
+;;;   Several mappers offer the ability to swap between multiple 8k banks while running.
+;;;   The 8k banks are divided into two sections, one for backgrounds and one for sprites.
+;;;   Each "pattern" is 16 bytes and describes a 8x8 pixel tile with two color bits per pixel.
+;;;   Thus, each 4k section holds 256 patterns used by Nametables and OAM to draw the screen.
+;;;
+;;;   A Nametable is 960 bytes followed by a 64 byte Attribute Table. Each Nametable byte is an
+;;;   index (divided by 16) into the pattern table with attributes bits selecting the palette.
+;;;   A single Nametable (including its Attribute Table) is 1k but the address space presents
+;;;   four nametables where the PPU hardware only has enough VRAM for two.
+;;;   This is accomplished by mirroring the addresses in a scheme determined by the cartridge.
+;;;
+;;;   The Palette is 32 bytes mirrored into the top 256 bytes of the 16k address space.
+;;;   Each byte is an index into the PPU's fixed bank of 64 colors. The palette is subdivided
+;;;   into a Backdrop color, and 4 4-color palettes each for backgrounds and sprites.
+;;;   The "zero" color in each 4-color palette is treated as transparency.
+;;;
+;;;   OAM is 256 bytes providing 4 bytes (pattern, attribute, and scroll info) for 64 sprites.
+;;;   OAM has a separate address space without mirroring and exposed through dedicated
+;;;   registers for OAM address and data at 0x2003 and 0x2004 in the CPU's Memory Map.
+;;; References:
+;;  * https://wiki.nesdev.com/w/index.php/PPU_memory_map
+;;  * https://wiki.nesdev.com/w/index.php/PPU_nametables
+;;  * https://wiki.nesdev.com/w/index.php/Mirroring#Nametable_Mirroring
+
 
 ;; PPU Structure
 
@@ -108,3 +145,31 @@
 
 (defun read-data (ppu)
   (ppu-data ppu))
+
+;;; PPU Memory Map
+
+(define-constant +mirroring+
+    '(:vertical   #(0 1 0 1)
+      :horizontal #(0 0 1 1)
+      :lower      #(0 0 0 0)
+      :upper      #(1 1 1 1))
+  :documentation "A map from mirroring types to arrays of nametable offsets." :test #'equalp)
+
+(declaim (inline nt-offset))
+(defun nt-offset (mirror-type address)
+  "Use the MIRROR-TYPE and ADDRESS to determine the offset of the nametable to access."
+  (let* ((layout    (getf +mirroring+ mirror-type))
+         (nt-index  (floor (ldb (byte 12 0) address) #x400)))
+    (* #x400 (aref layout nt-index))))
+
+(defun nt-mirror (mirror-type address)
+  (+ (nt-offset mirror-type address) (wrap-nametable address)))
+
+(defun read-vram (ppu address)
+  (let ((mapper (ppu-pattern-table ppu)))
+    (cond ((< address #x2000)
+           (load-chr mapper address))
+          ((< address #x3f00)
+           (aref (ppu-nametable ppu) (nt-mirror (mirroring mapper) address)))
+          ((< address #x4000)
+           (aref (ppu-palette-table ppu) (wrap-palette-table address))))))

@@ -6,7 +6,9 @@
                 :load-rom
                 :mapper)
   (:import-from :clones.util
-                :asset-path))
+                :wrap-palette-table
+                :asset-path
+                :ub8))
 
 (in-package :clones-test.ppu)
 
@@ -104,6 +106,38 @@
     (is (ppu-read ppu #x2004) (aref (ppu-oam ppu) (ppu-oam-address ppu)))
     (is (ppu-read ppu #x2007) (ppu-data ppu))))
 
+(defun test-read-vram ()
+  (let ((ppu (make-ppu))
+        (rom (load-rom (asset-path "roms/color_test.nes"))))
+    (setf (ppu-pattern-table ppu) rom)
+    ;; It sucks to test the implementation here but I'm not
+    ;; gonna sidetrack to mock or spy generic functions right now.
+    (dotimes (i 4)
+      (let ((index (random #x2000)))
+        (is (read-vram ppu index)
+            (clones.mappers:load-chr rom index))))
+    (setf (aref (ppu-nametable ppu) #x20) 42
+          (aref (ppu-nametable ppu) #x420) 27)
+    (is (read-vram ppu #x2020) 42)
+    (is (read-vram ppu #x2420) 42)
+    (is (read-vram ppu #x2820) 27)
+    (is (read-vram ppu #x2c20) 27)
+    (dotimes (i 4)
+      (let ((index (random #xff))
+            (color (random #xff)))
+        (setf (aref (ppu-palette-table ppu) (wrap-palette-table index)) color)
+        (is (read-vram ppu (+ #x3f00 index)) color)))))
+
+(defun test-mirroring ()
+  (is (clones.ppu::nt-offset :horizontal #x2020) 0)
+  (is (clones.ppu::nt-offset :horizontal #x2420) 0)
+  (is (clones.ppu::nt-offset :horizontal #x2820) #x400)
+  (is (clones.ppu::nt-offset :horizontal #x2c20) #x400)
+  (is (clones.ppu::nt-offset :vertical   #x2020) 0)
+  (is (clones.ppu::nt-offset :vertical   #x2420) #x400)
+  (is (clones.ppu::nt-offset :vertical   #x2820) 0)
+  (is (clones.ppu::nt-offset :vertical   #x2c20) #x400))
+
 (plan 1)
 
 (subtest "PPU Interface"
@@ -113,6 +147,8 @@
   (test-control-helpers)
   (test-mask-helpers)
   (test-cart-swap)
-  (test-ppu-read))
+  (test-ppu-read)
+  (test-read-vram)
+  (test-mirroring))
 
 (finalize)
