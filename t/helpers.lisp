@@ -2,6 +2,8 @@
 
 (defpackage :clones-test.helpers
   (:use :cl :prove)
+  (:import-from :prove.reporter.list
+                :format-report)
   (:import-from :split-sequence
                 :split-sequence)
   (:import-from :alexandria
@@ -11,11 +13,25 @@
 
 (in-package :clones-test.helpers)
 
+(defun patch-test-reporting ()
+  (defmethod format-report (stream (reporter prove.reporter.list:list-reporter)
+                            (report prove.report:passed-test-report) &rest args)
+    (declare (ignore args))))
+
+(defun drop-reporting-patch ()
+  (let* ((specializers (mapcar #'find-class '(prove.reporter.list:list-reporter
+                                              prove.report:passed-test-report)))
+         (method (find-method #'format-report '() (cons t specializers))))
+        (when method
+          (remove-method #'format-report method))))
+
 (defun run-file (filename)
   (let* ((test-file (concatenate 'string "t/" filename ".lisp"))
          (pathname (asdf/system:system-relative-pathname :clones test-file))
-         (prove:*enable-colors* nil))
-    (prove:run pathname :reporter :list)))
+         (prove:*enable-colors* (if (find-package :swank) nil t)))
+    (patch-test-reporting)
+    (prove:run pathname :reporter :list)
+    (drop-reporting-patch)))
 
 (defun parse-log (line)
   "Parse a line of nestest.log, returning a list of the form: (pc acc x y status stack cycles)"
