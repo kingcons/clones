@@ -17,6 +17,8 @@
                 :mirroring
                 :fetch
                 :fetch-chr
+                :store
+                :store-chr
                 :default-rom)
   (:export #:ppu
            #:make-ppu
@@ -53,7 +55,8 @@
            #:emphasize-blue-p
            #:fetch
            #:store
-           #:read-vram))
+           #:read-vram
+           #:write-vram))
 
 (in-package :clones.ppu)
 
@@ -169,7 +172,8 @@
     (3 (setf (ppu-oam-address ppu) value))
     (4 (write-oam ppu value))
     (5 (write-scroll ppu value))
-    (6 (write-address ppu value))))
+    (6 (write-address ppu value))
+    (7 (write-vram ppu value))))
 
 (defun write-control (ppu value)
   (setf (ppu-control ppu) value
@@ -235,3 +239,14 @@
            (aref (ppu-nametable ppu) (nt-mirror (mirroring mapper) address)))
           ((< address #x4000)
            (aref (ppu-palette-table ppu) (wrap-palette-table address))))))
+
+(defun write-vram (ppu value)
+  (with-accessors ((address ppu-address)) ppu
+    (let ((mapper (ppu-pattern-table ppu)))
+      (cond ((< address #x2000)
+             (store-chr mapper address value))
+            ((< address #x3f00)
+             (setf (aref (ppu-nametable ppu) (nt-mirror (mirroring mapper) address)) value))
+            ((< address #x4000)
+             (setf (aref (ppu-palette-table ppu) (wrap-palette-table address)) value))))
+    (incf address (vram-step ppu))))

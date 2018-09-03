@@ -212,6 +212,22 @@
       (is (ppu-write-latch ppu) 0)
       (is (ppu-address ppu) #b0010101000010000))))
 
+(defun test-write-vram ()
+  (subtest "PPU Memory Map - Writes ..."
+    (let ((ppu (make-ppu)))
+      (setf (ppu-address ppu) #x0020)
+      (store ppu #x2007 11)
+      (is (read-vram ppu #x0020) 11)
+      (is (ppu-address ppu) #x0021)
+      (setf (ppu-address ppu) #x2020
+            (ppu-control ppu) #b00000100)
+      (store ppu #x2007 22)
+      (is (read-vram ppu #x2020) 22)
+      (is (ppu-address ppu) #x2040)
+      (setf (ppu-address ppu) #x3f20)
+      (store ppu #x2007 33)
+      (is (read-vram ppu #x3f20) 33))))
+
 (plan nil)
 
 (subtest "PPU Interface"
@@ -225,6 +241,7 @@
   (test-register-reads)
   (test-ppu-write)
   (test-ppu-scroll-register)
-  (test-ppu-address-register))
+  (test-ppu-address-register)
+  (test-write-vram))
 
 (finalize)
