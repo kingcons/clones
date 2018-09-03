@@ -22,6 +22,7 @@
                 (
                  ; (:file "clones" :depends-on ("display" "disassembler" "instructions"))
                  ; (:file "display" :depends-on ("ppu"))
+                 (:file "render" :depends-on ("instructions" "ppu"))
                  (:file "disassembler" :depends-on ("addressing" "instruction-data"))
                  (:file "instructions" :depends-on ("addressing"))
                  (:file "addressing" :depends-on ("cpu" "memory"))

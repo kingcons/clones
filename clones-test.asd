@@ -17,6 +17,7 @@
   :components ((:module "t"
                 :components
                 ((:file "helpers")
+                 (:test-file "render")
                  (:test-file "cpu")
                  (:test-file "memory")
                  (:test-file "ppu")
