@@ -173,7 +173,7 @@
       (is (ppu-address ppu) #x1041))))
 
 (defun test-ppu-write ()
-  (subtest "CPU Memory Map - Writes ..."
+  (subtest "CPU Memory Map - Basic Writes ..."
     (let ((ppu (make-ppu)))
       (store ppu #x2000 #b10001010)
       (is (ppu-control ppu) 138)
@@ -202,6 +202,16 @@
       (is (ppu-coarse-y ppu) #b11000)
       (is (ppu-fine-y ppu) #b100))))
 
+(defun test-ppu-address-register ()
+  (subtest "PPUADDR Writes ..."
+    (let ((ppu (make-ppu)))
+      (is (ppu-write-latch ppu) 0)
+      (store ppu #x2006 #b00101010)
+      (is (ppu-write-latch ppu) 1)
+      (store ppu #x2006 #b00010000)
+      (is (ppu-write-latch ppu) 0)
+      (is (ppu-address ppu) #b0010101000010000))))
+
 (plan nil)
 
 (subtest "PPU Interface"
@@ -214,6 +224,7 @@
   (test-mirroring)
   (test-register-reads)
   (test-ppu-write)
-  (test-ppu-scroll-register))
+  (test-ppu-scroll-register)
+  (test-ppu-address-register))
 
 (finalize)

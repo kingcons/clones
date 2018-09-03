@@ -168,7 +168,8 @@
     (2 0)
     (3 (setf (ppu-oam-address ppu) value))
     (4 (write-oam ppu value))
-    (5 (write-scroll ppu value))))
+    (5 (write-scroll ppu value))
+    (6 (write-address ppu value))))
 
 (defun write-control (ppu value)
   (setf (ppu-control ppu) value
@@ -192,6 +193,20 @@
         (setf write-latch 0
               coarse-y (ldb (byte 5 3) value)
               fine-y   (ldb (byte 3 0) value)))))
+
+;; KLUDGE: Technically, writes to PPUADDR clobber matching values in PPUSCROLL.
+;; However, as written in https://wiki.nesdev.com/w/index.php/PPU_scrolling#The_common_case
+;; it is not only customary but expected that PPUSCROLL will be set after PPUADDR.
+;; Thus, it should be safe to skip modifying the scroll register in almost all circumstances.
+(let ((buffer 0))
+  (defun write-address (ppu value)
+    (with-accessors ((write-latch ppu-write-latch)
+                     (address     ppu-address)) ppu
+      (if (zerop write-latch)
+          (setf write-latch 1
+                buffer (ash value 8))
+          (setf write-latch 0
+                address (logior buffer value))))))
 
 ;;; PPU Memory Map
 
