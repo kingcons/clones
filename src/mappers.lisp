@@ -64,7 +64,7 @@
 
 ;;; End of Mapper Protocol, Concrete implementations follow...
 
-(defstruct mapper rom)
+(defstruct mapper (rom (default-rom) :type rom))
 
 ;;; Mapper 0 - NROM
 
