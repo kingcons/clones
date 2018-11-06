@@ -12,8 +12,7 @@
                 :wrap-byte
                 :wrap-word
                 :flip-bit)
-  (:export #:single-step
-           #:scanline-step))
+  (:export #:single-step))
 
 (in-package :clones.instructions)
 
