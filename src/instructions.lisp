@@ -25,49 +25,54 @@
          ,@(loop for (opcode bytes cycles mode) in opcodes
                  ;; KLUDGE: Find the symbol since it doesn't exist at instruction-data load-time.
                  for addr-mode = (find-symbol (symbol-name mode))
-                 collect `(%define-opcode (,name ,opcode ,addr-mode
+                 collect `(%define-opcode (,name ,opcode
                                            :bytes ,bytes
                                            :cycles ,cycles
-                                           :access-pattern ,access-pattern
                                            :skip-pc ,skip-pc)
-                            ,@body))
+                            ,(%opcode-body addr-mode access-pattern body)))
          ,@(loop for (opcode) in opcodes
                  collect `(export ',(build-op-name name opcode) 'clones.instructions))))))
 
-(defmacro %define-opcode ((name opcode address-mode &key bytes cycles access-pattern skip-pc)
+(defmacro %define-opcode ((name opcode &key bytes cycles skip-pc)
                          &body body)
   `(defun ,(build-op-name name opcode) (cpu)
      (declare (type cpu cpu))
      (declare #.*standard-optimize-settings*)
      (incf (cpu-pc cpu))
-     ,(ecase access-pattern
-        ((nil) `(progn ,@body))
-        (:jump `(let ((address (,address-mode cpu)))
-                  ,@body))
-        (:read (if (member address-mode '(absolute-x absolute-y indirect-y))
-                   `(multiple-value-bind (final start) (,address-mode cpu)
-                      (let ((argument (fetch (cpu-memory cpu) final)))
-                        (when (page-crossed-p start final)
-                          (incf (cpu-cycles cpu)))
-                        ,@body))
-                   `(let ((argument (fetch (cpu-memory cpu) (,address-mode cpu))))
-                      ,@body)))
-        (:write `(let ((address (,address-mode cpu)))
-                   ,@body))
-        (:read-modify-write (if (eql address-mode 'accumulator)
-                                `(flet ((update (address value)
-                                          (setf (cpu-accum cpu) value)))
-                                   (let ((argument (,address-mode cpu))
-                                         (address nil))
-                                     ,@body))
-                                `(flet ((update (address value)
-                                          (store (cpu-memory cpu) address value)))
-                                   (let* ((address (,address-mode cpu))
-                                          (argument (fetch (cpu-memory cpu) address)))
-                                     ,@body)))))
+     ,@body
      ,@(unless (or skip-pc (= 1 bytes))
          `((incf (cpu-pc cpu) ,(1- bytes))))
      (incf (cpu-cycles cpu) ,cycles)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun %opcode-body (address-mode access-pattern body)
+    (ecase access-pattern
+      ((nil)
+       `(progn ,@body))
+      ((:jump :write)
+       `(let ((address (,address-mode cpu)))
+          ,@body))
+      (:read
+       (if (member address-mode '(absolute-x absolute-y indirect-y))
+           `(multiple-value-bind (final start) (,address-mode cpu)
+              (let ((argument (fetch (cpu-memory cpu) final)))
+                (when (page-crossed-p start final)
+                  (incf (cpu-cycles cpu)))
+                ,@body))
+           `(let ((argument (fetch (cpu-memory cpu) (,address-mode cpu))))
+              ,@body)))
+      (:read-modify-write
+       (if (eql address-mode 'accumulator)
+           `(flet ((update (address value)
+                     (setf (cpu-accum cpu) value)))
+              (let ((argument (,address-mode cpu))
+                    (address nil))
+                ,@body))
+           `(flet ((update (address value)
+                     (store (cpu-memory cpu) address value)))
+              (let* ((address (,address-mode cpu))
+                     (argument (fetch (cpu-memory cpu) address)))
+                ,@body)))))))
 
 (defmacro branch-if (test)
   `(if ,test
