@@ -8,7 +8,7 @@
 (plan nil)
 
 (subtest "PPU Rendering ..."
-  (is-type *framebuffer* 'clones.util:byte-vector)
-  (is-type +color-palette+ 'clones.util:byte-vector))
+  (is-type (subseq *framebuffer* 0 #x10) 'clones.util:byte-vector)
+  (is-type (subseq +color-palette+ 0 #x10) 'clones.util:byte-vector))
 
 (finalize)
