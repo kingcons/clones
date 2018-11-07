@@ -471,3 +471,16 @@ need a function to:
 * Get the color.
 
 [scroll-dia]: https://wiki.nesdev.com/w/index.php/PPU_scrolling#PPU_internal_registers
+
+### PPU Rewrite! (08/31)
+
+#### Externally used PPU bits:
+* dma-result & nmi-result to coordinate with cpu
+* new-frame & sync method used by main loop
+* *framebuffer* used by clones.display
+* ppu type, make-ppu, ppu-read, ppu-write, ppu-cart used by clones.memory
+
+#### Design:
+* Seems like framebuffer, sync, and result metadata are part of a "RENDER" object
+* constructor, ppu-read, ppu-write, and something to swap cartridge are public interface of PPU
+* Private interface of PPU is used by RENDER object heavily enough to warrant testing, however.

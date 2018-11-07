@@ -14,8 +14,9 @@
 
 (in-package :clones.render)
 
-(defconstant +width+ 256)
-(defconstant +height+ 240)
+(defconstant +width+               256)
+(defconstant +height+              240)
+(defconstant +cycles-per-scanline+ 341)
 
 (declaim (type (byte-vector 184320) *framebuffer*))
 (defvar *framebuffer* (make-static-vector (* +width+ +height+ 3) :element-type 'ub8)
@@ -39,3 +40,17 @@
                   #x00 #xFC #xFC  #xF8 #xD8 #xF8  #x00 #x00 #x00  #x00 #x00 #x00)))
   (define-constant +color-palette+ (make-array 192 :element-type 'ub8 :initial-contents rgb-vals)
     :documentation "The NTSC color palette used by the PPU." :test #'equalp))
+
+;; render-state / context?
+;;; PPU should probably have a context object and return it from the sync method?
+;;; Though I don't like `context-dmi-p` and `context-frame-p` as method names for main loop. :-/
+
+(defstruct context
+  (dma-p         nil                      :type boolean)
+  (nmi-p         nil                      :type boolean)
+  (frame-p       nil                      :type boolean)
+  (nt-buffer     (make-byte-vector #x20)  :type byte-vector)
+  (at-buffer     (make-byte-vector #x08)  :type byte-vector)
+  (candidates    (make-array 8)           :type (simple-vector 8))
+  (bg-pixels     (make-array 8)           :type (simple-vector 8))
+  (sprite-pixels (make-array 8)           :type (simple-vector 8)))

@@ -72,6 +72,7 @@
 ;;;
 ;;;   A Nametable is 960 bytes followed by a 64 byte Attribute Table. Nametable bytes are an
 ;;;   index (divided by 16) into the pattern table with attribute bits selecting the palette.
+;;;   Thus, a Nametable can specify a full background of 32x30 tiles (each being 8x8 pixels).
 ;;;   A single Nametable (including its Attribute Table) is 1k but the address space presents
 ;;;   four nametables where the PPU hardware only has enough VRAM for two.
 ;;;   This is accomplished by mirroring the addresses in a scheme determined by the cartridge.
