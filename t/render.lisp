@@ -7,8 +7,16 @@
 
 (plan nil)
 
+(defun test-framebuffer ()
+  (subtest "Checking framebuffer..."
+    (is-type (subseq *framebuffer* 0 #x10) 'clones.util:byte-vector)))
+
+(defun test-palette ()
+  (subtest "Checking palette..."
+    (is-type (subseq +color-palette+ 0 #x10) 'clones.util:byte-vector)))
+
 (subtest "PPU Rendering ..."
-  (is-type (subseq *framebuffer* 0 #x10) 'clones.util:byte-vector)
-  (is-type (subseq +color-palette+ 0 #x10) 'clones.util:byte-vector))
+  (test-framebuffer)
+  (test-palette))
 
 (finalize)

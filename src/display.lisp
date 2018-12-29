@@ -31,9 +31,10 @@
 
 (defun display-frame ()
   (sdl2:in-main-thread ()
-    (sdl2:update-texture *texture* (static-vector-pointer *framebuffer*)
-                         :rect (cffi:null-pointer)
-                         :width (* 3 256))
+    (sdl2:update-texture *texture*
+                         (cffi:null-pointer)
+                         (static-vector-pointer *framebuffer*)
+                         (* 3 256))
     (sdl2:render-clear *renderer*)
     (sdl2:render-copy *renderer* *texture*)
     (incf *frame-count*)
