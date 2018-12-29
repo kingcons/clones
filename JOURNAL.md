@@ -484,3 +484,37 @@ need a function to:
 * Seems like framebuffer, sync, and result metadata are part of a "RENDER" object
 * constructor, ppu-read, ppu-write, and something to swap cartridge are public interface of PPU
 * Private interface of PPU is used by RENDER object heavily enough to warrant testing, however.
+
+### Rebooting my Brain (12/28)
+
+It's been a few months so, naturally, I've forgotten more than half of what I knew about the PPU.
+The PPU Rewrite progressed pretty smoothly for, well, a few days and what's there currently is
+at least tested. All I've written is the state machine / register-y bits though.
+
+Having read through the PPU Scrolling article a few more times, I _think_ I might be ready to
+write tests for the render algorithm. The 18 bits I wrote about before work a little differently
+than I imagined. The coarse X and coarse Y values often won't start at 0 and so getting wraparound
+working when you run off the end of a nametable is crucial since the new data is coming in where
+the previous data is going offscreen.
+
+I'm a little less clear on how the fine scroll works and getting Y wraparound working
+(both coarse and fine) seems much more involved than X wraparound. After reading the ANESE
+source a little, it seems like the fine X is used to index appropriately into the attribute
+bytes and pattern bytes but doesn't actually change the nametable fetches at all.
+It's also clear from NESdev's article on PPU Scroll that the PPU never internally fucks with
+the fine X value so only programmer writes between frames reset or modify it, it won't change
+during rendering.
+
+So, I think the rendering algorithm is:
+
+* Loop for each tile in a scanline (i < 32):
+  * Grab the nametable and attribute byte incorporating the coarse X+Y values
+    * nametable-byte: base-nt-address + ((coarse-y / 8) * 32) + coarse-x
+    * attribute-byte: base-at-address + ((coarse-y / 32) * 8) + (coarse-x / 4)
+  * Grab the pattern bytes based on the above
+  * Index into the pattern bytes based on fine scroll with wraparound to generate pixels
+  * Bump the Coarse X, switching nametables if needed
+* Do all the fancy, wild ass Y scroll tweaking
+
+I'm sure I'm missing some stuff and this probably doesn't account for mirroring but _F it_.
+I'm going to sleep and maybe I can figure the rest out tomorrow. :)
