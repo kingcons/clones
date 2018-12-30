@@ -518,3 +518,33 @@ So, I think the rendering algorithm is:
 
 I'm sure I'm missing some stuff and this probably doesn't account for mirroring but _F it_.
 I'm going to sleep and maybe I can figure the rest out tomorrow. :)
+
+**NOTE:** To use a render-context and cut down on fetches with this algorithm may be tricky.
+The main thing I know I'll have to change is wraparound when filling the buffers. Probably
+simple for X scroll and a pain in the ass for Y scroll is my hunch.
+
+### Horizontal Scrolling and Scanline Conundrums (12/30)
+
+Good Morning! Last night I got some basic nametable and attribute fetching working and tested.
+I broke TDD and went ahead and wrote code that should work with full horizontal scrolling. Whoops.
+Hopefully, I'll write some more tests to verify that today. Speaking of which, testing this stuff
+is pretty gross because I'm mocking graphics data and then checking private data structures
+(my render context) to see if the appropriate data makes it into buffers at the right time.
+I admit that I've had a hard time thinking of better ways to test though.
+
+The big leap that was needed from my earlier version of the PPU code was actually incorporating
+the scroll register into which tile data was fetched. Previously, we'd get a Nametable Byte or
+Attribute Byte based on the _scanline_ and _tile/quad_ but ignore the scrolling info. It seems
+the right approach is fetching based _only_ on the scrolling info and use the scanline exclusively
+for tracking the syncing of the PPU and where in the output buffer to render pixels.
+
+I also probably should be using fine-x and fine-y when processing the pattern bytes to find
+the palette index. But thus far, I'm not actually trying to render pixels at all, or
+sync the PPU to anything, etc. The next step will be getting the pattern bytes and updating
+the bg-buffer. At that point, I could start worrying about sprites and pixel priority but I'll
+more likely try to start working on sync and actually wiring this stuff up so I can get some
+graphics output. It would be nice to check some things with my eyes. :)
+
+_Then_ I can get sprite rendering working. _Then_ I can start thinking about documenting
+the code more and cleaning things up if applicable and merging this branch.
+_Then_ maybe I'll finally start work on the APU or MMC3 so we can play SMB3. Oof.

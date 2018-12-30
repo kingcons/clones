@@ -53,6 +53,7 @@
            #:emphasize-red-p
            #:emphasize-green-p
            #:emphasize-blue-p
+           #:base-nt-address
            #:fetch
            #:store
            #:read-vram
@@ -222,7 +223,6 @@
       :upper      #(1 1 1 1))
   :documentation "A map from mirroring types to arrays of nametable offsets." :test #'equalp)
 
-(declaim (inline nt-offset))
 (defun nt-offset (mirror-type address)
   "Use the MIRROR-TYPE and ADDRESS to determine the offset of the nametable to access."
   (let* ((layout    (getf +mirroring+ mirror-type))
@@ -231,6 +231,9 @@
 
 (defun nt-mirror (mirror-type address)
   (+ (nt-offset mirror-type address) (wrap-nametable address)))
+
+(defun base-nt-address (ppu)
+  (+ #x2000 (* #x400 (ppu-nt-index ppu))))
 
 (defun read-vram (ppu address)
   (let ((mapper (ppu-pattern-table ppu)))
