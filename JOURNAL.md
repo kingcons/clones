@@ -548,3 +548,34 @@ graphics output. It would be nice to check some things with my eyes. :)
 _Then_ I can get sprite rendering working. _Then_ I can start thinking about documenting
 the code more and cleaning things up if applicable and merging this branch.
 _Then_ maybe I'll finally start work on the APU or MMC3 so we can play SMB3. Oof.
+
+### Testing Thoughts (12/30)
+
+So I did way less work on clones today than I intended to. And I should really be more
+focused on working with React and Redux the next few days than anything else. But I've
+been thinking a bit more about how to testing the rendering process. For a while, I
+was thinking of the render context as the main piece of observable state that I have.
+But really, I should be thinking about the things that are actually worth checking.
+
+What do I care about testing? Well:
+* the nametable byte fetched should be based on the coarse-x and coarse-y info and nametable
+* the attribute byte fetched should be based on the same with slightly different math
+* nametable and attribute bytes should wrap nametables correctly when coarse-x exceeds 31
+* rendering a pixel should determine the palette address based on fine-x and fine-y correctly
+* rendering a pixel should be able to determine the correct pixel priority
+* more than 8 sprites on a scanline should set the sprite overflow flag
+* probably a bunch of specific rules about sprites I haven't thought of yet
+* after scanline 241, we should set vblank, clear zero hit, and trigger an NMI
+* after scanline 262, we should clear vblank, set frame-p, and reset the scanline
+* syncing the PPU with less than a scanline's worth of cycles should be a no-op
+
+Anyway, I'm not sure why I bothered to list all that out. But I guess my point is, I care as much
+about testing the nametable fetches by unit testing the hell out of the `get-nametable-byte`
+function as I do about checking the render context after a scanline. I sort of imagined
+that constructing unit tests would be harder for this stuff than feature or integration tests
+but I was just thinking of testing the wrong things.
+
+Coming up with 5 different PPU states and making sure the right nametable byte is fetched in
+all of them is super doable. I should retry testing tomorrow with _that_ as my mindset and
+I'll do just fine. Then I can move into testing the pattern table bits and bobs. Before you
+know it, I'll just throw some plumbing together and have graphics. Well, maybe not sprites. :)
