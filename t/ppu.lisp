@@ -131,14 +131,14 @@
 
 (defun test-mirroring ()
   (subtest "Nametable Mirroring ..."
-    (is (clones.ppu::nt-offset :horizontal #x2020) 0)
-    (is (clones.ppu::nt-offset :horizontal #x2420) 0)
-    (is (clones.ppu::nt-offset :horizontal #x2820) #x400)
-    (is (clones.ppu::nt-offset :horizontal #x2c20) #x400)
-    (is (clones.ppu::nt-offset :vertical   #x2020) 0)
-    (is (clones.ppu::nt-offset :vertical   #x2420) #x400)
-    (is (clones.ppu::nt-offset :vertical   #x2820) 0)
-    (is (clones.ppu::nt-offset :vertical   #x2c20) #x400)))
+    (is (clones.ppu::nt-mirror :horizontal #x2020) #x20)
+    (is (clones.ppu::nt-mirror :horizontal #x2420) #x20)
+    (is (clones.ppu::nt-mirror :horizontal #x2820) #x420)
+    (is (clones.ppu::nt-mirror :horizontal #x2c20) #x420)
+    (is (clones.ppu::nt-mirror :vertical   #x2020) #x20)
+    (is (clones.ppu::nt-mirror :vertical   #x2420) #x420)
+    (is (clones.ppu::nt-mirror :vertical   #x2820) #x20)
+    (is (clones.ppu::nt-mirror :vertical   #x2c20) #x420)))
 
 (defun test-register-reads ()
   (subtest "PPU Register Read Behavior ..."
