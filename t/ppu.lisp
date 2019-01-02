@@ -53,12 +53,12 @@
       (is (vram-step ppu) 1)
       (setf (ppu-control ppu) #b00000100)
       (is (vram-step ppu) 32)
-      (is (sprite-base-address ppu) 0)
+      (is (sprite-offset ppu) 0)
       (setf (ppu-control ppu) #b00001000)
-      (is (sprite-base-address ppu) #x1000)
-      (is (background-base-address ppu) 0)
+      (is (sprite-offset ppu) #x1000)
+      (is (background-offset ppu) 0)
       (setf (ppu-control ppu) #b00010000)
-      (is (background-base-address ppu) #x1000)
+      (is (background-offset ppu) #x1000)
       (is (sprite-size ppu) 8)
       (setf (ppu-control ppu) #b00100000)
       (is (sprite-size ppu) 16)
@@ -233,12 +233,12 @@
     (let ((ppu (make-ppu)))
       (is (ppu-coarse-x ppu) 0)
       (is (ppu-nt-index ppu) 0)
-      (bump-coarse-x ppu 1)
+      (scroll-tile ppu 1)
       (is (ppu-coarse-x ppu) 1)
-      (bump-coarse-x ppu 30)
+      (scroll-tile ppu 30)
       (is (ppu-coarse-x ppu) 31)
       (is (ppu-nt-index ppu) 0)
-      (bump-coarse-x ppu 1)
+      (scroll-tile ppu 1)
       (is (ppu-coarse-x ppu) 0)
       (is (ppu-nt-index ppu) 1))))
 
@@ -246,12 +246,12 @@
   (subtest "PPU Rendering - Coarse Y Scrolling"
     (let ((ppu (make-ppu)))
       (is (ppu-coarse-y ppu) 0)
-      (bump-coarse-y ppu)
+      (scroll-line ppu)
       (is (ppu-coarse-y ppu) 1)
       (dotimes (i 28)
-        (bump-coarse-y ppu))
+        (scroll-line ppu))
       (is (ppu-coarse-y ppu) 29)
-      (bump-coarse-y ppu)
+      (scroll-line ppu)
       (is (ppu-coarse-y ppu) 0)
       (is (ppu-nt-index ppu) 2))))
 
@@ -263,13 +263,13 @@
             (aref (ppu-nametable ppu) 1) #x40
             (aref (ppu-nametable ppu) 32) #x80)
       (is (read-nametable ppu) #x20)
-      (bump-coarse-x ppu 1)
+      (scroll-tile ppu 1)
       (is (read-nametable ppu) #x40)
-      (bump-coarse-x ppu 31)
+      (scroll-tile ppu 31)
       ;; NOTE: For a vertically mirrored cartridge the below value would be zero. But
       ;; nestest.rom is horizontally mirrored so wrap around instead of to the next NT.
       (is (read-nametable ppu) #x20)
-      (bump-coarse-y ppu)
+      (scroll-line ppu)
       (is (read-nametable ppu) #x80))))
 
 (defun test-attribute-fetch ()
@@ -280,11 +280,24 @@
             (aref (ppu-nametable ppu) #x3c1) #xBB
             (aref (ppu-nametable ppu) #x3c8) #xFF)
       (is (read-attribute ppu) #xAA)
-      (bump-coarse-x ppu 4)
+      (scroll-tile ppu 4)
       (is (read-attribute ppu) #xBB)
-      (bump-coarse-x ppu 28)
-      (bump-coarse-y ppu)
+      (scroll-tile ppu 28)
+      (scroll-line ppu)
       (is (read-attribute ppu) #xFF))))
+
+(defun test-pattern-fetch ()
+  (subtest "PPU Rendering - Pattern Fetch"
+    (let ((ppu (make-ppu)))
+      ;; Insert some pattern data to test with since nestest doesn't have any.
+      (loop for i below 32
+            do (clones.mappers:store-chr (ppu-pattern-table ppu) i (1+ i)))
+      (is (read-pattern ppu (background-offset ppu) 0 0 :lo) 1)
+      (is (read-pattern ppu (background-offset ppu) 0 0 :hi) 9)
+      (is (read-pattern ppu (background-offset ppu) 0 3 :lo) 4)
+      (is (read-pattern ppu (background-offset ppu) 0 3 :hi) 12)
+      (is (read-pattern ppu (background-offset ppu) 1 0 :lo) 17)
+      (is (read-pattern ppu (background-offset ppu) 1 7 :lo) 24))))
 
 (plan nil)
 
@@ -304,6 +317,7 @@
   (test-scrolling-tiles)
   (test-scrolling-lines)
   (test-nametable-fetch)
-  (test-attribute-fetch))
+  (test-attribute-fetch)
+  (test-pattern-fetch))
 
 (finalize)

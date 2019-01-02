@@ -41,8 +41,8 @@
            #:x-scroll-offset
            #:y-scroll-offset
            #:vram-step
-           #:sprite-base-address
-           #:background-base-address
+           #:sprite-offset
+           #:background-offset
            #:sprite-size
            #:vblank-p
            #:grayscale-p
@@ -58,10 +58,11 @@
            #:store
            #:read-vram
            #:write-vram
-           #:bump-coarse-x
-           #:bump-coarse-y
+           #:scroll-tile
+           #:scroll-line
            #:read-nametable
-           #:read-attribute))
+           #:read-attribute
+           #:read-pattern))
 
 (in-package :clones.ppu)
 
@@ -123,13 +124,13 @@
                 (if (logbitp ,bit-position (ppu-control ppu))
                     ,set
                     ,unset))))
-  (define-control-bit x-scroll-offset         0  256   0)
-  (define-control-bit y-scroll-offset         1  240   0)
-  (define-control-bit vram-step               2  032   1)
-  (define-control-bit sprite-base-address     3  4096  0)
-  (define-control-bit background-base-address 4  4096  0)
-  (define-control-bit sprite-size             5  16    8)
-  (define-control-bit vblank-p                7  t   nil))
+  (define-control-bit x-scroll-offset   0  256   0)
+  (define-control-bit y-scroll-offset   1  240   0)
+  (define-control-bit vram-step         2  032   1)
+  (define-control-bit sprite-offset     3  4096  0)
+  (define-control-bit background-offset 4  4096  0)
+  (define-control-bit sprite-size       5  16    8)
+  (define-control-bit vblank-p          7  t   nil))
 
 (macrolet ((define-mask-bit (name bit-position)
              `(defun ,name (ppu)
@@ -258,7 +259,7 @@
 
 ;; PPU Internal Fetches
 
-(defun bump-coarse-x (ppu step)
+(defun scroll-tile (ppu step)
   (with-accessors ((coarse-x ppu-coarse-x)
                    (nt-index ppu-nt-index)) ppu
     (let ((new-value (+ coarse-x step)))
@@ -267,7 +268,8 @@
           (setf nt-index (logxor nt-index 1)
                 coarse-x (logand new-value 31))))))
 
-(defun bump-coarse-y (ppu)
+(defun scroll-line (ppu)
+  ;; TODO: Fix FINE-Y handling: https://wiki.nesdev.com/w/index.php/PPU_scrolling#Y_increment
   (with-accessors ((coarse-y ppu-coarse-y)
                    (nt-index ppu-nt-index)) ppu
     (if (< coarse-y 29)
@@ -288,4 +290,13 @@
          (vertical-offset (* (ppu-coarse-y ppu) 8))
          (quad (floor (ppu-coarse-x ppu) 4))
          (address (+ nametable-offset vertical-offset quad)))
+    (read-vram ppu address)))
+
+(defun read-pattern (ppu pattern-bank-offset tile-number line-offset byte)
+  ;; TODO: Shouldn't LINE-OFFSET almost always be PPU-FINE-Y for both bgs and sprites?
+  (let* ((tile-offset (* tile-number 16))
+         (byte-offset (ecase byte
+                        (:lo 0)
+                        (:hi 8)))
+         (address (+ pattern-bank-offset tile-offset line-offset byte-offset)))
     (read-vram ppu address)))
