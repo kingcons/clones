@@ -579,3 +579,31 @@ Coming up with 5 different PPU states and making sure the right nametable byte i
 all of them is super doable. I should retry testing tomorrow with _that_ as my mindset and
 I'll do just fine. Then I can move into testing the pattern table bits and bobs. Before you
 know it, I'll just throw some plumbing together and have graphics. Well, maybe not sprites. :)
+
+### Testing Fetches (01/01/2019)
+
+Today was pretty successful. I ultimately only spent an hour or two really focused on PPU hacking.
+But that time was spent pretty fluidly working on writing tests and implementing so I feel I've
+hit on the right things to test. Namely, I have functions for scrolling by a tile or a line as
+well as for fetching nametable, attribute table, or pattern table data. Testing is simple. Just
+build a PPU object, set up data in nametables or elsewhere as desired, check fetch output. Then
+tweak the scrolling info and check output again.
+
+In as much as there was an insight, it was just to separate the fetching and scrolling logic
+and expose it directly since that was the thing I could write clear and simple tests for.
+This isn't a new discovery but testing is something I struggle with at times. Mostly because
+you have to make some decisions about interfaces and ... well, that step is hard for unfamiliar
+problems.
+
+The biggest implementation hurdles I hit were knowing what should depend on COARSE-X/Y vs FINE-X/Y
+and mirroring. I had a particular surprise with testing nametable fetches for tile scrolling
+because the test ROM I use is horizontally mirrored. It seemed to me we should wrap to the "other"
+nametable but it was wrapping around to the beginning of the same nametable. I think this is
+actually correct behavior at this point after looking carefully at nesdev wiki and checking one
+or two other emulators. Basically, horizontal mirroring is used for vertical scrolling and
+vertical mirroring for horizontal scrolling. Whoever decided to name things that way ...
+
+Anyhow, next steps should be computing the palette index for a pixel based on FINE-X/Y.
+Once I can do that, it'll be about time to just write some loops in CLONES.RENDER and
+then hand the framebuffer off to CLONES.DISPLAY for drawing. Oh, and then sprites.
+Here's hoping. :)
