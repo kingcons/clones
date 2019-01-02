@@ -228,6 +228,64 @@
       (store ppu #x2007 33)
       (is (read-vram ppu #x3f20) 33))))
 
+(defun test-scrolling-tiles ()
+  (subtest "PPU Rendering - Coarse X Scrolling"
+    (let ((ppu (make-ppu)))
+      (is (ppu-coarse-x ppu) 0)
+      (is (ppu-nt-index ppu) 0)
+      (bump-coarse-x ppu 1)
+      (is (ppu-coarse-x ppu) 1)
+      (bump-coarse-x ppu 30)
+      (is (ppu-coarse-x ppu) 31)
+      (is (ppu-nt-index ppu) 0)
+      (bump-coarse-x ppu 1)
+      (is (ppu-coarse-x ppu) 0)
+      (is (ppu-nt-index ppu) 1))))
+
+(defun test-scrolling-lines ()
+  (subtest "PPU Rendering - Coarse Y Scrolling"
+    (let ((ppu (make-ppu)))
+      (is (ppu-coarse-y ppu) 0)
+      (bump-coarse-y ppu)
+      (is (ppu-coarse-y ppu) 1)
+      (dotimes (i 28)
+        (bump-coarse-y ppu))
+      (is (ppu-coarse-y ppu) 29)
+      (bump-coarse-y ppu)
+      (is (ppu-coarse-y ppu) 0)
+      (is (ppu-nt-index ppu) 2))))
+
+(defun test-nametable-fetch ()
+  (subtest "PPU Rendering - Nametable Fetch"
+    (let ((ppu (make-ppu)))
+      (is (read-nametable ppu) 0)
+      (setf (aref (ppu-nametable ppu) 0) #x20
+            (aref (ppu-nametable ppu) 1) #x40
+            (aref (ppu-nametable ppu) 32) #x80)
+      (is (read-nametable ppu) #x20)
+      (bump-coarse-x ppu 1)
+      (is (read-nametable ppu) #x40)
+      (bump-coarse-x ppu 31)
+      ;; NOTE: For a vertically mirrored cartridge the below value would be zero. But
+      ;; nestest.rom is horizontally mirrored so wrap around instead of to the next NT.
+      (is (read-nametable ppu) #x20)
+      (bump-coarse-y ppu)
+      (is (read-nametable ppu) #x80))))
+
+(defun test-attribute-fetch ()
+  (subtest "PPU Rendering - Attribute Fetch"
+    (let ((ppu (make-ppu)))
+      (is (read-attribute ppu) 0)
+      (setf (aref (ppu-nametable ppu) #x3c0) #xAA
+            (aref (ppu-nametable ppu) #x3c1) #xBB
+            (aref (ppu-nametable ppu) #x3c8) #xFF)
+      (is (read-attribute ppu) #xAA)
+      (bump-coarse-x ppu 4)
+      (is (read-attribute ppu) #xBB)
+      (bump-coarse-x ppu 28)
+      (bump-coarse-y ppu)
+      (is (read-attribute ppu) #xFF))))
+
 (plan nil)
 
 (subtest "PPU Interface"
@@ -242,6 +300,10 @@
   (test-ppu-write)
   (test-ppu-scroll-register)
   (test-ppu-address-register)
-  (test-write-vram))
+  (test-write-vram)
+  (test-scrolling-tiles)
+  (test-scrolling-lines)
+  (test-nametable-fetch)
+  (test-attribute-fetch))
 
 (finalize)

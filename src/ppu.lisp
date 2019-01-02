@@ -57,7 +57,11 @@
            #:fetch
            #:store
            #:read-vram
-           #:write-vram))
+           #:write-vram
+           #:bump-coarse-x
+           #:bump-coarse-y
+           #:read-nametable
+           #:read-attribute))
 
 (in-package :clones.ppu)
 
@@ -251,3 +255,37 @@
             ((< address #x4000)
              (setf (aref (ppu-palette-table ppu) (wrap-palette-table address)) value))))
     (incf address (vram-step ppu))))
+
+;; PPU Internal Fetches
+
+(defun bump-coarse-x (ppu step)
+  (with-accessors ((coarse-x ppu-coarse-x)
+                   (nt-index ppu-nt-index)) ppu
+    (let ((new-value (+ coarse-x step)))
+      (if (< new-value 32)
+          (setf coarse-x new-value)
+          (setf nt-index (logxor nt-index 1)
+                coarse-x (logand new-value 31))))))
+
+(defun bump-coarse-y (ppu)
+  (with-accessors ((coarse-y ppu-coarse-y)
+                   (nt-index ppu-nt-index)) ppu
+    (if (< coarse-y 29)
+        (incf coarse-y)
+        (setf coarse-y 0
+              nt-index (logxor nt-index 2)))))
+
+(defun read-nametable (ppu)
+  (let* ((mirror-type (mirroring (ppu-pattern-table ppu)))
+         (nametable-offset (+ #x2000 (nt-offset mirror-type (ppu-nt-index ppu))))
+         (vertical-offset (* (ppu-coarse-y ppu) 32))
+         (address (+ nametable-offset vertical-offset (ppu-coarse-x ppu))))
+    (read-vram ppu address)))
+
+(defun read-attribute (ppu)
+  (let* ((mirror-type (mirroring (ppu-pattern-table ppu)))
+         (nametable-offset (+ #x23c0 (nt-offset mirror-type (ppu-nt-index ppu))))
+         (vertical-offset (* (ppu-coarse-y ppu) 8))
+         (quad (floor (ppu-coarse-x ppu) 4))
+         (address (+ nametable-offset vertical-offset quad)))
+    (read-vram ppu address)))
