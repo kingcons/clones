@@ -25,24 +25,20 @@
 
 (defun test-context ()
   (subtest "Checking render context..."
-    (is-type *context* 'clones.render:context)))
-
-(defun test-nametables ()
-  (subtest "Checking Nametable Access..."
-    (diag "With Coarse X of zero...")
-    (let ((nt-bytes (coerce (alexandria:iota 32 :start 64) 'vector))
-          (at-bytes #(#xAA #xAA #xAA #xAA #xFF #xFF #xFF #xFF)))
-      (with-ppu (ppu :nt-bytes nt-bytes :at-bytes at-bytes)
-        (is (aref (context-nt-buffer *context*) 0) 0)
-        (is (aref (context-at-buffer *context*) 0) 0)
-        (render-scanline ppu)
-        (is (context-nt-buffer *context*) nt-bytes :test #'equalp)
-        (is (context-at-buffer *context*) at-bytes :test #'equalp)))))
+    (is-type *context* 'clones.render:context)
+    (is (context-scanline *context*) 0)
+    (is (context-dma-p *context*) nil)
+    (is (context-nmi-p *context*) nil)
+    (is (context-frame-p *context*) nil)
+    (is (length (context-nt-buffer *context*)) 32)
+    (is (length (context-at-buffer *context*)) 8)
+    (is (length (context-candidates *context*)) 8)
+    (is (length (context-bg-pixels *context*)) 8)
+    (is (length (context-sprite-pixels *context*)) 8)))
 
 (subtest "PPU Rendering ..."
   (test-framebuffer)
   (test-palette)
-  (test-context)
-  (test-nametables))
+  (test-context))
 
 (finalize)

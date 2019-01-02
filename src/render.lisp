@@ -17,7 +17,14 @@
            #:render-scanline
            #:context-scanline
            #:context-nt-buffer
-           #:context-at-buffer))
+           #:context-at-buffer
+           #:context-scanline
+           #:context-dma-p
+           #:context-nmi-p
+           #:context-frame-p
+           #:context-candidates
+           #:context-bg-pixels
+           #:context-sprite-pixels))
 
 (in-package :clones.render)
 
@@ -75,34 +82,14 @@
        (unwind-protect ,@body
          (setf (ppu-coarse-x ,ppu) ,backup)))))
 
-(defun next-coarse-x (ppu step)
-  (with-accessors ((coarse-x ppu-coarse-x)
-                   (nt-index ppu-nt-index)) ppu
-    (let ((new-value (+ coarse-x step)))
-      (if (< new-value 32)
-          (setf coarse-x new-value)
-          (setf nt-index (logxor nt-index 1)
-                coarse-x (logand new-value 31))))))
-
 (defun fill-nt-buffer (ppu)
   (restoring-coarse-x ppu
     (dotimes (tile 32)
-      (setf (aref (context-nt-buffer *context*) tile) (get-nametable-byte ppu))
-      (next-coarse-x ppu 1))))
+      (setf (aref (context-nt-buffer *context*) tile) (read-nametable ppu))
+      (bump-coarse-x ppu 1))))
 
 (defun fill-at-buffer (ppu)
   (restoring-coarse-x ppu
     (dotimes (quad 8)
-      (setf (aref (context-at-buffer *context*) quad) (get-attribute-byte ppu))
-      (next-coarse-x ppu 4))))
-
-(defun get-nametable-byte (ppu)
-  (let* ((scanline-offset (* (ppu-coarse-y ppu) 32))
-         (address (+ (base-nt-address ppu) scanline-offset (ppu-coarse-x ppu))))
-    (read-vram ppu address)))
-
-(defun get-attribute-byte (ppu)
-  (let* ((scanline-offset (* (ppu-coarse-y ppu) 8))
-         (quad (floor (ppu-coarse-x ppu) 4))
-         (address (+ (base-nt-address ppu) #x3c0 scanline-offset quad)))
-    (read-vram ppu address)))
+      (setf (aref (context-at-buffer *context*) quad) (read-attribute ppu))
+      (bump-coarse-x ppu 4))))
