@@ -63,7 +63,7 @@
            #:read-nametable
            #:read-attribute
            #:read-pattern
-           #:color-quad
+           #:quad-position
            #:palette-high-bits))
 
 (in-package :clones.ppu)
@@ -303,13 +303,11 @@
          (address (+ pattern-bank-offset tile-offset line-offset byte-offset)))
     (read-vram ppu address)))
 
-(defun color-quad (ppu)
-  (let ((coarse-x (ppu-coarse-x ppu))
-        (coarse-y (ppu-coarse-y ppu)))
-    (if (evenp (floor coarse-y 2))
-        (if (evenp (floor coarse-x 2)) 0 2)
-        (if (evenp (floor coarse-x 2)) 4 6))))
+(defun quad-position (coarse-x coarse-y)
+  (if (evenp (floor coarse-y 2))
+      (if (evenp (floor coarse-x 2)) 0 2)
+      (if (evenp (floor coarse-x 2)) 4 6)))
 
-(defun palette-high-bits (ppu attribute-byte)
-  (let ((position (color-quad ppu)))
+(defun palette-high-bits (attribute-byte coarse-x coarse-y)
+  (let ((position (quad-position coarse-x coarse-y)))
     (ldb (byte 2 position) attribute-byte)))
