@@ -299,6 +299,51 @@
       (is (read-pattern ppu (background-offset ppu) 1 0 :lo) 17)
       (is (read-pattern ppu (background-offset ppu) 1 7 :lo) 24))))
 
+(defun test-color-quad ()
+  (subtest "PPU Rendering - Color Quad"
+    (let ((ppu (make-ppu)))
+      ;; Top Left
+      (dolist (coarse-x '(0 1))
+        (dolist (coarse-y '(0 1))
+          (setf (ppu-coarse-x ppu) coarse-x
+                (ppu-coarse-y ppu) coarse-y)
+          (is (color-quad ppu) 0)))
+      ;; Top Right
+      (dolist (coarse-x '(2 3))
+        (dolist (coarse-y '(0 1))
+          (setf (ppu-coarse-x ppu) coarse-x
+                (ppu-coarse-y ppu) coarse-y)
+          (is (color-quad ppu) 2)))
+      ;; Bottom Left
+      (dolist (coarse-x '(0 1))
+        (dolist (coarse-y '(2 3))
+          (setf (ppu-coarse-x ppu) coarse-x
+                (ppu-coarse-y ppu) coarse-y)
+          (is (color-quad ppu) 4)))
+      ;; Bottom Right
+      (dolist (coarse-x '(2 3))
+        (dolist (coarse-y '(2 3))
+          (setf (ppu-coarse-x ppu) coarse-x
+                (ppu-coarse-y ppu) coarse-y)
+          (is (color-quad ppu) 6))))))
+
+(defun test-palette-high-bits ()
+  (subtest "PPU Rendering - Palette High Bits"
+    (let ((ppu (make-ppu))
+          (attribute-byte #b10001011))
+      (setf (ppu-coarse-x ppu) 1
+            (ppu-coarse-y ppu) 1)
+      (is (palette-high-bits ppu attribute-byte) #b11)
+      (setf (ppu-coarse-x ppu) 2
+            (ppu-coarse-y ppu) 1)
+      (is (palette-high-bits ppu attribute-byte) #b10)
+      (setf (ppu-coarse-x ppu) 1
+            (ppu-coarse-y ppu) 2)
+      (is (palette-high-bits ppu attribute-byte) #b00)
+      (setf (ppu-coarse-x ppu) 2
+            (ppu-coarse-y ppu) 2)
+      (is (palette-high-bits ppu attribute-byte) #b10))))
+
 (plan nil)
 
 (subtest "PPU Interface"
@@ -318,6 +363,8 @@
   (test-scrolling-lines)
   (test-nametable-fetch)
   (test-attribute-fetch)
-  (test-pattern-fetch))
+  (test-pattern-fetch)
+  (test-color-quad)
+  (test-palette-high-bits))
 
 (finalize)
