@@ -86,10 +86,10 @@
   (restoring-coarse-x ppu
     (dotimes (tile 32)
       (setf (aref (context-nt-buffer *context*) tile) (read-nametable ppu))
-      (scroll-tile ppu 1))))
+      (next-tile ppu 1))))
 
 (defun fill-at-buffer (ppu)
   (restoring-coarse-x ppu
     (dotimes (quad 8)
       (setf (aref (context-at-buffer *context*) quad) (read-attribute ppu))
-      (scroll-tile ppu 4))))
+      (next-tile ppu 4))))

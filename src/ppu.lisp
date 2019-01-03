@@ -58,8 +58,8 @@
            #:store
            #:read-vram
            #:write-vram
-           #:scroll-tile
-           #:scroll-line
+           #:next-tile
+           #:next-line
            #:read-nametable
            #:read-attribute
            #:read-pattern
@@ -261,7 +261,7 @@
 
 ;; PPU Internal Fetches
 
-(defun scroll-tile (ppu step)
+(defun next-tile (ppu step)
   (with-accessors ((coarse-x ppu-coarse-x)
                    (nt-index ppu-nt-index)) ppu
     (let ((new-value (+ coarse-x step)))
@@ -270,7 +270,7 @@
           (setf nt-index (logxor nt-index 1)
                 coarse-x (logand new-value 31))))))
 
-(defun scroll-line (ppu)
+(defun next-line (ppu)
   ;; TODO: Fix FINE-Y handling: https://wiki.nesdev.com/w/index.php/PPU_scrolling#Y_increment
   (with-accessors ((coarse-y ppu-coarse-y)
                    (nt-index ppu-nt-index)) ppu
