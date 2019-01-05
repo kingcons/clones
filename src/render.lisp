@@ -62,9 +62,7 @@
   (frame-p       nil                      :type boolean)
   (nt-buffer     (make-byte-vector #x20)  :type (byte-vector 32))
   (at-buffer     (make-byte-vector #x08)  :type (byte-vector 08))
-  (candidates    (make-array 8)           :type (simple-vector 8))
-  (bg-pixels     (make-array 8)           :type (simple-vector 8))
-  (sprite-pixels (make-array 8)           :type (simple-vector 8)))
+  (candidates    (make-array 8)           :type (simple-vector 8)))
 
 (defvar *context* (make-context)
   "A Render Context to cache state and avoid redundant fetches.")

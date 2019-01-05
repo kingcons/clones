@@ -32,9 +32,7 @@
     (is (context-frame-p *context*) nil)
     (is (length (context-nt-buffer *context*)) 32)
     (is (length (context-at-buffer *context*)) 8)
-    (is (length (context-candidates *context*)) 8)
-    (is (length (context-bg-pixels *context*)) 8)
-    (is (length (context-sprite-pixels *context*)) 8)))
+    (is (length (context-candidates *context*)) 8)))
 
 (subtest "PPU Rendering ..."
   (test-framebuffer)
