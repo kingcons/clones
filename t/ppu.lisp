@@ -273,10 +273,13 @@
 (defun test-scrolling-lines ()
   (subtest "PPU Rendering - Coarse Y Scrolling"
     (let ((ppu (make-ppu)))
-      (is (ppu-coarse-y ppu) 0)
+      (is (ppu-fine-y ppu) 0)
       (next-line ppu)
+      (is (ppu-fine-y ppu) 1)
+      (dotimes (i 7)
+        (next-line ppu))
       (is (ppu-coarse-y ppu) 1)
-      (dotimes (i 28)
+      (dotimes (i 231)
         (next-line ppu))
       (is (ppu-coarse-y ppu) 29)
       (next-line ppu)
@@ -297,7 +300,8 @@
       ;; NOTE: For a vertically mirrored cartridge the below value would be zero. But
       ;; nestest.rom is horizontally mirrored so wrap around instead of to the next NT.
       (is (read-nametable ppu) #x20)
-      (next-line ppu)
+      (dotimes (tile-row 8)
+        (next-line ppu))
       (is (read-nametable ppu) #x80))))
 
 (defun test-attribute-fetch ()
@@ -306,12 +310,12 @@
       (is (read-attribute ppu) 0)
       (setf (aref (ppu-nametable ppu) #x3c0) #xAA
             (aref (ppu-nametable ppu) #x3c1) #xBB
-            (aref (ppu-nametable ppu) #x3c8) #xFF)
+            (aref (ppu-nametable ppu) #x3c9) #xFF)
       (is (read-attribute ppu) #xAA)
       (next-tile ppu 4)
       (is (read-attribute ppu) #xBB)
-      (next-tile ppu 28)
-      (next-line ppu)
+      (dotimes (tile-row 8)
+        (next-line ppu))
       (is (read-attribute ppu) #xFF))))
 
 (defun test-pattern-fetch ()

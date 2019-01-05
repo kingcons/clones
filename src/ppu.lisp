@@ -245,13 +245,15 @@
                 coarse-x (logand new-value 31))))))
 
 (defun next-line (ppu)
-  ;; TODO: Fix FINE-Y handling: https://wiki.nesdev.com/w/index.php/PPU_scrolling#Y_increment
-  (with-accessors ((coarse-y ppu-coarse-y)
+  (with-accessors ((fine-y   ppu-fine-y)
+                   (coarse-y ppu-coarse-y)
                    (nt-index ppu-nt-index)) ppu
-    (if (< coarse-y 29)
-        (incf coarse-y)
-        (setf coarse-y 0
-              nt-index (logxor nt-index 2)))))
+    (when (= fine-y 7)
+      (if (< coarse-y 29)
+          (incf coarse-y)
+          (setf coarse-y 0
+                nt-index (logxor nt-index 2))))
+    (setf fine-y (logand (1+ fine-y) 7))))
 
 (defun nametable-address (ppu)
   (let ((mirror-type (mirroring (ppu-pattern-table ppu))))
