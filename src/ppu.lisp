@@ -64,7 +64,8 @@
            #:read-attribute
            #:read-pattern
            #:quad-position
-           #:palette-high-bits))
+           #:palette-high-bits
+           #:palette-low-bits))
 
 (in-package :clones.ppu)
 
@@ -279,16 +280,18 @@
         (setf coarse-y 0
               nt-index (logxor nt-index 2)))))
 
+(defun nametable-address (ppu)
+  (let ((mirror-type (mirroring (ppu-pattern-table ppu))))
+    (+ #x2000 (nt-offset mirror-type (ppu-nt-index ppu)))))
+
 (defun read-nametable (ppu)
-  (let* ((mirror-type (mirroring (ppu-pattern-table ppu)))
-         (nametable-offset (+ #x2000 (nt-offset mirror-type (ppu-nt-index ppu))))
+  (let* ((nametable-offset (nametable-address ppu))
          (vertical-offset (* (ppu-coarse-y ppu) 32))
          (address (+ nametable-offset vertical-offset (ppu-coarse-x ppu))))
     (read-vram ppu address)))
 
 (defun read-attribute (ppu)
-  (let* ((mirror-type (mirroring (ppu-pattern-table ppu)))
-         (nametable-offset (+ #x23c0 (nt-offset mirror-type (ppu-nt-index ppu))))
+  (let* ((nametable-offset (+ #x3c0 (nametable-address ppu)))
          (vertical-offset (* (ppu-coarse-y ppu) 8))
          (quad (floor (ppu-coarse-x ppu) 4))
          (address (+ nametable-offset vertical-offset quad)))
@@ -311,3 +314,7 @@
 (defun palette-high-bits (attribute-byte coarse-x coarse-y)
   (let ((position (quad-position coarse-x coarse-y)))
     (ldb (byte 2 position) attribute-byte)))
+
+(defun palette-low-bits (pattern-lo pattern-hi row)
+  (+ (ash (ldb (byte 1 row) pattern-hi) 1)
+     (ldb (byte 1 row) pattern-lo)))

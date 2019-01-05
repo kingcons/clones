@@ -301,32 +301,43 @@
 
 (defun test-quad-position ()
   (subtest "PPU Rendering - Color Quad"
-    (let ((ppu (make-ppu)))
-      ;; Top Left
-      (dolist (coarse-x '(0 1))
-        (dolist (coarse-y '(0 1))
-          (is (quad-position coarse-x coarse-y) 0)))
-      ;; Top Right
-      (dolist (coarse-x '(2 3))
-        (dolist (coarse-y '(0 1))
-          (is (quad-position coarse-x coarse-y) 2)))
-      ;; Bottom Left
-      (dolist (coarse-x '(0 1))
-        (dolist (coarse-y '(2 3))
-          (is (quad-position coarse-x coarse-y) 4)))
-      ;; Bottom Right
-      (dolist (coarse-x '(2 3))
-        (dolist (coarse-y '(2 3))
-          (is (quad-position coarse-x coarse-y) 6))))))
+    ;; Top Left
+    (dolist (coarse-x '(0 1))
+      (dolist (coarse-y '(0 1))
+        (is (quad-position coarse-x coarse-y) 0)))
+    ;; Top Right
+    (dolist (coarse-x '(2 3))
+      (dolist (coarse-y '(0 1))
+        (is (quad-position coarse-x coarse-y) 2)))
+    ;; Bottom Left
+    (dolist (coarse-x '(0 1))
+      (dolist (coarse-y '(2 3))
+        (is (quad-position coarse-x coarse-y) 4)))
+    ;; Bottom Right
+    (dolist (coarse-x '(2 3))
+      (dolist (coarse-y '(2 3))
+        (is (quad-position coarse-x coarse-y) 6)))))
 
 (defun test-palette-high-bits ()
   (subtest "PPU Rendering - Palette High Bits"
-    (let ((ppu (make-ppu))
-          (attribute-byte #b10001011))
+    (let ((attribute-byte #b10001011))
       (is (palette-high-bits attribute-byte 1 1) #b11)
       (is (palette-high-bits attribute-byte 2 1) #b10)
       (is (palette-high-bits attribute-byte 1 2) #b00)
       (is (palette-high-bits attribute-byte 2 2) #b10))))
+
+(defun test-palette-low-bits ()
+  (subtest "PPU Rendering - Palette Low Bits"
+    (let ((lo-byte #b10101100)
+          (hi-byte #b00110011))
+      (is (palette-low-bits lo-byte hi-byte 0) 2)
+      (is (palette-low-bits lo-byte hi-byte 1) 2)
+      (is (palette-low-bits lo-byte hi-byte 2) 1)
+      (is (palette-low-bits lo-byte hi-byte 3) 1)
+      (is (palette-low-bits lo-byte hi-byte 4) 2)
+      (is (palette-low-bits lo-byte hi-byte 5) 3)
+      (is (palette-low-bits lo-byte hi-byte 6) 0)
+      (is (palette-low-bits lo-byte hi-byte 7) 1))))
 
 (plan nil)
 
@@ -349,6 +360,7 @@
   (test-attribute-fetch)
   (test-pattern-fetch)
   (test-quad-position)
-  (test-palette-high-bits))
+  (test-palette-high-bits)
+  (test-palette-low-bits))
 
 (finalize)
