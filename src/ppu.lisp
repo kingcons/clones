@@ -22,6 +22,7 @@
                 :default-rom)
   (:export #:ppu
            #:make-ppu
+           #:set-vblank
            #:ppu-coarse-x
            #:ppu-coarse-y
            #:ppu-fine-x
@@ -119,6 +120,9 @@
   (define-mask-bit emphasize-red-p        5)
   (define-mask-bit emphasize-green-p      6)
   (define-mask-bit emphasize-blue-p       7))
+
+(defun set-vblank (ppu state)
+  (setf (ldb (byte 1 7) (ppu-status ppu)) state))
 
 ;; Register Behavior
 
