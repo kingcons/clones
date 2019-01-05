@@ -10,7 +10,7 @@
 (defmacro with-ppu ((var &key nt-bytes at-bytes) &body body)
   `(let ((,var (clones.ppu:make-ppu)))
      (when (and ,nt-bytes ,at-bytes)
-       (with-accessors ((nametable clones.ppu:ppu-nametable)) ,var
+       (with-accessors ((nametable clones.ppu::ppu-nametable)) ,var
          (setf (subseq nametable 0 (length ,nt-bytes)) ,nt-bytes
                (subseq nametable #x3c0 (+ #x3c0 (length ,at-bytes))) ,at-bytes)))
      ,@body))
