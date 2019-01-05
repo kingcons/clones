@@ -2,6 +2,34 @@
 
 (defpackage :clones-test.ppu
   (:use :cl :clones.ppu :prove)
+  (:import-from :clones.ppu
+                :ppu-control
+                :ppu-mask
+                :ppu-status
+                :ppu-oam-address
+                :ppu-data
+                :ppu-address
+                :ppu-write-latch
+                :ppu-oam
+                :ppu-nametable
+                :ppu-palette-table
+                :ppu-pattern-table
+                :x-scroll-offset
+                :y-scroll-offset
+                :vram-step
+                :sprite-offset
+                :background-offset
+                :sprite-size
+                :vblank-p
+                :grayscale-p
+                :show-background-left-p
+                :show-sprites-left-p
+                :emphasize-red-p
+                :emphasize-green-p
+                :emphasize-blue-p
+                :nt-mirror
+                :read-vram
+                :write-vram)
   (:import-from :clones.mappers
                 :mapper)
   (:import-from :clones.util

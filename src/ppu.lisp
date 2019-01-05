@@ -22,42 +22,15 @@
                 :default-rom)
   (:export #:ppu
            #:make-ppu
-           #:ppu-control
-           #:ppu-mask
-           #:ppu-status
-           #:ppu-oam-address
-           #:ppu-data
-           #:ppu-address
            #:ppu-coarse-x
            #:ppu-coarse-y
            #:ppu-fine-x
            #:ppu-fine-y
            #:ppu-nt-index
-           #:ppu-write-latch
-           #:ppu-oam
-           #:ppu-nametable
-           #:ppu-palette-table
-           #:ppu-pattern-table
-           #:x-scroll-offset
-           #:y-scroll-offset
-           #:vram-step
-           #:sprite-offset
-           #:background-offset
-           #:sprite-size
-           #:vblank-p
-           #:grayscale-p
-           #:show-background-left-p
-           #:show-sprites-left-p
            #:show-background-p
            #:show-sprites-p
-           #:emphasize-red-p
-           #:emphasize-green-p
-           #:emphasize-blue-p
-           #:nt-mirror
            #:fetch
            #:store
-           #:read-vram
-           #:write-vram
            #:next-tile
            #:next-line
            #:read-nametable
