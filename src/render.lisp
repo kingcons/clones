@@ -19,7 +19,6 @@
            #:context-nt-buffer
            #:context-at-buffer
            #:context-scanline
-           #:context-dma-p
            #:context-nmi-p
            #:context-frame-p
            #:context-candidates

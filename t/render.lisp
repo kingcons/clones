@@ -27,7 +27,6 @@
   (subtest "Checking render context..."
     (is-type *context* 'clones.render:context)
     (is (context-scanline *context*) 0)
-    (is (context-dma-p *context*) nil)
     (is (context-nmi-p *context*) nil)
     (is (context-frame-p *context*) nil)
     (is (length (context-nt-buffer *context*)) 32)

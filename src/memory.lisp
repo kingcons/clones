@@ -5,7 +5,6 @@
   (:import-from :clones.ppu
                 :ppu
                 :make-ppu
-                ;; :ppu-dma-result
                 :ppu-pattern-table)
   (:import-from :clones.input
                 :gamepad
@@ -21,6 +20,7 @@
   (:export #:memory
            #:memory-ppu
            #:memory-gamepad
+           #:memory-dma-p
            #:make-memory
            #:swap-rom
            #:fetch
@@ -32,25 +32,26 @@
 (in-package :clones.memory)
 
 (defstruct memory
-  (ram (make-byte-vector #x800) :type byte-vector)
-  (ppu (make-ppu) :type ppu)
-  (apu nil)
+  (dma-p   nil :type boolean)
+  (ram     (make-byte-vector #x800) :type byte-vector)
+  (ppu     (make-ppu) :type ppu)
+  (apu     nil)
   (gamepad (make-gamepad) :type gamepad)
-  (mapper (load-rom (asset-path "roms/nestest.nes")) :type mapper))
+  (mapper  (load-rom (asset-path "roms/nestest.nes")) :type mapper))
 
-;; (defun %oam-dma (memory value)
-;;   (let ((ppu (memory-ppu memory))
-;;         (page (ash value 8)))
-;;     (loop for index from page to (+ page #xff)
-;;           do (let ((data (fetch memory index)))
-;;                (store ppu #x2004 data)))
-;;     (setf (ppu-dma-result ppu) t)))
+(defun %oam-dma (memory value)
+  (let ((ppu (memory-ppu memory))
+        (page (ash value 8)))
+    (loop for index from page to (+ page #xff)
+          do (let ((data (fetch memory index)))
+               (store ppu #x2004 data)))
+    (setf (memory-dma-p memory) t)))
 
-;; (defun swap-rom (memory rom-file)
-;;   (let ((rom (load-rom (asset-path rom-file))))
-;;     (with-accessors ((mapper memory-mapper) (ppu memory-ppu)) memory
-;;       (setf mapper rom
-;;             (ppu-cartridge ppu) rom))))
+(defun swap-rom (memory rom-file)
+  (let ((rom (load-rom (asset-path rom-file))))
+    (with-accessors ((mapper memory-mapper) (ppu memory-ppu)) memory
+      (setf mapper rom
+            (ppu-pattern-table ppu) rom))))
 
 (defmethod fetch ((memory memory) address)
   (cond ((< address #x2000)
@@ -69,8 +70,8 @@
          (setf (aref (memory-ram memory) (logand address #x7ff)) value))
         ((< address #x4000)
          (store (memory-ppu memory) address value))
-        ;; ((= address #x4014)
-        ;;  (%oam-dma memory value))
+        ((= address #x4014)
+         (%oam-dma memory value))
         ((= address #x4016)
          (reset-strobe (memory-gamepad memory)))
         ((< address #x8000)
