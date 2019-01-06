@@ -36,10 +36,7 @@
            #:next-line
            #:read-nametable
            #:read-attribute
-           #:read-pattern
-           #:quad-position
-           #:palette-high-bits
-           #:palette-low-bits))
+           #:get-bg-pixels))
 
 (in-package :clones.ppu)
 
@@ -294,6 +291,28 @@
   (let ((position (quad-position coarse-x coarse-y)))
     (ldb (byte 2 position) attribute-byte)))
 
-(defun palette-low-bits (pattern-lo pattern-hi row)
-  (+ (ash (ldb (byte 1 row) pattern-hi) 1)
-     (ldb (byte 1 row) pattern-lo)))
+(defun palette-low-bits (pattern-lo pattern-hi column)
+  (+ (ash (ldb (byte 1 column) pattern-hi) 1)
+     (ldb (byte 1 column) pattern-lo)))
+
+(defun get-color (ppu lo-bits hi-bits type)
+  (let* ((palette-offset (ecase type
+                           (:bg     #x3f00)
+                           (:sprite #x3f10)))
+         (address (+ palette-offset (dpb hi-bits (byte 2 2) lo-bits))))
+    (read-vram ppu address)))
+
+(defun get-bg-pixels (ppu nametable-byte attribute-byte bytevec)
+  (with-accessors ((coarse-x ppu-coarse-x)
+                   (coarse-x ppu-coarse-y)
+                   (fine-y   ppu-fine-y)) ppu
+    (let* ((backdrop   (read-vram ppu #x3f00))
+           (bg-offset  (background-offset ppu))
+           (pattern-lo (read-pattern ppu bg-offset nametable-byte fine-y :lo))
+           (pattern-hi (read-pattern ppu bg-offset nametable-byte fine-y :hi))
+           (palette-hi (palette-high-bits attribute-byte coarse-x coarse-y)))
+      (dotimes (pixel 8)
+        (let ((palette-lo (palette-low-bits pattern-lo pattern-hi pixel)))
+          (if (zerop palette-lo)
+              (setf (aref bytevec pixel) backdrop)
+              (setf (aref bytevec pixel) (get-color ppu palette-lo palette-hi :bg))))))))

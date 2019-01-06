@@ -29,7 +29,11 @@
                 :emphasize-blue-p
                 :nt-mirror
                 :read-vram
-                :write-vram)
+                :write-vram
+                :read-pattern
+                :quad-position
+                :palette-high-bits
+                :palette-low-bits)
   (:import-from :clones.mappers
                 :mapper)
   (:import-from :clones.util
