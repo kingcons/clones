@@ -2,7 +2,7 @@
 
 (defpackage :clones.display
   (:use :cl)
-  (:import-from :clones.ppu
+  (:import-from :clones.render
                 :*framebuffer*)
   (:import-from :static-vectors
                 :static-vector-pointer)

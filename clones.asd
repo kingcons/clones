@@ -19,9 +19,8 @@
   :depends-on (:alexandria :sdl2 :static-vectors)
   :components ((:module "src"
                 :components
-                (
-                 ; (:file "clones" :depends-on ("display" "disassembler" "instructions"))
-                 ; (:file "display" :depends-on ("ppu"))
+                ((:file "clones" :depends-on ("display" "disassembler" "instructions"))
+                 (:file "display" :depends-on ("ppu" "render"))
                  (:file "render" :depends-on ("instructions" "ppu"))
                  (:file "disassembler" :depends-on ("addressing" "instruction-data"))
                  (:file "instructions" :depends-on ("addressing"))

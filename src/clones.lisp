@@ -5,12 +5,13 @@
   (:import-from :clones.cpu
                 :make-cpu
                 :cpu-memory
+                :cpu-cycles
                 :reset)
-  (:import-from :clones.ppu
-                :ppu-dma-result
-                :ppu-nmi-result
-                :ppu-new-frame
-                :sync)
+  (:import-from :clones.render
+                :*context*
+                :context-frame-p
+                :context-nmi-p
+                :render-scanline)
   (:import-from :clones.input
                 :handle-input)
   (:import-from :clones.instructions
@@ -18,12 +19,14 @@
   (:import-from :clones.memory
                 :memory-ppu
                 :memory-gamepad
+                :memory-dma-p
                 :swap-rom)
   (:import-from :clones.util
                 :slot->))
 
 (in-package :clones)
 
+(defconstant +cycles-per-scanline+ 113)
 (defvar *nes* (make-cpu))
 (defvar *trace* nil)
 
@@ -41,16 +44,17 @@
   (with-accessors ((ppu memory-ppu)
                    (gamepad memory-gamepad)) (cpu-memory nes)
     (loop
-      (let ((cycle-count (single-step nes)))
+      (let* ((cycle-count (single-step nes)))
         (when *trace*
           (print nes)
           (clones.disassembler:now nes))
-        (sync ppu (* cycle-count 3))
-        (when (ppu-dma-result ppu)
+        (when (render-scanline ppu (* cycle-count 3))
+          (setf (cpu-cycles nes) (mod (cpu-cycles nes) +cycles-per-scanline+)))
+        (when (memory-dma-p (cpu-memory nes))
           (clones.cpu:dma nes))
-        (when (ppu-nmi-result ppu)
+        (when (context-nmi-p *context*)
           (clones.cpu:nmi nes))
-        (when (ppu-new-frame ppu)
+        (when (context-frame-p *context*)
           (when headless (return nil))
           (let ((input (handle-input gamepad)))
             (when (eq :quit input) (return nil))
