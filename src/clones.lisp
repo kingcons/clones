@@ -11,7 +11,7 @@
                 :*context*
                 :context-frame-p
                 :context-nmi-p
-                :render-scanline)
+                :sync)
   (:import-from :clones.input
                 :handle-input)
   (:import-from :clones.instructions
@@ -48,8 +48,7 @@
         (when *trace*
           (print nes)
           (clones.disassembler:now nes))
-        (when (render-scanline ppu (* cycle-count 3))
-          (setf (cpu-cycles nes) (mod (cpu-cycles nes) +cycles-per-scanline+)))
+        (sync ppu (* cycle-count 3))
         (when (memory-dma-p (cpu-memory nes))
           (clones.cpu:dma nes))
         (when (context-nmi-p *context*)

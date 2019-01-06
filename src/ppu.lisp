@@ -22,6 +22,7 @@
                 :default-rom)
   (:export #:ppu
            #:make-ppu
+           #:vblank-p
            #:set-vblank
            #:ppu-coarse-x
            #:ppu-coarse-y
@@ -304,7 +305,7 @@
 
 (defun get-bg-pixels (ppu nametable-byte attribute-byte bytevec)
   (with-accessors ((coarse-x ppu-coarse-x)
-                   (coarse-x ppu-coarse-y)
+                   (coarse-y ppu-coarse-y)
                    (fine-y   ppu-fine-y)) ppu
     (let* ((backdrop   (read-vram ppu #x3f00))
            (bg-offset  (background-offset ppu))

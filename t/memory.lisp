@@ -21,7 +21,7 @@
 
 (subtest "Storing and Fetching Data from PPU"
   (let* ((memory (make-memory)))
-    (setf (clones.ppu:ppu-data (memory-ppu memory)) 42)
+    (setf (clones.ppu::ppu-data (memory-ppu memory)) 42)
     (is (fetch memory #x2007) 42)))
 
 (subtest "Storing and Fetching Data from Mapper (NROM)"

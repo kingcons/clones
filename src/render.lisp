@@ -14,7 +14,7 @@
            #:+color-palette+
            #:*context*
            #:context
-           #:render-scanline
+           #:sync
            #:context-scanline
            #:context-nt-buffer
            #:context-at-buffer
@@ -52,6 +52,7 @@
   "A Framebuffer for graphics operations with 3 bytes per pixel for RGB.")
 
 (defstruct context
+  (cycles        0                        :type fixnum)
   (scanline      0                        :type (integer 0 262))
   (dma-p         nil                      :type boolean)
   (nmi-p         nil                      :type boolean)
@@ -63,22 +64,27 @@
 (defvar *context* (make-context)
   "A Render Context to cache state and avoid redundant fetches.")
 
-(defun render-scanline (ppu cycle-count)
-  (with-accessors ((scanline context-scanline)) *context*
-    (when (< cycle-count +cycles-per-scanline+)
-      (return-from render-scanline))
-    (prepare-context ppu scanline)
-    (let ((bg-pixels (make-byte-vector 8))
-          (sprite-pixels (make-byte-vector 8)))
-      (declare (dynamic-extent bg-pixels sprite-pixels))
-      (dotimes (tile 32)
-        (render-tile ppu tile bg-pixels sprite-pixels)))
-    (next-line ppu)
+(defun sync (ppu cycle-count)
+  (with-accessors ((cycles context-cycles)
+                   (scanline context-scanline)) *context*
+    (when (< cycle-count (+ cycles +cycles-per-scanline+))
+      (return-from sync))
+    (when (< scanline +height+)
+      (render-scanline ppu scanline))
+    (incf cycles +cycles-per-scanline+)
     (incf scanline)
     (case scanline
       (241 (start-vblank ppu))
-      (262 (finish-frame ppu)))
-    t))
+      (262 (finish-frame ppu)))))
+
+(defun render-scanline (ppu scanline)
+  (prepare-context ppu scanline)
+  (let ((bg-pixels (make-byte-vector 8))
+        (sprite-pixels (make-byte-vector 8)))
+    (declare (dynamic-extent bg-pixels sprite-pixels))
+    (dotimes (tile 32)
+      (render-tile ppu tile bg-pixels sprite-pixels)))
+  (next-line ppu))
 
 (defun prepare-context (ppu scanline)
   (with-accessors ((frame-p context-frame-p)
@@ -96,8 +102,8 @@
 
 (defun finish-frame (ppu)
   (set-vblank ppu 0)
-  (setf (context-scanline *context*) 0
-        (context-frame-p  *context*) t))
+  (setf (context-frame-p *context*) t
+        (context-scanline *context*) 0))
 
 (defmacro restoring-coarse-x (ppu &body body)
   (alexandria:with-gensyms (backup)
