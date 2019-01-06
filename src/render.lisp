@@ -129,11 +129,11 @@
                    (at-buffer  context-at-buffer)
                    (candidates context-candidates)) *context*
     (let* ((nametable-byte (aref nt-buffer tile))
-           (attribute-byte (aref at-buffer (floor tile 4)))
-           (bg-pixels (get-bg-pixels ppu nametable-byte attribute-byte bg-pixels)))
+           (attribute-byte (aref at-buffer (floor tile 4))))
+      (get-bg-pixels ppu nametable-byte attribute-byte bg-pixels)
       (loop for i from 7 downto 0
             for tile-x = (+ (* tile 8) i)
-            for color-index in bg-pixels
+            for color-index across bg-pixels
             do (render-pixel scanline tile-x color-index)))))
 
 (defun render-pixel (scanline tile-x color-index)
