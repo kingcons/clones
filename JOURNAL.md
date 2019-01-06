@@ -607,3 +607,28 @@ Anyhow, next steps should be computing the palette index for a pixel based on FI
 Once I can do that, it'll be about time to just write some loops in CLONES.RENDER and
 then hand the framebuffer off to CLONES.DISPLAY for drawing. Oh, and then sprites.
 Here's hoping. :)
+
+### Back to Rendering Pain (01/05/2019)
+
+Well, today was rough. I wanted a break from Flatiron stuff so I hacked at the PPU code
+from about 4 to 8pm or so. Several things are tested and good but I was desperate to at
+least get backgrounds rendering so the last hour and change was me moving fast, not testing,
+and basically adapting code from the previous PPU render loop to the current approach.
+
+It probably will not surprise you to read that it appears to render a lovely giant blank screen.
+At first, I thought it might be because I missed some subtle detail SMB needs to boot so I tried
+the nestest rom and got the same result. I won't have time to debug this for a week or three
+because I'm going to be _completely_ swamped by teaching React and onboarding a new instructor.
+
+I'm very sad I won't have time to work on this stuff. It feels like a crushing defeat to have
+worked on and off on NES emulators for years and still not have SMB working. I know I'm not an
+idiot. I also know that I like a number of things about the code that I'm generating. But damn,
+you'd think I would be able to debug rendering/graphics code by now.
+
+On the bright side, I'm confident the tested PPU stuff is correct. The code I wrote in the last
+hour isn't the core PPU state management, its the rendering loop and handoff of the framebuffer
+between the clones main loop and SDL. That seems like a more likely cause of a black screen too.
+I may try and steal an hour (inadvisedly) tomorrow, just to prove to myself that I got rendering
+working. If I can see a scrolling background, then I'm a superhero and content to put this down
+until I have time to properly clean it up and document it. I just don't want to wait another
+month to try to implement scrolling again. :sob:
