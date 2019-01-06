@@ -18,12 +18,9 @@
            #:context-scanline
            #:context-nt-buffer
            #:context-at-buffer
-           #:context-scanline
            #:context-nmi-p
            #:context-frame-p
-           #:context-candidates
-           #:context-bg-pixels
-           #:context-sprite-pixels))
+           #:context-candidates))
 
 (in-package :clones.render)
 
@@ -66,12 +63,41 @@
 (defvar *context* (make-context)
   "A Render Context to cache state and avoid redundant fetches.")
 
-(defun render-scanline (ppu)
+(defun render-scanline (ppu cycle-count)
   (with-accessors ((scanline context-scanline)) *context*
+    (when (< cycle-count +cycles-per-scanline+)
+      (return-from render-scanline))
+    (prepare-context ppu scanline)
+    (let ((bg-pixels (make-byte-vector 8))
+          (sprite-pixels (make-byte-vector 8)))
+      (declare (dynamic-extent bg-pixels sprite-pixels))
+      (dotimes (tile 32)
+        (render-tile ppu tile bg-pixels sprite-pixels)))
+    (next-line ppu)
+    (incf scanline)
+    (case scanline
+      (241 (start-vblank ppu))
+      (262 (finish-frame ppu)))
+    t))
+
+(defun prepare-context (ppu scanline)
+  (with-accessors ((frame-p context-frame-p)
+                   (nmi-p   context-nmi-p)) *context*
+    (setf frame-p nil nmi-p nil)
     (when (zerop (mod scanline 8))
       (fill-nt-buffer ppu))
     (when (zerop (mod scanline 32))
       (fill-at-buffer ppu))))
+
+(defun start-vblank (ppu)
+  (set-vblank ppu 1)
+  (when (vblank-p ppu)
+    (setf (context-nmi-p *context*) t)))
+
+(defun finish-frame (ppu)
+  (set-vblank ppu 0)
+  (setf (context-scanline *context*) 0
+        (context-frame-p  *context*) t))
 
 (defmacro restoring-coarse-x (ppu &body body)
   (alexandria:with-gensyms (backup)
@@ -90,3 +116,23 @@
     (dotimes (quad 8)
       (setf (aref (context-at-buffer *context*) quad) (read-attribute ppu))
       (next-tile ppu 4))))
+
+(defun render-tile (ppu tile bg-pixels sprite-pixels)
+  (with-accessors ((scanline   context-scanline)
+                   (nt-buffer  context-nt-buffer)
+                   (at-buffer  context-at-buffer)
+                   (candidates context-candidates)) *context*
+    (let* ((nametable-byte (aref nt-buffer tile))
+           (attribute-byte (aref at-buffer (floor tile 4)))
+           (bg-pixels (get-bg-pixels ppu nametable-byte attribute-byte bg-pixels)))
+      (loop for i from 7 downto 0
+            for tile-x = (+ (* tile 8) i)
+            for color-index in bg-pixels
+            do (render-pixel scanline tile-x color-index)))))
+
+(defun render-pixel (scanline tile-x color-index)
+  (let ((framebuffer-offset (* (+ (* scanline +width+) tile-x) 3))
+        (palette-offset (* color-index 3)))
+    (dotimes (i 3)
+      (setf (aref *framebuffer* (+ framebuffer-offset i))
+            (aref +color-palette+ (+ palette-offset i))))))
