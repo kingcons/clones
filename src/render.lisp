@@ -12,6 +12,8 @@
                 :ub8)
   (:export #:*framebuffer*
            #:+color-palette+
+           #:+width+
+           #:+height+
            #:*context*
            #:context
            #:sync

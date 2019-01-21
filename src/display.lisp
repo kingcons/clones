@@ -3,7 +3,9 @@
 (defpackage :clones.display
   (:use :cl)
   (:import-from :clones.render
-                :*framebuffer*)
+                :*framebuffer*
+                :+width+
+                :+height+)
   (:import-from :static-vectors
                 :static-vector-pointer)
   (:export #:init-display
@@ -11,8 +13,8 @@
 
 (in-package :clones.display)
 
-(defvar *screen-width* 512)
-(defvar *screen-height* 480)
+(defvar *screen-width* (* 2 +width+))
+(defvar *screen-height* (* 2 +height+))
 
 (defvar *display* nil)
 (defvar *renderer* nil)
