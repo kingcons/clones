@@ -7,11 +7,19 @@
   (:import-from :clones.conditions
                 :illegal-opcode)
   (:export #:*instructions*
+           #:*opcode-info*
            #:%build-op-name
            #:get-instruction-meta
            #:jump-table))
 
 (in-package :clones.instruction-data)
+
+(defstruct opcode-info
+  (addr-modes (make-array 256 :element-type 'symbol :initial-element :implied))
+  (byte-counts (make-array 256 :element-type 'fixnum))
+  (cycle-counts (make-array 256 :element-type 'fixnum)))
+
+(defvar *opcode-info* (make-instance 'opcode-info))
 
 (defvar *instructions*
   '((adc ((#x61 2 6 indirect-x)
@@ -200,6 +208,17 @@
   (assembly-mnemonic ((opcode-1 bytes cycles addressing-mode)
                       (opcode-n bytes cycles addressing-mode))
                      description &key access-pattern skip-pc)")
+
+(defun init-opcode-info ()
+  (dolist (instruction *instructions*)
+    (destructuring-bind (name opcodes docs &rest options) instruction
+      (declare (ignore name docs options))
+      (with-slots (addr-modes byte-counts cycle-counts) *opcode-info*
+        (loop for (opcode bytes cycles addr-mode) in opcodes
+              do (let ((mode (find-symbol (symbol-name addr-mode) :clones.addressing)))
+                   (setf (aref addr-modes opcode) mode
+                         (aref byte-counts opcode) bytes
+                         (aref cycle-counts opcode) cycles)))))))
 
 (defun %build-op-name (name opcode)
   "Build a symbol to name a function implementing a 6502 opcode."

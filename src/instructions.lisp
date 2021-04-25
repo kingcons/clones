@@ -14,7 +14,8 @@
   (:import-from :clones.instruction-data
                 :%build-op-name
                 :get-instruction-meta
-                :jump-table)
+                :jump-table
+                :*opcode-info*)
   (:export #:single-step))
 
 (in-package :clones.instructions)
@@ -310,3 +311,16 @@
   "Execute a single instruction and return the CPU."
   (declare (type cpu cpu))
   (jump-table (fetch (cpu-memory cpu) (cpu-pc cpu))))
+
+(defun single-step* (cpu)
+  (declare (type cpu cpu))
+  ;; TODO - Concerned about overhead of calling slot value in single-step
+  (with-slots (addr-modes byte-counts cycle-counts) *opcode-info*
+    (let* ((opcode (fetch (cpu-memory cpu) (cpu-pc cpu)))
+           (mode (aref addr-modes opcode))
+           (bytes (aref byte-counts opcode))
+           (cycles (aref cycle-counts opcode)))
+      (let ((argument (funcall mode cpu)))
+        ;; TODO - run opcode with argument
+        (incf (cpu-pc cpu) bytes)
+        (incf (cpu-cc cpu) cycles)))))
