@@ -6,9 +6,15 @@
                 :symbolicate)
   (:import-from :clones.conditions
                 :illegal-opcode)
-  (:export #:*instructions*
-           #:*opcodes*
+  (:export #:*opcodes*
+           #:addr-mode
+           #:byte-count
+           #:cycle-count
+           #:handler
+           #:name
+           #:skip-pc
            #:%build-op-name
+           #:init-opcode-info
            #:get-instruction-meta
            #:jump-table))
 
@@ -19,6 +25,7 @@
   (byte-count 0 :type fixnum)
   (cycle-count 0 :type fixnum)
   (handler :todo :type symbol)
+  (name :unnamed :type symbol)
   (skip-pc nil :type boolean))
 
 (defvar *opcodes* (make-array 256 :element-type 'opcode-info))
@@ -216,13 +223,15 @@
     (destructuring-bind (name opcodes docs &rest options) instruction
       (declare (ignore docs))
       (loop for (opcode bytes cycles addr-mode) in opcodes
-            do (let ((mode (find-symbol (symbol-name addr-mode) :clones.addressing))
-                     (handler (find-symbol (symbol-name name) :clones.instructions))
-                     (skip-pc (not (null (member :skip-pc options)))))
+            do (let* ((mode (find-symbol (symbol-name addr-mode) :clones.addressing))
+                      (handler-name (concatenate 'string "OP-" (symbol-name name)))
+                      (handler (find-symbol handler-name :clones.instructions))
+                      (skip-pc (not (null (member :skip-pc options)))))
                  (setf (aref *opcodes* opcode)
                        (make-opcode-info :addr-mode mode
                                          :byte-count bytes
                                          :cycle-count cycles
+                                         :name name
                                          :handler handler
                                          :skip-pc skip-pc)))))))
 

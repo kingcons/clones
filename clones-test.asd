@@ -18,6 +18,7 @@
                 :components
                 ((:file "helpers")
                  (:test-file "cpu")
+                 (:test-file "disassembler")
                  (:test-file "memory")
                  (:test-file "mappers")
                  (:test-file "rom"))))
