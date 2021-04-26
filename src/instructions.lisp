@@ -320,5 +320,5 @@
       (incf (cpu-pc cpu))
       (funcall handler cpu addr-mode)
       (unless skip-pc
-        (incf (cpu-pc cpu) (1- bytes)))
-      (incf (cpu-cycles cpu) cycles))))
+        (incf (cpu-pc cpu) (1- byte-count)))
+      (incf (cpu-cycles cpu) cycle-count))))
