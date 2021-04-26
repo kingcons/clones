@@ -15,7 +15,7 @@
                 :%build-op-name
                 :get-instruction-meta
                 :jump-table
-                :*opcode-info*)
+                :*opcodes*)
   (:export #:single-step))
 
 (in-package :clones.instructions)
@@ -314,13 +314,11 @@
 
 (defun single-step* (cpu)
   (declare (type cpu cpu))
-  ;; TODO - Concerned about overhead of calling slot value in single-step
-  (with-slots (addr-modes byte-counts cycle-counts) *opcode-info*
-    (let* ((opcode (fetch (cpu-memory cpu) (cpu-pc cpu)))
-           (mode (aref addr-modes opcode))
-           (bytes (aref byte-counts opcode))
-           (cycles (aref cycle-counts opcode)))
-      (let ((argument (funcall mode cpu)))
-        ;; TODO - run opcode with argument
-        (incf (cpu-pc cpu) bytes)
-        (incf (cpu-cc cpu) cycles)))))
+  (let ((opcode (fetch (cpu-memory cpu) (cpu-pc cpu))))
+    (with-slots (addr-mode byte-count cycle-count handler skip-pc)
+        (aref *opcodes* opcode)
+      (incf (cpu-pc cpu))
+      (funcall handler cpu addr-mode)
+      (unless skip-pc
+        (incf (cpu-pc cpu) (1- bytes)))
+      (incf (cpu-cycles cpu) cycles))))
