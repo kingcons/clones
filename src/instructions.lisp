@@ -1,7 +1,7 @@
 (in-package :cl-user)
 
 (defpackage :clones.instructions
-  (:use :cl :clones.addressing :clones.cpu)
+  (:use :cl :clones.addressing :clones.cpu :clones.instruction-data)
   (:import-from :clones.memory
                 :fetch
                 :store
@@ -11,20 +11,47 @@
                 :wrap-byte
                 :wrap-word
                 :flip-bit)
-  (:import-from :clones.instruction-data
-                :%build-op-name
-                :get-instruction-meta
-                :jump-table
-                :*opcodes*)
   (:export #:single-step))
 
 (in-package :clones.instructions)
+
+(defmacro define-instruction* (name () &body body)
+  (let ((metadata (get-instruction-meta name)))
+    `(defun ,(alexandria:symbolicate 'op- name) (cpu addr-mode)
+       (declare (type cpu cpu))
+       (declare #.*standard-optimize-settings*)
+       ,(ecase (second (member :access-pattern metadata))
+          (:regs
+           `(progn ,@body))
+          (:jump
+           `(let ((address (funcall addr-mode cpu)))
+              ,@body))
+          (:read
+           `(multiple-value-bind (final start) (funcall addr-mode cpu)
+              (let ((argument (fetch (cpu-memory cpu) final)))
+                (when (member addr-mode '(absolute-x absolute-y indirect-y))
+                  (maybe-update-cycle-count cpu start final))
+                ,@body)))
+          (:write
+           `(let ((address (funcall addr-mode cpu)))
+              ,@body))
+          (:read-modify-write
+           `(flet ((update (address value)
+                     (if (eql addr-mode 'accumulator)
+                         (setf (cpu-accum cpu) value)
+                         (store (cpu-memory cpu) address value))))
+              (let* ((address (funcall addr-mode cpu))
+                     (argument (if (eql addr-mode 'accumulator)
+                                   (funcall addr-mode cpu)
+                                   (fetch (cpu-memory cpu) address))))
+                ,@body)))))))
 
 (defmacro define-instruction (name () &body body)
   (let ((metadata (get-instruction-meta name)))
     (destructuring-bind (name opcodes docs &key access-pattern skip-pc) metadata
       (declare (ignore docs))
       `(progn
+         (define-instruction* ,name () ,@body)
          ,@(loop for (opcode bytes cycles mode) in opcodes
                  ;; KLUDGE: Find the symbol since it doesn't exist at instruction-data load-time.
                  for addr-mode = (find-symbol (symbol-name mode))
@@ -44,7 +71,7 @@
      (declare #.*standard-optimize-settings*)
      (incf (cpu-pc cpu))
      ,(ecase access-pattern
-        ((nil) `(progn ,@body))
+        (:regs `(progn ,@body))
         (:jump `(let ((address (,address-mode cpu)))
                   ,@body))
         (:read (if (member address-mode '(absolute-x absolute-y indirect-y))
@@ -315,10 +342,10 @@
 (defun single-step* (cpu)
   (declare (type cpu cpu))
   (let ((opcode (fetch (cpu-memory cpu) (cpu-pc cpu))))
-    (with-slots (addr-mode byte-count cycle-count handler skip-pc)
+    (with-slots (addr-mode byte-count cycle-count handler pattern)
         (aref *opcodes* opcode)
       (incf (cpu-pc cpu))
-      (funcall handler cpu addr-mode)
-      (unless skip-pc
+      (funcall handler cpu (and addr-mode (fdefinition addr-mode)))
+      (unless (eql pattern :jump)
         (incf (cpu-pc cpu) (1- byte-count)))
       (incf (cpu-cycles cpu) cycle-count))))

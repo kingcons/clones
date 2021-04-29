@@ -12,7 +12,7 @@
            #:cycle-count
            #:handler
            #:name
-           #:skip-pc
+           #:pattern
            #:%build-op-name
            #:init-opcode-info
            #:get-instruction-meta
@@ -26,7 +26,7 @@
   (cycle-count 0 :type fixnum)
   (handler :todo :type symbol)
   (name :unnamed :type symbol)
-  (skip-pc nil :type boolean))
+  (pattern :regs :type symbol))
 
 (defvar *opcodes* (make-array 256 :element-type 'opcode-info))
 
@@ -188,35 +188,35 @@
      "Jump Unconditional" :access-pattern :jump :skip-pc t)
     (jsr ((#x20 3 6 absolute))
      "Jump Subroutine" :access-pattern :jump :skip-pc t)
-    (clc ((#x18 1 2 nil)) "Clear Carry Flag")
-    (cld ((#xd8 1 2 nil)) "Clear Decimal Flag")
-    (cli ((#x58 1 2 nil)) "Clear Interrupt Flag")
-    (clv ((#xb8 1 2 nil)) "Clear Overflow Flag")
-    (sec ((#x38 1 2 nil)) "Set Carry Flag")
-    (sed ((#xf8 1 2 nil)) "Set Decimal Flag")
-    (sei ((#x78 1 2 nil)) "Set Interrupt Flag")
-    (pha ((#x48 1 3 nil)) "Push Accumulator")
-    (php ((#x08 1 3 nil)) "Push Status")
-    (pla ((#x68 1 4 nil)) "Pull Accumulator")
-    (plp ((#x28 1 4 nil)) "Pull Status")
-    (tax ((#xaa 1 2 nil)) "Transfer Accumulator -> X")
-    (tay ((#xa8 1 2 nil)) "Transfer Accumulator -> Y")
-    (tsx ((#xba 1 2 nil)) "Transfer Stack Pointer -> X")
-    (txa ((#x8a 1 2 nil)) "Transfer X -> Accumulator")
-    (txs ((#x9a 1 2 nil)) "Transfer X -> Stack Pointer")
-    (tya ((#x98 1 2 nil)) "Transfer Y -> Accumulator")
-    (brk ((#x00 1 7 nil)) "Break")
-    (dex ((#xca 1 2 nil)) "Decrement X")
-    (dey ((#x88 1 2 nil)) "Decrement Y")
-    (inx ((#xe8 1 2 nil)) "Increment X")
-    (iny ((#xc8 1 2 nil)) "Increment Y")
-    (nop ((#xea 1 2 nil)) "No Operation")
-    (rti ((#x40 1 6 nil)) "Return from Interrupt")
-    (rts ((#x60 1 6 nil)) "Return from Subroutine"))
+    (clc ((#x18 1 2 nil)) "Clear Carry Flag" :access-pattern :regs)
+    (cld ((#xd8 1 2 nil)) "Clear Decimal Flag" :access-pattern :regs)
+    (cli ((#x58 1 2 nil)) "Clear Interrupt Flag" :access-pattern :regs)
+    (clv ((#xb8 1 2 nil)) "Clear Overflow Flag" :access-pattern :regs)
+    (sec ((#x38 1 2 nil)) "Set Carry Flag" :access-pattern :regs)
+    (sed ((#xf8 1 2 nil)) "Set Decimal Flag" :access-pattern :regs)
+    (sei ((#x78 1 2 nil)) "Set Interrupt Flag" :access-pattern :regs)
+    (pha ((#x48 1 3 nil)) "Push Accumulator" :access-pattern :regs)
+    (php ((#x08 1 3 nil)) "Push Status" :access-pattern :regs)
+    (pla ((#x68 1 4 nil)) "Pull Accumulator" :access-pattern :regs)
+    (plp ((#x28 1 4 nil)) "Pull Status" :access-pattern :regs)
+    (tax ((#xaa 1 2 nil)) "Transfer Accumulator -> X" :access-pattern :regs)
+    (tay ((#xa8 1 2 nil)) "Transfer Accumulator -> Y" :access-pattern :regs)
+    (tsx ((#xba 1 2 nil)) "Transfer Stack Pointer -> X" :access-pattern :regs)
+    (txa ((#x8a 1 2 nil)) "Transfer X -> Accumulator" :access-pattern :regs)
+    (txs ((#x9a 1 2 nil)) "Transfer X -> Stack Pointer" :access-pattern :regs)
+    (tya ((#x98 1 2 nil)) "Transfer Y -> Accumulator" :access-pattern :regs)
+    (brk ((#x00 1 7 nil)) "Break" :access-pattern :regs)
+    (dex ((#xca 1 2 nil)) "Decrement X" :access-pattern :regs)
+    (dey ((#x88 1 2 nil)) "Decrement Y" :access-pattern :regs)
+    (inx ((#xe8 1 2 nil)) "Increment X" :access-pattern :regs)
+    (iny ((#xc8 1 2 nil)) "Increment Y" :access-pattern :regs)
+    (nop ((#xea 1 2 nil)) "No Operation" :access-pattern :regs)
+    (rti ((#x40 1 6 nil)) "Return from Interrupt" :access-pattern :regs)
+    (rts ((#x60 1 6 nil)) "Return from Subroutine" :access-pattern :regs))
   "A list describing the 6502 Instruction Set of the form:
   (assembly-mnemonic ((opcode-1 bytes cycles addressing-mode)
                       (opcode-n bytes cycles addressing-mode))
-                     description &key access-pattern skip-pc)")
+                     description &key access-pattern)")
 
 (defun init-opcode-info ()
   (dolist (instruction *instructions*)
@@ -226,14 +226,14 @@
             do (let* ((mode (find-symbol (symbol-name addr-mode) :clones.addressing))
                       (handler-name (concatenate 'string "OP-" (symbol-name name)))
                       (handler (find-symbol handler-name :clones.instructions))
-                      (skip-pc (not (null (member :skip-pc options)))))
+                      (pattern (getf options :access-pattern)))
                  (setf (aref *opcodes* opcode)
                        (make-opcode-info :addr-mode mode
                                          :byte-count bytes
                                          :cycle-count cycles
                                          :name name
                                          :handler handler
-                                         :skip-pc skip-pc)))))))
+                                         :pattern pattern)))))))
 
 (defun %build-op-name (name opcode)
   "Build a symbol to name a function implementing a 6502 opcode."

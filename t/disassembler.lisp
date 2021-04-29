@@ -11,6 +11,7 @@
 (subtest "Basic Disassembly"
   (let ((cpu (make-cpu))
         (output (format nil "~A~%" "C000  4C F5 C5  ;; JMP $F5C5")))
+    (clones.instruction-data:init-opcode-info)
     (setf (cpu-pc cpu) #xC000)
     (is-print (now cpu) output)))
 

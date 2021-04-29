@@ -20,13 +20,13 @@
   :components ((:module "src"
                 :components
                 ((:file "disassembler" :depends-on ("addressing" "instruction-data"))
-                 (:file "instructions" :depends-on ("cpu" "addressing"))
+                 (:file "instructions" :depends-on ("addressing" "instruction-data"))
+                 (:file "instruction-data" :depends-on ("addressing"))
                  (:file "addressing" :depends-on ("cpu" "memory"))
-                 (:file "cpu" :depends-on ("memory" "instruction-data"))
+                 (:file "cpu" :depends-on ("memory"))
                  (:file "memory" :depends-on ("mappers" "util"))
                  (:file "mappers" :depends-on ("rom" "conditions"))
                  (:file "rom" :depends-on ("util" "conditions"))
-                 (:file "instruction-data")
                  (:file "conditions")
                  (:file "util"))))
   :in-order-to ((test-op (test-op clones-test))))
