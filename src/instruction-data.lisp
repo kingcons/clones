@@ -13,10 +13,7 @@
            #:handler
            #:name
            #:pattern
-           #:%build-op-name
-           #:init-opcode-info
-           #:get-instruction-meta
-           #:jump-table))
+           #:init-opcode-info))
 
 (in-package :clones.instruction-data)
 
@@ -168,26 +165,26 @@
           (#x94 2 4 zero-page-x))
      "Store Y Register" :access-pattern :write)
     (bcc ((#x90 2 2 relative))
-     "Branch on Carry Clear" :access-pattern :jump :skip-pc t)
+     "Branch on Carry Clear" :access-pattern :jump)
     (bcs ((#xb0 2 2 relative))
-     "Branch on Carry Set" :access-pattern :jump :skip-pc t)
+     "Branch on Carry Set" :access-pattern :jump)
     (beq ((#xf0 2 2 relative))
-     "Branch on Equal" :access-pattern :jump :skip-pc t)
+     "Branch on Equal" :access-pattern :jump)
     (bmi ((#x30 2 2 relative))
-     "Branch on Minus (negative)" :access-pattern :jump :skip-pc t)
+     "Branch on Minus (negative)" :access-pattern :jump)
     (bne ((#xd0 2 2 relative))
-     "Branch on Not Equal" :access-pattern :jump :skip-pc t)
+     "Branch on Not Equal" :access-pattern :jump)
     (bpl ((#x10 2 2 relative))
-     "Branch on Plus (positive)" :access-pattern :jump :skip-pc t)
+     "Branch on Plus (positive)" :access-pattern :jump)
     (bvc ((#x50 2 2 relative))
-     "Branch on Overflow Clear" :access-pattern :jump :skip-pc t)
+     "Branch on Overflow Clear" :access-pattern :jump)
     (bvs ((#x70 2 2 relative))
-     "Branch on Overflow Set" :access-pattern :jump :skip-pc t)
+     "Branch on Overflow Set" :access-pattern :jump)
     (jmp ((#x4c 3 3 absolute)
           (#x6c 3 5 indirect))
-     "Jump Unconditional" :access-pattern :jump :skip-pc t)
+     "Jump Unconditional" :access-pattern :jump)
     (jsr ((#x20 3 6 absolute))
-     "Jump Subroutine" :access-pattern :jump :skip-pc t)
+     "Jump Subroutine" :access-pattern :jump)
     (clc ((#x18 1 2 nil)) "Clear Carry Flag" :access-pattern :regs)
     (cld ((#xd8 1 2 nil)) "Clear Decimal Flag" :access-pattern :regs)
     (cli ((#x58 1 2 nil)) "Clear Interrupt Flag" :access-pattern :regs)
@@ -234,25 +231,3 @@
                                          :name name
                                          :handler handler
                                          :pattern pattern)))))))
-
-(defun %build-op-name (name opcode)
-  "Build a symbol to name a function implementing a 6502 opcode."
-  (symbolicate name '- (format nil "~2,'0X" opcode)))
-
-(defun get-instruction-meta (name)
-  "Get the instruction data matching NAME."
-  (find name *instructions* :key #'car
-        :test (lambda (x y) (string= (symbol-name x) (symbol-name y)))))
-
-;; TODO: Use ecase/tree later -> http://www.foldr.org/~michaelw/log/programming/lisp/icfp-contest-2006-vm
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun %jump-clause (name op sym)
-    `(,(first op) (,(%build-op-name name (first op)) ,sym)))
-
-  (defmacro jump-table (form &optional (package 'clones.cpu))
-    (let* ((sym (find-symbol "CPU" package))
-           (clauses (loop for (name opcodes) in *instructions*
-                         appending (mapcar (lambda (x) (%jump-clause name x sym)) opcodes))))
-      `(case ,form
-         ,@(sort clauses #'< :key #'first)
-         (otherwise (error 'illegal-opcode :cpu ,sym :opcode ,form))))))

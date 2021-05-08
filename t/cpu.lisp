@@ -21,7 +21,7 @@
         (cpu-stack cpu)
         (cpu-cycles cpu)))
 
-(defun run-legal-opcode-tests (cpu trace-asm)
+(defun run-legal-opcode-tests (cpu &optional trace-asm)
   (setf (cpu-pc cpu) #xC000)
   (with-open-file (in (asset-path "roms/nestest_cpu.log"))
     (loop for line = (read-line in nil)
