@@ -35,7 +35,7 @@ Expects CPU and ADDR-MODE to be lexically present variables."
                 (store (cpu-memory cpu) address value))))
      (let* ((address (funcall addr-mode cpu))
             (argument (if (eql addr-mode 'accumulator)
-                          (funcall addr-mode cpu)
+                          (cpu-accum cpu)
                           (fetch (cpu-memory cpu) address))))
        ,@body)))
 
@@ -318,7 +318,7 @@ Expects CPU and ADDR-MODE to be lexically present variables."
     (with-slots (addr-mode byte-count cycle-count handler pattern)
         (aref *opcodes* opcode)
       (incf (cpu-pc cpu))
-      (funcall handler cpu (and addr-mode (fdefinition addr-mode)))
+      (funcall handler cpu addr-mode)
       (unless (eql pattern :jump)
         (incf (cpu-pc cpu) (1- byte-count)))
       (incf (cpu-cycles cpu) cycle-count))))
