@@ -1,7 +1,7 @@
 (in-package :cl-user)
 
 (defpackage :clones.disassembler
-  (:use :cl :clones.instruction-data)
+  (:use :cl :clones.addressing :clones.instruction-data)
   (:import-from :clones.memory
                 :fetch
                 :fetch-range)
@@ -13,22 +13,27 @@
 
 (in-package :clones.disassembler)
 
-(defun hexify (bytes)
-  (format nil "~{~2,'0x ~}" bytes))
+(defun disasm-bytes (index bytes)
+  (format t "~4,'0x  ~9@<~{~2,'0x ~}~> ;; " index bytes))
+
+(defun disasm-insts (name bytes addr-mode)
+  (let* ((formatter (get-format-string addr-mode))
+         (2-byte-modes '(absolute absolute-x absolute-y indirect))
+         (opcode-args (if (member addr-mode 2-byte-modes)
+                          (reverse (rest bytes))
+                          (rest bytes))))
+    (format t "~a~@[ ~@?~]~%" name formatter opcode-args)))
 
 (defun disasm (memory start end)
-  (loop with index = start while (<= index end)
+  (loop with index = start
+        while (<= index end)
         for opcode = (fetch memory index)
-        do (with-slots (name byte-count addr-mode) (aref *opcodes* opcode)
-             (flet ((format-args (format-string bytes)
-                      (if (member addr-mode '(absolute absolute-x absolute-y indirect))
-                          (format nil format-string (reverse bytes))
-                          (format nil format-string bytes))))
-               (let* ((writer (clones.addressing:get-format-string addr-mode))
-                      (bytes (fetch-range memory index (+ index (1- byte-count))))
-                      (args (format-args writer (rest bytes))))
-                 (format t "~4,'0x  ~9a ;; ~a ~a~%" index (hexify bytes) name args)))
-             (incf index byte-count))))
+        for metadata = (aref *opcodes* opcode)
+        do (with-slots (name byte-count addr-mode) metadata
+             (let ((bytes (fetch-range memory index (+ index (1- byte-count)))))
+               (disasm-bytes index bytes)
+               (disasm-insts name bytes addr-mode)
+               (incf index byte-count)))))
 
 (defun current-instruction (memory start)
   (let* ((opcode (fetch memory start))
