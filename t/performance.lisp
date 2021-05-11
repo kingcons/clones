@@ -14,19 +14,17 @@
 (in-package :clones-test.performance)
 
 (defmacro with-patched-functions (bindings &body body)
-  (let* ((gensyms (loop for (name) in bindings collect (gensym)))
-         (backups (loop for gensym in gensyms
-                        for (name definition) in bindings
-                        collect `(,gensym (fdefinition ',name))))
-         (patches (loop for (name definition) in bindings
-                        append `((fdefinition ',name) ,definition)))
-         (reverts (loop for (name) in bindings
-                        for gensym in gensyms
-                        append `((fdefinition ',name) ,gensym))))
-    `(let ,backups
-       (setf ,@patches)
-       ,@body
-       (setf ,@reverts))))
+  (let ((gensyms (loop for (name) in bindings collect (gensym))))
+    (loop for gensym in gensyms
+          for (name definition) in bindings
+          collect `(,gensym (fdefinition ',name)) into backups
+          append `((fdefinition ',name) ,definition) into patches
+          append `((fdefinition ',name) ,gensym) into reverts
+          finally (return
+                    `(let ,backups
+                       (setf ,@patches)
+                       ,@body
+                       (setf ,@reverts))))))
 
 (defun maybe-init-opcodes ()
   (let ((initializer (find-symbol "INIT-OPCODE-INFO" :clones.instruction-data)))
