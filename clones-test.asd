@@ -17,8 +17,9 @@
   :components ((:module "t"
                 :components
                 ((:file "helpers")
-                 (:test-file "cpu")
                  (:test-file "disassembler")
+                 (:test-file "performance")
+                 (:test-file "cpu")
                  (:test-file "memory")
                  (:test-file "mappers")
                  (:test-file "rom"))))
