@@ -60,3 +60,6 @@
                                       (setf (aref ram address) value))))
       (time (loop until (= (clones.cpu:cpu-pc cpu) #x3c37)
                   do (clones.instructions:single-step cpu))))))
+
+(plan nil)
+(finalize)
