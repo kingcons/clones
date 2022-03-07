@@ -1,6 +1,6 @@
-(in-package :cl-user)
-(defpackage clones
-  (:use :cl))
+(mgl-pax:define-package :clones
+  (:use :cl :alexandria :serapeum :mgl-pax))
+
 (in-package :clones)
 
-;; blah blah blah.
+;; A new world awaits...

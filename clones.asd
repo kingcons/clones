@@ -1,12 +1,3 @@
-#|
-  This file is a part of clones project.
-  Copyright (c) 2017 Brit Butler (brit@kingcons.io)
-|#
-
-#|
-  Author: Brit Butler (brit@kingcons.io)
-|#
-
 (in-package :cl-user)
 (defpackage clones-asd
   (:use :cl :asdf))
@@ -15,18 +6,25 @@
 (defsystem clones
   :version "0.1"
   :author "Brit Butler"
-  :license "LLGPL"
-  :depends-on (:alexandria)
+  :license "MIT"
+  :homepage "http://github.com/kingcons/clones"
+  :bug-tracker "http://github.com/kingcons/clones/issues"
+  :source-control (:git "https://github.com/kingcons/clones.git")
+  :description "A work-in-progress Emulator for the Nintendo Entertainment System."
+  :depends-on (:alexandria :serapeum :mgl-pax)
   :components ((:module "src"
                 :components
-                ((:file "disassembler" :depends-on ("addressing" "instruction-data"))
-                 (:file "instructions" :depends-on ("cpu" "addressing"))
-                 (:file "addressing" :depends-on ("cpu" "memory"))
-                 (:file "cpu" :depends-on ("memory" "instruction-data"))
-                 (:file "memory" :depends-on ("mappers" "util"))
-                 (:file "mappers" :depends-on ("rom" "conditions"))
-                 (:file "rom" :depends-on ("util" "conditions"))
-                 (:file "instruction-data")
-                 (:file "conditions")
-                 (:file "util"))))
-  :in-order-to ((test-op (test-op clones-test))))
+                ((:file "clones"))))
+  :in-order-to ((test-op (test-op clones/test))))
+
+(defsystem clones/test
+  :version "0.1"
+  :author "Brit Butler"
+  :license "MIT"
+  :description "Tests for Clones."
+  :depends-on (:clones :try)
+  :components ((:module "test"
+                :serial t
+                :components ((:file "tests"))))
+  :perform (test-op (o s)
+             (uiop:symbol-call '#:clones-test '#:test)))
