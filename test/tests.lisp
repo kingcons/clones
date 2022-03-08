@@ -1,4 +1,3 @@
-
 (defpackage :clones-test
   (:use :cl :clones :try)
   (:export #:test-all))
