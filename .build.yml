@@ -5,13 +5,14 @@ sources:
   - https://git.sr.ht/~kingcons/clones
 tasks:
   - install-quicklisp: |
-    sbcl --eval "(load \"~/quicklisp.lisp\")" --eval "(quicklisp-quickstart:install)" --quit
-    echo '(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))
-            (when (probe-file quicklisp-init)
-              (load quicklisp-init)))' >> ~/.sbclrc
-    mkdir -p ~/quicklisp/local-projects/
+      curl -O https://beta.quicklisp.org/quicklisp.lisp
+      sbcl --non-interactive \
+           --eval "(load \"~/quicklisp.lisp\")" \
+           --eval "(quicklisp-quickstart:install)" \
+      mkdir -p ~/quicklisp/local-projects/
   - test: |
-    ln -sf ~/clones ~/quicklisp/local-projects/clones
-    sbcl --eval "(ql:quickload :clones/test)" \
-         --eval "(unless (try:passedp (try:try 'clones-test:test-all)) (uiop:quit 1))" \
-         --quit
+      ln -sf ~/clones ~/quicklisp/local-projects/clones
+      sbcl --non-interactive \
+           --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
+           --eval "(ql:quickload '(clones clones/test))" \
+           --eval "(unless (try:passedp (try:try 'clones-test:test-all)) (uiop:quit 1))" \
