@@ -24,7 +24,7 @@ tasks:
       echo 'Building site'
       sbcl --non-interactive \
            --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
-           --eval "(ql:quickload '(clones clones/test))" \
+           --eval "(ql:quickload '(clones mgl-pax/document))" \
            --eval "(clones::build-site)"
       ln -sf ~/clones/site/clones.html ~/clones/site/index.html
       tar -C site -cvz . > site.tar.gz
