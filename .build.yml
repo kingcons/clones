@@ -21,15 +21,12 @@ tasks:
            --eval "(unless (try:passedp (try:try 'clones-test:test-all)) (uiop:quit 1))" \
   - build-site: |
       cd clones
-      BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-      if [ $BRANCH == "master" ]; then
-        echo 'Building site'
-        sbcl --non-interactive \
-             --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
-             --eval "(ql:quickload '(clones clones/test))" \
-             --eval "(clones::build-site)"
-        ln -sf ~/clones/site/clones.html ~/clones/site/index.html
-        tar -C site -cvz . > site.tar.gz
-        acurl -f https://pages.sr.ht/publish/$site -Fcontent=@site.tar.gz
-        rm site.tar.gz
-      fi
+      echo 'Building site'
+      sbcl --non-interactive \
+           --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
+           --eval "(ql:quickload '(clones clones/test))" \
+           --eval "(clones::build-site)"
+      ln -sf ~/clones/site/clones.html ~/clones/site/index.html
+      tar -C site -cvz . > site.tar.gz
+      acurl -f https://pages.sr.ht/publish/$site -Fcontent=@site.tar.gz
+      rm site.tar.gz
