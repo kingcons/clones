@@ -7,13 +7,13 @@
   (@links section))
 
 (defsection @links (:title "Links")
-  "[![build status][badge]](https://builds.sr.ht/~kingcons/clones/commits/test.yml)
-   [badge]: https://builds.sr.ht/~kingcons/clones/commits/test.yml.svg
+  "[repo]: https://sr.ht/~kingcons/clones
+   [site]: https://clones.kingcons.io
+   [build]: https://builds.sr.ht/~kingcons/clones/commits/.build.yml
 
-   Here is the [git repo][repo] and
-   here is the [website][site].
-   [repo]: https://sr.ht/~kingcons/clones
-   [site]: https://clones.kingcons.io")
+   Build Status: [![builds.sr.ht status](https://builds.sr.ht/~kingcons/clones/commits/.build.yml.svg)][build]
+
+   Here are links to the current [git repo][repo] and [website][site].")
 
 (defun build-site ()
   (let ((*document-normalize-packages* nil))

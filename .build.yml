@@ -26,7 +26,7 @@ tasks:
            --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
            --eval "(ql:quickload '(clones mgl-pax/document))" \
            --eval "(clones::build-site)"
-      ln -sf ~/clones/site/clones.html ~/clones/site/index.html
+      mv ~/clones/site/clones.html ~/clones/site/index.html
       tar -C site -cvz . > site.tar.gz
       acurl -f https://pages.sr.ht/publish/$site -Fcontent=@site.tar.gz
       rm site.tar.gz
