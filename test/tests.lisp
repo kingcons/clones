@@ -1,8 +1,8 @@
-(defpackage :clones-test
+(defpackage :clones.test
   (:use :cl :clones :try)
   (:export #:test-all))
 
-(in-package :clones-test)
+(in-package :clones.test)
 
 (deftest test-all ()
   (is (= 2 2)))
