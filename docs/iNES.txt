@@ -1,0 +1,33 @@
+author: rvu - march-2000
+
+
+this is the complete header information i've been using lately, if you see something wrong or incomplete please tell me!.
+
+    |   0    |  3   | 'NES'                                    |
+    |   3    |  1   | $1A                                      |
+    |   4    |  1   | 16K PRG-ROM page count                   |
+    |   5    |  1   | 8K CHR-ROM page count                    |
+    |   6    |  1   | ROM Control Byte #1                      |
+    |        |      |   %####vTsM                              |
+    |        |      |    |  ||||+- 0=Horizontal Mirroring      |
+    |        |      |    |  ||||   1=Vertical Mirroring        |
+    |        |      |    |  |||+-- 1=SRAM enabled              |
+    |        |      |    |  ||+--- 1=512-byte trainer present  |
+    |        |      |    |  |+---- 1=Four-screen VRAM layout   |
+    |        |      |    |  |                                  |
+    |        |      |    +--+----- Mapper # (lower 4-bits)     |
+    |   7    |  1   | ROM Control Byte #2                      |
+    |        |      |   %####0000                              |
+    |        |      |    |  |                                  |
+    |        |      |    +--+----- Mapper # (upper 4-bits)     |
+    |  7     |  1   | 01=00-> nes rom                          |
+    |  7     |  1   | 01=01-> vs unisystem rom                 |
+    |  7     |  1   | 01=02-> playchoice rom                   |
+    |  8     |  1   | $00                                      |
+    |  9     |  1   | $00                                      |
+    |  10    |  1   | 0=0->"100% compatible with NTSC console" |
+    |  10    |  1   | 1=0->"Not necessarily 100% compatible    |
+    |        |      |       with PAL console""                 |
+    |  10    |  1   | 4=0->"extra ram at $6000-$7fff           |
+    |  10    |  1   | 5=0->"don't have bus conflicts           |
+    |  11    |  6   | $00                                      |

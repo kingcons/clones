@@ -6,7 +6,8 @@
 (defsection @clones (:title "Clones - An NES Emulator")
   (@links section)
   (@overview section)
-  (@roadmap section))
+  (@roadmap section)
+  (clones.rom:@rom section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones

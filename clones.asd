@@ -14,7 +14,8 @@
   :components ((:module "src"
                 :components
                 ((:file "clones")
-                 (:file "docs"))))
+                 (:file "docs" :depends-on ("rom"))
+                 (:file "rom"))))
   :in-order-to ((test-op (test-op clones/test))))
 
 (defsystem clones/test
@@ -25,6 +26,7 @@
   :depends-on (:clones :try)
   :components ((:module "test"
                 :serial t
-                :components ((:file "tests"))))
+                :components ((:file "rom")
+                             (:file "tests"))))
   :perform (test-op (o s)
              (uiop:symbol-call '#:clones.test '#:test)))

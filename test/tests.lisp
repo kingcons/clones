@@ -5,7 +5,7 @@
 (in-package :clones.test)
 
 (deftest test-all ()
-  (is (= 2 2)))
+  (clones.test.rom:rom-tests))
 
 (defun test (&key (debug nil) (print 'unexpected) (describe 'unexpected))
   (warn-on-tests-not-run ((find-package :clones-test))
