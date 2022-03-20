@@ -13,7 +13,8 @@
   :depends-on (:alexandria :serapeum :mgl-pax)
   :components ((:module "src"
                 :components
-                ((:file "clones"))))
+                ((:file "clones")
+                 (:file "docs"))))
   :in-order-to ((test-op (test-op clones/test))))
 
 (defsystem clones/test

@@ -25,7 +25,7 @@ tasks:
       sbcl --non-interactive \
            --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
            --eval "(ql:quickload '(clones mgl-pax/document))" \
-           --eval "(clones::build-site)"
+           --eval "(clones.docs::build-site)"
       mv ~/clones/site/clones.html ~/clones/site/index.html
       tar -C site -cvz . > site.tar.gz
       acurl -f https://pages.sr.ht/publish/$site -Fcontent=@site.tar.gz
