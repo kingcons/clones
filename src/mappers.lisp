@@ -46,16 +46,16 @@ type of the game."
       (otherwise (error 'unimplemented-mapper :pathname pathname :mapper-name mapper-name)))))
 
 (defgeneric get-prg (mapper address)
-  (:documentation "Retrieve the value at ADDRESS from MAPPER."))
+  (:documentation "Retrieve the value at ADDRESS from the prg bank."))
 
 (defgeneric set-prg (mapper address value)
-  (:documentation ""))
+  (:documentation "Set ADDRESS in the prg bank to VALUE."))
 
 (defgeneric get-chr (mapper address)
-  (:documentation ""))
+  (:documentation "Retrive the value at ADDRESS from the chr bank."))
 
 (defgeneric set-chr (mapper address value)
-  (:documentation ""))
+  (:documentation "Set ADDRESS in the chr bank to VALUE."))
 
 ;; Mapper 0 - NROM
 
@@ -67,12 +67,12 @@ type of the game."
 
 (defmethod set-prg ((mapper nrom) address value)
   (declare (ignore address value))
-  0)
+  nil)
 
-(defmethod get-prg ((mapper nrom) address)
+(defmethod get-chr ((mapper nrom) address)
   (with-slots (chr) mapper
     (aref chr (logand address (1- (length chr))))))
 
 (defmethod set-chr ((mapper nrom) address value)
   (declare (ignore address value))
-  0)
+  nil)
