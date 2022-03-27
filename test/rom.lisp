@@ -1,10 +1,10 @@
 (defpackage :clones.test.rom
   (:use :cl :clones.rom :try)
-  (:export #:rom-tests))
+  (:export #:test-rom))
 
 (in-package :clones.test.rom)
 
-(deftest rom-tests ()
+(deftest test-rom ()
   (let ((invalid (asdf:system-relative-pathname :clones "roms/invalid.nes"))
         (nestest (asdf:system-relative-pathname :clones "roms/nestest.nes"))
         (mmc4 (asdf:system-relative-pathname :clones "roms/mmc4.nes")))
@@ -19,4 +19,4 @@
                  (parse-rom mmc4)))))
 
 #+nil
-(try 'rom-tests)
+(try 'test-rom)

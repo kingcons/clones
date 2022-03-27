@@ -6,7 +6,8 @@
 (defsection @clones (:title "Clones - An NES Emulator")
   (@links section)
   (@overview section)
-  (clones.rom:@rom section))
+  (clones.rom:@rom section)
+  (clones.mappers:@mappers section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones
@@ -60,7 +61,7 @@ calling back to the Tony Garnock-Jones quote above.
 Work has just begun so nothing is playable yet. Hang in there.
 
 * ROM Support: ✅
-* NROM Mapper: ❌
+* NROM Mapper: ✅
 * CPU Opcodes: ❌
 * Rendering - Backgrounds: ❌
 * Rendering - Sprites: ❌
