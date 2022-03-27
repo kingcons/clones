@@ -36,13 +36,12 @@
 and return an appropriate instance of MAPPER for the cartridge
 type of the game."
   (let* ((mapper-args (clones.rom:parse-rom pathname))
-         (mapper-name (getf mapper-args :mapper-name))
-         (mapper-class (intern (string mapper-name) :clones.mappers)))
+         (mapper-name (getf mapper-args :mapper-name)))
     (when (eql :unsupported mapper-name)
       (error 'unsupported-mapper :pathname pathname))
     (alexandria:remove-from-plistf mapper-args :mirroring :mapper-name)
-    (case mapper-class
-      (nrom (apply 'make-instance mapper-class mapper-args))
+    (case mapper-name
+      (:nrom (apply 'make-instance 'nrom mapper-args))
       (otherwise (error 'unimplemented-mapper :pathname pathname :mapper-name mapper-name)))))
 
 (defgeneric get-prg (mapper address)
