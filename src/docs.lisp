@@ -6,7 +6,6 @@
 (defsection @clones (:title "Clones - An NES Emulator")
   (@links section)
   (@overview section)
-  (@roadmap section)
   (clones.rom:@rom section))
 
 (defsection @links (:title "Links")
@@ -36,7 +35,7 @@ program should teach how it works. But we don't see this.
 - Tony Garnock-Jones, [@leastfixedpoint][tgj]
 
 Many NES emulators already exist on the web, the desktop, and elsewhere.
-My goal is to create a readable, tested, and compact code base sufficient
+Clones is intended to be a readable, tested, and compact code base sufficient
 for mostly accurate emulation of many but not all popular Nintendo titles.
 
 However, my goal is not to be able to relive childhood nostalgia since
@@ -49,15 +48,16 @@ sacrificing total accuracy and performance for clarity and ease of modification.
 Once some key games (Super Mario Bros, Mega Man 2) are playable, focus will
 shift towards building out debugging and reverse engineering tools.
 
-In addition to the usual tools to disassemble memory or view VRAM,
-we hope to support building a directed graph of blocks and jumps as
-games are played. Afterwards, we'll provide tools for users to annotate
-the graph with notes about the code. This will move us towards our
-overall goal of making the high-level structure of programs \"discoverable\"
-through using them, calling back to the Tony Garnock-Jones quote above.")
+In addition to the usual tools to disassemble memory or view VRAM, we hope to
+support building a directed graph of blocks and jumps as games are played.
+Afterwards, we'll provide tools for users to visualize and annotate the graph
+with notes about the code. This will move us towards our overall goal of making
+the high-level structure of programs \"discoverable\" through using them,
+calling back to the Tony Garnock-Jones quote above.
 
-(defsection @roadmap (:title "Roadmap")
-  "Work has just begun so nothing is playable yet. Hang in there.
+### Current Status
+
+Work has just begun so nothing is playable yet. Hang in there.
 
 * ROM Support: ❌
 * NROM Mapper: ❌

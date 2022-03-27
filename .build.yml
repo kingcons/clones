@@ -18,7 +18,7 @@ tasks:
       sbcl --non-interactive \
            --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
            --eval "(ql:quickload '(clones clones/test))" \
-           --eval "(unless (try:passedp (try:try 'clones.test:test-all)) (uiop:quit 1))" \
+           --eval "(unless (try:passedp (try:try 'clones.test:test-all)) (uiop:quit 1))"
   - build-site: |
       cd clones
       echo 'Building site'

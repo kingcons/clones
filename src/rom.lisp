@@ -3,10 +3,10 @@
 
 (in-package :clones.rom)
 
-(defsection @rom (:title "iNES ROM Parsing")
-  (valid-nes-rom? function))
+(defsection @rom (:title "ROM Parsing")
+  (valid-rom? function))
 
-(defun valid-nes-rom? (stream)
+(defun valid-rom? (stream)
   (let ((header #(78 69 83 26))
         (bytes (make-array 4)))
     (read-sequence bytes stream)
