@@ -59,7 +59,7 @@ calling back to the Tony Garnock-Jones quote above.
 
 Work has just begun so nothing is playable yet. Hang in there.
 
-* ROM Support: ❌
+* ROM Support: ✅
 * NROM Mapper: ❌
 * CPU Opcodes: ❌
 * Rendering - Backgrounds: ❌

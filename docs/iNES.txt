@@ -31,3 +31,12 @@ this is the complete header information i've been using lately, if you see somet
     |  10    |  1   | 4=0->"extra ram at $6000-$7fff           |
     |  10    |  1   | 5=0->"don't have bus conflicts           |
     |  11    |  6   | $00                                      |
+
+An iNES file consists of the following sections, in order:
+
+    Header (16 bytes)
+    Trainer, if present (0 or 512 bytes)
+    PRG ROM data (16384 * x bytes)
+    CHR ROM data, if present (8192 * y bytes)
+    PlayChoice INST-ROM, if present (0 or 8192 bytes)
+    PlayChoice PROM, if present (16 bytes Data, 16 bytes CounterOut) (this is often missing, see PC10 ROM-Images for details)
