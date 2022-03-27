@@ -22,6 +22,9 @@
       (3 :cnrom)
       (4 :mmc3)
       (5 :mmc5)
+      (7 :aorom)
+      (9 :mmc2)
+      (10 :mmc4)
       (otherwise :unsupported))))
 
 (defun get-mirroring (ctrl-byte)

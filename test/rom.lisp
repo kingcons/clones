@@ -15,7 +15,7 @@
       (parse-rom mmc4))
     (is (subsetp '(:mapper-name :nrom :prg-count 1 :chr-count 1)
                  (parse-rom nestest)))
-    (is (subsetp '(:mapper-name :unsupported)
+    (is (subsetp '(:mapper-name :mmc4)
                  (parse-rom mmc4)))))
 
 #+nil

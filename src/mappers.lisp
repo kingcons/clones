@@ -8,7 +8,8 @@
   (get-prg generic-function)
   (set-prg generic-function)
   (get-chr generic-function)
-  (set-chr generic-function))
+  (set-chr generic-function)
+  (unimplemented-mapper condition))
 
 (defclass mapper ()
   ((pathname :initarg :pathname :reader mapper-pathname)
@@ -16,12 +17,6 @@
    (chr-count :initarg :chr-count :reader chr-count)
    (prg :initarg :prg :type (simple-array (unsigned-byte 8) *))
    (chr :initarg :chr :type (simple-array (unsigned-byte 8) *))))
-
-(define-condition unsupported-mapper ()
-  ((pathname :initarg :pathname :reader mapper-pathname))
-  (:report (lambda (condition stream)
-             (format stream "The file at ~S uses a mapper Clones will not support."
-                     (mapper-pathname condition)))))
 
 (define-condition unimplemented-mapper ()
   ((pathname :initarg :pathname :reader mapper-pathname)
@@ -37,8 +32,6 @@ and return an appropriate instance of MAPPER for the cartridge
 type of the game."
   (let* ((mapper-args (clones.rom:parse-rom pathname))
          (mapper-name (getf mapper-args :mapper-name)))
-    (when (eql :unsupported mapper-name)
-      (error 'unsupported-mapper :pathname pathname))
     (alexandria:remove-from-plistf mapper-args :mirroring :mapper-name)
     (case mapper-name
       (:nrom (apply 'make-instance 'nrom mapper-args))
