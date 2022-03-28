@@ -63,9 +63,9 @@ to the [iNES format](http://rocknes.web.fc2.com/ines.txt)."))
 
 (defun parse-rom (pathname)
   "Attempt to parse the file at PATHNAME as an Nintendo ROM, returning
-a plist suitable for passing to MAKE-INSTANCE for an appropriate
-[`MAPPER`][clones.mappers:mapper class]. An INVALID-ROM condition will
-be signalled if the header does not conform to the iNES format."
+a property list suitable for passing to MAKE-INSTANCE for an appropriate
+[`MAPPER`][clones.mappers:mapper]. An INVALID-ROM condition will be signalled if
+the header does not conform to the [iNES format](http://rocknes.web.fc2.com/ines.txt)."
   (with-open-file (input pathname :element-type '(unsigned-byte 8))
     (unless (valid-header? input)
       (error 'invalid-rom :pathname pathname))
