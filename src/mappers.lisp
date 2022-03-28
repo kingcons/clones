@@ -1,5 +1,6 @@
 (mgl-pax:define-package :clones.mappers
-  (:use :cl :alexandria :serapeum :mgl-pax))
+  (:use :cl :alexandria :mgl-pax)
+  (:import-from :clones.rom #:parse-rom))
 
 (in-package :clones.mappers)
 

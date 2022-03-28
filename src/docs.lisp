@@ -1,5 +1,5 @@
 (mgl-pax:define-package :clones.docs
-  (:use :cl :alexandria :serapeum :mgl-pax))
+  (:use :cl :alexandria :mgl-pax))
 
 (in-package :clones.docs)
 
