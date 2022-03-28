@@ -74,8 +74,7 @@ Work has just begun so nothing is playable yet. Hang in there.
     (update-asdf-system-readmes @clones :clones)))
 
 (defun build-site ()
-  (let ((*document-normalize-packages* nil))
-    (update-asdf-system-html-docs
-     @clones :clones
-     :target-dir (asdf:system-relative-pathname :clones "site/")
-     :pages `((:objects (,clones.docs:@clones))))))
+  (update-asdf-system-html-docs
+   @clones :clones
+   :target-dir (asdf:system-relative-pathname :clones "site/")
+   :pages `((:objects (,clones.docs:@clones)))))

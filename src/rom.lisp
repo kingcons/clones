@@ -57,9 +57,15 @@
   ((pathname :initarg :pathname :reader invalid-rom-pathname))
   (:report (lambda (condition stream)
              (format stream "The file at ~A is not a valid ROM."
-                     (invalid-rom-pathname condition)))))
+                     (invalid-rom-pathname condition))))
+  (:documentation "Signalled when the file passed to PARSE-ROM does not correspond
+to the [iNES format](http://rocknes.web.fc2.com/ines.txt)."))
 
 (defun parse-rom (pathname)
+  "Attempt to parse the file at PATHNAME as an Nintendo ROM, returning
+a plist suitable for passing to MAKE-INSTANCE for an appropriate
+[`MAPPER`][clones.mappers:mapper class]. An INVALID-ROM condition will
+be signalled if the header does not conform to the iNES format."
   (with-open-file (input pathname :element-type '(unsigned-byte 8))
     (unless (valid-header? input)
       (error 'invalid-rom :pathname pathname))
