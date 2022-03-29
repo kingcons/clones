@@ -14,7 +14,8 @@
   :components ((:module "src"
                 :components
                 ((:file "clones")
-                 (:file "docs" :depends-on ("rom" "mappers"))
+                 (:file "docs" :depends-on ("rom" "mappers" "memory"))
+                 (:file "memory")
                  (:file "mappers")
                  (:file "rom"))))
   :in-order-to ((test-op (test-op clones/test))))
@@ -27,7 +28,8 @@
   :depends-on (:clones :try)
   :components ((:module "test"
                 :serial t
-                :components ((:file "mappers")
+                :components ((:file "memory")
+                             (:file "mappers")
                              (:file "rom")
                              (:file "tests"))))
   :perform (test-op (o s)
