@@ -12,7 +12,7 @@
 (in-package :clones.memory)
 
 (defsection @memory (:title "Memory Interface")
-  (memory structure)
+  (memory class)
   (make-memory function)
   (fetch function)
   (store function))
