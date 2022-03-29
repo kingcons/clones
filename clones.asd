@@ -14,7 +14,8 @@
   :components ((:module "src"
                 :components
                 ((:file "clones")
-                 (:file "docs" :depends-on ("rom" "mappers" "memory"))
+                 (:file "docs" :depends-on ("rom" "mappers" "memory" "opcodes"))
+                 (:file "opcodes")
                  (:file "memory")
                  (:file "mappers")
                  (:file "rom"))))
