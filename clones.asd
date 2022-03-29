@@ -12,13 +12,15 @@
   :description "A work-in-progress Emulator for the Nintendo Entertainment System."
   :depends-on (:alexandria :serapeum :mgl-pax)
   :components ((:module "src"
+                :serial t
                 :components
-                ((:file "clones")
-                 (:file "docs" :depends-on ("rom" "mappers" "memory" "opcodes"))
-                 (:file "opcodes")
-                 (:file "memory")
+                ((:file "rom")
                  (:file "mappers")
-                 (:file "rom"))))
+                 (:file "memory")
+                 (:file "opcodes")
+                 (:file "disassembler")
+                 (:file "docs")
+                 (:file "clones"))))
   :in-order-to ((test-op (test-op clones/test))))
 
 (defsystem clones/test

@@ -6,8 +6,12 @@
 (in-package :clones.opcodes)
 
 (defsection @opcodes (:title "Opcode Data")
-  (*opcodes* variable)
-  (build-opcode-table function))
+  (build-opcode-table function)
+  (opcode-name structure-accessor)
+  (opcode-size structure-accessor)
+  (opcode-time structure-accessor)
+  (opcode-addressing-mode structure-accessor)
+  (opcode-access-pattern structure-accessor))
 
 (defvar *opcodes*
   '((adc ((#x61 2 6 indirect-x)
@@ -208,21 +212,21 @@
 (defstruct opcode
   (name 'fake :type symbol)
   (code 22 :type octet)
-  (bytes 0 :type octet)
-  (cycles 0 :type octet)
+  (size 0 :type octet)
+  (time 0 :type octet)
   (addressing-mode :implied :type addressing-mode)
   (access-pattern :static :type access-pattern))
 
-(defun build-opcode-table (data)
+(defun build-opcode-table ()
   (declare (optimize debug))
   (let ((table (make-array 256 :element-type 'opcode :initial-element (make-opcode))))
-    (loop for (instruction opcodes access-pattern) in data
+    (loop for (instruction opcodes access-pattern) in *opcodes*
           do (dolist (opcode opcodes)
-               (destructuring-bind (code bytes cycles addressing-mode) opcode
+               (destructuring-bind (code size time addressing-mode) opcode
                  (let ((opcode (make-opcode :name instruction
                                             :code code
-                                            :bytes bytes
-                                            :cycles cycles
+                                            :size size
+                                            :time time
                                             :addressing-mode (make-keyword addressing-mode)
                                             :access-pattern access-pattern)))
                    (setf (aref table code) opcode)))))

@@ -7,7 +7,10 @@
   (@links section)
   (@overview section)
   (clones.rom:@rom section)
-  (clones.mappers:@mappers section))
+  (clones.mappers:@mappers section)
+  (clones.memory:@memory section)
+  (clones.opcodes:@opcodes section)
+  (clones.disassembler:@disassembler section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones
