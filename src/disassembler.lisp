@@ -20,9 +20,8 @@
           for length = (opcode-size opcode)
           for bytes = (loop for i from index below (+ index length)
                            collect (fetch memory i))
-          for hex = (format nil "~{~2,'0X ~}" bytes)
           until (> index end)
-          do (format t "~4,'0X:  ~10A ;;  ~A~%"
+          do (format t "~4,'0X:  ~11@< ~{~2,'0X ~} ~> ;;  ~A~%"
                      index
-                     hex
+                     bytes
                      (opcode-name opcode)))))
