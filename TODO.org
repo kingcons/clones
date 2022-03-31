@@ -1,0 +1,34 @@
+* Clones Tasks
+*** Implement ROM parsing, returning a plist
+**** DONE Function parse-rom (pathname) -> plist of attributes
+**** DONE Add pathname as an attribute in parse-rom output
+**** DONE Finish tests for parse-rom
+**** DONE Write docs for exported symbols in ROM module
+*** Implement mapper class, then nrom support
+**** DONE mapper interface -> get-prg, set-prg, get-chr, set-chr, load-rom
+**** DONE add nice docs for mapper module
+**** add a pretty printer for mappers?
+*** Implement Disassembler
+**** DONE Add a nice instruction reference
+**** DONE Add a simple memory interface fetch/store, just RAM and mapper for now, 0s if doing other I/O
+**** DONE Write tests for the memory interface
+**** DONE Add opcode-data
+**** DONE Build opcode table from instruction-data. Can this be shared with CPU? array of opcode structs
+***** Opcodes: name, access pattern, code, bytes, cycles, addressing mode. Skip docs?
+***** Access pattern: static/jump/read/write/rmw
+**** DONE Build disassembler skipping arg formatting, just hex bytes
+*** Stream Warmup
+**** TODO Fix unbound pathname in default mapper / nestest
+**** TODO Convert uses of initform to default-initargs
+**** TODO Build out a correct arg formatter for the different addressing modes. Maybe use trivia/defunion?
+**** TODO Measure build-opcode-table consing. Export *opcode-table* var instead of rebuilding on demand
+**** TODO Write tests for the disassembler. Adding a stream keyarg would help.
+*** Implement CPU
+**** TODO Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
+**** TODO What's our plan for dispatch? We'll have *opcode-table*. Then what?
+**** TODO Add a function interpret(opcode cpu) that computes address/operand and calls the instruction
+**** TODO Add a nestest harness in clones.test.cpu
+**** TODO Implement a bunch of instructions! Watch out for read-modify-write nonsense
+
+* External dependencies
+** DONE Add support for sourcehut URIs to mgl-pax?
