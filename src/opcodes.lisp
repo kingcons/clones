@@ -6,7 +6,7 @@
 (in-package :clones.opcodes)
 
 (defsection @opcodes (:title "Opcode Data")
-  (build-opcode-table function)
+  (*opcode-table* variable)
   (opcode-name structure-accessor)
   (opcode-size structure-accessor)
   (opcode-time structure-accessor)
@@ -210,7 +210,7 @@
   '(member :static :read :write :read-modify-write :jump))
 
 (defstruct opcode
-  (name 'fake :type symbol)
+  (name 'illegal :type symbol)
   (code 22 :type octet)
   (size 0 :type octet)
   (time 0 :type octet)
@@ -218,7 +218,6 @@
   (access-pattern :static :type access-pattern))
 
 (defun build-opcode-table ()
-  (declare (optimize debug))
   (let ((table (make-array 256 :element-type 'opcode :initial-element (make-opcode))))
     (loop for (instruction opcodes access-pattern) in *opcodes*
           do (dolist (opcode opcodes)
@@ -231,3 +230,9 @@
                                             :access-pattern access-pattern)))
                    (setf (aref table code) opcode)))))
     table))
+
+(defvar *opcode-table* (build-opcode-table)
+  "An array of OPCODE structures for the 6502,
+   indexed by their hex code. Illegal 6502 opcodes
+   have a default name of `ILLEGAL` and arbitrarily
+   are assigned a hex code of 22.")

@@ -18,10 +18,10 @@
 ***** Access pattern: static/jump/read/write/rmw
 **** DONE Build disassembler skipping arg formatting, just hex bytes
 *** Stream Warmup
-**** TODO Fix unbound pathname in default mapper / nestest
-**** TODO Convert uses of initform to default-initargs
-**** TODO Build out a correct arg formatter for the different addressing modes. Maybe use trivia/defunion?
-**** TODO Measure build-opcode-table consing. Export *opcode-table* var instead of rebuilding on demand
+**** DONE Fix unbound pathname in default mapper / nestest
+**** DONE Convert uses of initform to default-initargs
+**** DONE Build out a correct arg formatter for the different addressing modes. Maybe use trivia/defunion?
+**** DONE Measure build-opcode-table consing. Export *opcode-table* var instead of rebuilding on demand
 **** TODO Write tests for the disassembler. Adding a stream keyarg would help.
 *** Implement CPU
 **** TODO Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
