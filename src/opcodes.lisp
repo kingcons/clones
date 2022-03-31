@@ -210,7 +210,7 @@
   '(member :static :read :write :read-modify-write :jump))
 
 (defstruct opcode
-  (name 'illegal :type symbol)
+  (name :illegal :type keyword)
   (code 22 :type octet)
   (size 0 :type octet)
   (time 0 :type octet)
@@ -222,7 +222,7 @@
     (loop for (instruction opcodes access-pattern) in *opcodes*
           do (dolist (opcode opcodes)
                (destructuring-bind (code size time addressing-mode) opcode
-                 (let ((opcode (make-opcode :name instruction
+                 (let ((opcode (make-opcode :name (make-keyword instruction)
                                             :code code
                                             :size size
                                             :time time

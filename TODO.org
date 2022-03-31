@@ -24,11 +24,14 @@
 **** DONE Measure build-opcode-table consing. Export *opcode-table* var instead of rebuilding on demand
 **** TODO Write tests for the disassembler. Adding a stream keyarg would help.
 *** Implement CPU
-**** TODO Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
-**** TODO What's our plan for dispatch? We'll have *opcode-table*. Then what?
-**** TODO Add a function interpret(opcode cpu) that computes address/operand and calls the instruction
-**** TODO Add a nestest harness in clones.test.cpu
+**** DONE Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
+**** DONE Add a CPU structure with correct default values and slots
+**** DONE Add a nestest harness in clones.test.cpu
+**** DONE Add a function single-step(cpu) that dispatches to an appropriate handler for the opcode
+**** TODO Should we get the operand for an instruction in single-step or the individual handlers?
 **** TODO Implement a bunch of instructions! Watch out for read-modify-write nonsense
+**** TODO Add support for working with status register in terms of status keywords like :interrupt :carry etc
+**** TODO Ponder storing the size of an opcode's args rather than the opcode AND args. Do we ever need both?
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
