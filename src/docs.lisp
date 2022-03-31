@@ -10,7 +10,8 @@
   (clones.mappers:@mappers section)
   (clones.memory:@memory section)
   (clones.opcodes:@opcodes section)
-  (clones.disassembler:@disassembler section))
+  (clones.disassembler:@disassembler section)
+  (clones.cpu:@cpu section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones

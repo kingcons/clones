@@ -19,6 +19,7 @@
                  (:file "memory")
                  (:file "opcodes")
                  (:file "disassembler")
+                 (:file "cpu")
                  (:file "docs")
                  (:file "clones"))))
   :in-order-to ((test-op (test-op clones/test))))
@@ -31,9 +32,10 @@
   :depends-on (:clones :try)
   :components ((:module "test"
                 :serial t
-                :components ((:file "memory")
+                :components ((:file "rom")
                              (:file "mappers")
-                             (:file "rom")
+                             (:file "memory")
+                             (:file "cpu")
                              (:file "tests"))))
   :perform (test-op (o s)
              (uiop:symbol-call '#:clones.test '#:test)))
