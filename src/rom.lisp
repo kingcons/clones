@@ -32,12 +32,13 @@
       :horizontal
       :vertical))
 
-(defun extract-metadata (stream)
+(defun extract-metadata (stream pathname)
   (let ((prg-count (read-byte stream))
         (chr-count (read-byte stream))
         (ctrl-byte-1 (read-byte stream))
         (ctrl-byte-2 (read-byte stream)))
-    (list :prg-count prg-count
+    (list :pathname pathname
+          :prg-count prg-count
           :chr-count chr-count
           :mapper-name (get-mapper-name ctrl-byte-1 ctrl-byte-2)
           :mirroring (get-mirroring ctrl-byte-1))))
@@ -69,6 +70,6 @@ the header does not conform to the [iNES format](http://rocknes.web.fc2.com/ines
   (with-open-file (input pathname :element-type '(unsigned-byte 8))
     (unless (valid-header? input)
       (error 'invalid-rom :pathname pathname))
-    (let* ((metadata (extract-metadata input))
+    (let* ((metadata (extract-metadata input pathname))
            (data (extract-data input metadata)))
       (append metadata data))))
