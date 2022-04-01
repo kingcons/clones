@@ -6,8 +6,7 @@
 (in-package :clones.disassembler)
 
 (defsection @disassembler (:title "Disassembler")
-  (disasm function)
-  (now function))
+  (disasm function))
 
 (defun format-args (mode bytes)
   "Take a keyword representing a 6502 addressing mode
@@ -51,10 +50,3 @@
                    bytes
                    (opcode-name opcode)
                    (format-args mode (rest bytes)))))
-
-(defun now (cpu)
-  "Disassemble the current instruction pointed to by the CPU's program counter."
-  (with-accessors ((memory clones.cpu:cpu-memory)
-                   (pc clones.cpu:cpu-pc)) cpu
-    (let ((opcode (aref *opcode-table* (fetch memory pc))))
-      (disasm memory pc (+ pc (1- (opcode-size opcode)))))))

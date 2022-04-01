@@ -1,6 +1,5 @@
 (defpackage :clones.test.cpu
   (:use :cl :clones.cpu :try)
-  (:import-from :clones.disassembler #:now)
   (:export #:test-cpu))
 
 (in-package :clones.test.cpu)
@@ -30,7 +29,7 @@
             do (let ((expected (string-trim '(#\Return) line))
                      (actual (debug-log cpu)))
                  (when disassemble?
-                   (clones.disassembler:now cpu))
+                   (now cpu))
                  (is (string-equal expected actual))
                  (single-step cpu))
             finally (is (= (cpu-pc cpu) #xC6BD))))))
