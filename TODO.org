@@ -28,8 +28,13 @@
 **** DONE Add a CPU structure with correct default values and slots
 **** DONE Add a nestest harness in clones.test.cpu
 **** DONE Add a function single-step(cpu) that dispatches to an appropriate handler for the opcode
-**** TODO Should we get the operand for an instruction in single-step or the individual handlers?
-**** TODO Implement a bunch of instructions! Watch out for read-modify-write nonsense
+**** TODO Opcode Boss Rush!
+***** Start by going over the diff from last time, big thing was added explicit errors to make the fix clear
+****** https://git.sr.ht/~kingcons/clones/commit/dd3cadaf94a56bbfecd6d7cec5977e6719ddb715
+***** Worth calling out that both keywords as function names and structures are antipatterns
+****** https://www.reddit.com/r/lisp/comments/4tihvq/keywords_as_function_names/
+****** Structs is a bit of a premature optimization but why use classes for something that isn't polymorphic?
+***** Keep notes on any weird / tricky things to implement we encounter (rmw, page boundary bonus cycle, etc)
 **** TODO Add support for working with status register in terms of status keywords like :interrupt :carry etc
 **** TODO Ponder storing the size of an opcode's args rather than the opcode AND args. Do we ever need both?
 
