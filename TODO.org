@@ -28,15 +28,30 @@
 **** DONE Add a CPU structure with correct default values and slots
 **** DONE Add a nestest harness in clones.test.cpu
 **** DONE Add a function single-step(cpu) that dispatches to an appropriate handler for the opcode
-**** TODO Opcode Boss Rush!
+**** DONE Opcode Boss Rush!
 ***** Start by going over the diff from last time, big thing was added explicit errors to make the fix clear
 ****** https://git.sr.ht/~kingcons/clones/commit/dd3cadaf94a56bbfecd6d7cec5977e6719ddb715
 ***** Worth calling out that both keywords as function names and structures are antipatterns
 ****** https://www.reddit.com/r/lisp/comments/4tihvq/keywords_as_function_names/
 ****** Structs is a bit of a premature optimization but why use classes for something that isn't polymorphic?
 ***** Keep notes on any weird / tricky things to implement we encounter (rmw, page boundary bonus cycle, etc)
+**** TODO Opcode Boss Rush Pt. 2!
+***** Does it make a difference to use ASH/+ to combine bytes into an address, or would DPB be any better?
+***** What is the best way to set arbitrary bits in the status register?
+****** What's the difference between DPB and DEPOSIT-FIELD?
+**** TODO Rewrite SET-FLAG-ZN to not hurt my soul.
+**** TODO Maybe extract STACK-PUSH-WORD out from JSR if we need it again?
 **** TODO Fix the horrific docs for *opcode-table* and/or structure constructors like make-cpu?
 **** TODO Add support for working with status register in terms of status keywords like :interrupt :carry etc
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
+
+* Weird issues
+** Hit a confusing disassembler bug because of a missing ' after the , in a format string. Eg. ~2,'0X
+** Stack grows downward on the 6502 lol (encountered during :JSR) 🙃
+*** Hit this _TWICE_ also. Following stack discipline by hand sucks, added STACK-PUSH-WORD, STACK-POP-WORD.
+*** This was extra confusing because we ran into the issues while in RTS not during the JSR.
+*** The return address was getting mangled and it took adding explicit byte printouts on both sides to fix.
+** Relative instruction cycle counting is weird and based on if you cross a page to get to new PC
+*** Hit this _TWICE_ which was even more confusing. TL;DR: You don't pay the toll unless you take the branch!

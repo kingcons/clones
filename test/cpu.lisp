@@ -6,8 +6,7 @@
 
 (deftest test-cpu ()
   (test-initial-values)
-  ;; (test-legal-opcodes)
-  )
+  (test-legal-opcodes))
 
 (deftest test-initial-values ()
   (let ((cpu (make-cpu)))
@@ -46,5 +45,5 @@
             pc accum x-reg y-reg status stack cycles)))
 
 #+nil
-(let ((*print-parent* nil))
+(let ((*print* 'unexpected))
   (test-legal-opcodes))
