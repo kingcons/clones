@@ -35,8 +35,8 @@
 ****** https://www.reddit.com/r/lisp/comments/4tihvq/keywords_as_function_names/
 ****** Structs is a bit of a premature optimization but why use classes for something that isn't polymorphic?
 ***** Keep notes on any weird / tricky things to implement we encounter (rmw, page boundary bonus cycle, etc)
+**** TODO Fix the horrific docs for *opcode-table* and/or structure constructors like make-cpu?
 **** TODO Add support for working with status register in terms of status keywords like :interrupt :carry etc
-**** TODO Ponder storing the size of an opcode's args rather than the opcode AND args. Do we ever need both?
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
