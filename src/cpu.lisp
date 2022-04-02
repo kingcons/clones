@@ -74,13 +74,11 @@
                (:absolute (let ((low-byte (fetch memory (1+ pc)))
                                 (high-byte (fetch memory (+ pc 2))))
                             (dpb high-byte (byte 8 8) low-byte)))
-               (:relative (let* ((start (+ pc 2)) ; Instruction after the branch
-                                 (offset (fetch memory (1+ pc)))
-                                 (destination
-                                   (if (logbitp 7 offset)
-                                       (- start (ldb (byte 7 0) offset))
-                                       (+ start offset))))
-                            destination))
+               (:relative (let ((offset (fetch memory (+ pc 1)))
+                                (next (+ pc 2))) ; Instruction after the branch
+                            (if (logbitp 7 offset) ; Branch backwards when negative
+                                (- next (ldb (byte 7 0) offset))
+                                (+ next offset))))
                (otherwise (error 'addressing-mode-not-implemented
                                  :mode addressing-mode
                                  :opcode opcode)))))
