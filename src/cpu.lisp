@@ -166,11 +166,8 @@
 
 (defun :bit (cpu operand)
   (let ((result (logand (cpu-accum cpu) operand)))
-    (with-accessors ((status cpu-status)) cpu
-      (setf status (dpb (ash operand -6) (byte 2 6) status))
-      (setf status (dpb (if (zerop result) 1 0)
-                        (byte 1 1)
-                        status)))))
+    (deposit-field operand (byte 2 6) (cpu-status cpu))
+    (dpb (if (zerop result) 1 0) (byte 1 1) (cpu-status cpu))))
 
 (defun :bne (cpu operand)
   (branch-if cpu (not (logbitp 1 (cpu-status cpu))) operand))
