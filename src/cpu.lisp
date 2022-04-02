@@ -1,7 +1,7 @@
 (mgl-pax:define-package :clones.cpu
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.opcodes :clones.memory)
-  (:import-from :clones.disassembler #:disasm))
+  (:import-from :clones.disassembler #:disassemble-instruction))
 
 (in-package :clones.cpu)
 
@@ -56,12 +56,10 @@
   (pc #xFFFC :type (unsigned-byte 16))
   (cycles 0 :type fixnum))
 
-(defun now (cpu)
-  "Disassemble the current instruction pointed to by the CPU's program counter."
-  (with-accessors ((memory cpu-memory)
-                   (pc cpu-pc)) cpu
-    (let ((opcode (aref *opcode-table* (fetch memory pc))))
-      (disasm memory pc (+ pc (1- (opcode-size opcode)))))))
+(defun now (cpu &key (stream t))
+  "Disassemble the current instruction pointed to by the CPU's program counter.
+   STREAM is the FORMAT destination for the disassembly."
+  (disassemble-instruction (cpu-memory cpu) (cpu-pc cpu) :stream stream))
 
 (defun get-operand (cpu opcode)
   (with-accessors ((memory cpu-memory)

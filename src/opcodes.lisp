@@ -8,6 +8,7 @@
 (defsection @opcodes (:title "Opcode Data")
   (*opcode-table* variable)
   (opcode-name structure-accessor)
+  (opcode-code structure-accessor)
   (opcode-size structure-accessor)
   (opcode-time structure-accessor)
   (opcode-addressing-mode structure-accessor)
