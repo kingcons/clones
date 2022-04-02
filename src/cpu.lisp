@@ -73,12 +73,12 @@
                (:zero-page (fetch memory (1+ pc)))
                (:absolute (let ((low-byte (fetch memory (1+ pc)))
                                 (high-byte (fetch memory (+ pc 2))))
-                            (+ (ash high-byte 8) low-byte)))
+                            (dpb high-byte (byte 8 8) low-byte)))
                (:relative (let* ((start (+ pc 2)) ; Instruction after the branch
                                  (offset (fetch memory (1+ pc)))
                                  (destination
                                    (if (logbitp 7 offset)
-                                       (- start (logand offset #x7F))
+                                       (- start (ldb (byte 7 0) offset))
                                        (+ start offset))))
                             destination))
                (otherwise (error 'addressing-mode-not-implemented
@@ -126,9 +126,9 @@
                    (incf (cpu-cycles ,cpu))))
              (incf ,pc 2))))))
 
-(defun page-crossed? (start dest)
-  (not (= (ash start -8)
-          (ash dest -8))))
+(defun page-crossed? (start end)
+  (not (= (ldb (byte 8 8) start)
+          (ldb (byte 8 8) end))))
 
 (defun set-flag-zn (cpu operand)
   (with-accessors ((status cpu-status)) cpu
@@ -143,13 +143,13 @@
     (let ((low-byte (fetch memory (1+ stack)))
           (high-byte (fetch memory (+ stack 2))))
       (incf stack 2)
-      (+ (ash high-byte 8) low-byte))))
+      (dpb high-byte (byte 8 8) low-byte))))
 
 (defun stack-push-address (cpu address)
   (with-accessors ((memory cpu-memory)
                    (stack cpu-stack)) cpu
-    (let ((low-byte (logand address #xFF))
-          (high-byte (ash address -8)))
+    (let ((low-byte (ldb (byte 8 0) address))
+          (high-byte (ldb (byte 8 8) address)))
       (store memory stack high-byte)
       (decf stack)
       (store memory stack low-byte)
