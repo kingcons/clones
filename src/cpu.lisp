@@ -151,6 +151,12 @@
       (store memory stack low-byte)
       (decf stack))))
 
+(defun :and (cpu operand)
+  (with-accessors ((accum cpu-accum)) cpu
+    (let ((result (logand accum operand)))
+      (setf accum result)
+      (set-flag-zn cpu result))))
+
 (defun :bcc (cpu operand)
   (branch-if cpu (not (logbitp 0 (cpu-status cpu))) operand))
 
@@ -162,8 +168,9 @@
 
 (defun :bit (cpu operand)
   (let ((result (logand (cpu-accum cpu) operand)))
-    (deposit-field operand (byte 2 6) (cpu-status cpu))
-    (dpb (if (zerop result) 1 0) (byte 1 1) (cpu-status cpu))))
+    (with-accessors ((status cpu-status)) cpu
+      (setf status (deposit-field operand (byte 2 6) status))
+      (setf status (dpb (if (zerop result) 1 0) (byte 1 1) status)))))
 
 (defun :bne (cpu operand)
   (branch-if cpu (not (logbitp 1 (cpu-status cpu))) operand))
@@ -201,6 +208,20 @@
 (defun :nop (cpu operand)
   (declare (ignore cpu operand)))
 
+(defun :php (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((stack cpu-stack)) cpu
+    (store (cpu-memory cpu) stack (cpu-status cpu))
+    (decf stack)))
+
+(defun :pla (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((stack cpu-stack)) cpu
+    (let ((result (fetch (cpu-memory cpu) (1+ stack))))
+      (setf (cpu-accum cpu) (logior result #b0010000))
+      (set-flag-zn cpu result))
+    (incf stack)))
+
 (defun :rts (cpu operand)
   (declare (ignore operand))
   (let ((return-address (stack-pop-address cpu)))
@@ -210,6 +231,16 @@
   (declare (ignore operand))
   (with-accessors ((status cpu-status)) cpu
     (setf status (logior status #b00000001))))
+
+(defun :sed (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((status cpu-status)) cpu
+    (setf status (logior status #b00001000))))
+
+(defun :sei (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((status cpu-status)) cpu
+    (setf status (logior status #b00000100))))
 
 (defun :sta (cpu operand)
   (with-accessors ((memory cpu-memory)) cpu

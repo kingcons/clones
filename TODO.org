@@ -55,3 +55,5 @@
 *** The return address was getting mangled and it took adding explicit byte printouts on both sides to fix.
 ** Relative instruction cycle counting is weird and based on if you cross a page to get to new PC
 *** Hit this _TWICE_ which was even more confusing. TL;DR: You don't pay the toll unless you take the branch!
+** PLA was super confusing because bit 5 became unset and never should be unset.
+*** Even more confusing, the 6502 doc I have says it should never be unset but nestest log says otherwise.
