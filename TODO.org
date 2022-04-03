@@ -48,6 +48,8 @@
 ***** Rewrite status locations to reference the helper. Maybe add a STATUS? helper for branch-if.
 ***** To update: SEC/CLC and friends, BIT, BCC/BCS and friends, SET-FLAG-ZN
 **** TODO Factor out FETCH-WORD from absolute addressing and STACK-POP-ADDRESS. Rename stack ops.
+**** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
+**** TODO Rewrite all stack interactions. Stack is 0x100 -> 0x1FF but I was treating it as zero page.
 **** TODO Opcode Boss Rush Pt. 2!
 
 * External dependencies
@@ -63,3 +65,9 @@
 *** Hit this _TWICE_ which was even more confusing. TL;DR: You don't pay the toll unless you take the branch!
 ** PLA was super confusing because bit 5 became unset and never should be unset.
 *** Even more confusing, the 6502 doc I have says it should never be unset but nestest log says otherwise.
+** Overflow handling is always confusing
+*** I struggle to think about twos complement representation in addition to unsigned values
+*** Looking at past projects I've used quite unsatisfying solutions in the subtraction case.
+** Carry bit having different meanings when adding or subtracting led to some confusion.
+** Didn't write dedicated stack helpers and then was confused when stack pointer and zero page overlapped.
+*** I.e. Had to debug absolute loading from stack which didn't show the right data.

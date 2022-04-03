@@ -140,6 +140,14 @@
   (let ((position (%flag-index flag)))
     `(logbitp ,position (cpu-status cpu))))
 
+(defun overflow? (x y result)
+  ;; Cribbing from 6502.txt version of ADC
+  ;; (not (and (logbitp 7 (logxor x y))
+  ;;            (logbitp 7 (logxor x result))))
+  (flet ((sign-of (x) (logbitp 7 x)))
+    (not (or (eql (sign-of result) (sign-of x))
+             (eql (sign-of result) (sign-of y))))))
+
 (defun page-crossed? (start end)
   (not (= (ldb (byte 8 8) start)
           (ldb (byte 8 8) end))))
@@ -166,6 +174,16 @@
       (store memory stack low-byte)
       (decf stack))))
 
+(defun :adc (cpu operand)
+  (with-accessors ((accum cpu-accum)) cpu
+    (let* ((carry-bit (ldb (byte 1 0) (cpu-status cpu)))
+           (result (+ accum operand carry-bit))
+           (wrapped (logand result #xFF)))
+      (set-flag cpu :overflow (if (overflow? accum operand result) 1 0))
+      (set-flag cpu :carry (if (> result #xFF) 1 0))
+      (set-flag-zn cpu wrapped)
+      (setf accum wrapped))))
+
 (defun :and (cpu operand)
   (with-accessors ((accum cpu-accum)) cpu
     (let ((result (logand accum operand)))
@@ -187,6 +205,9 @@
     (set-flag cpu :overflow (if (logbitp 6 operand) 1 0))
     (set-flag cpu :sign (if (logbitp 7 operand) 1 0))))
 
+(defun :bmi (cpu operand)
+  (branch-if cpu (status? :sign) operand))
+
 (defun :bne (cpu operand)
   (branch-if cpu (not (status? :zero)) operand))
 
@@ -202,6 +223,66 @@
 (defun :clc (cpu operand)
   (declare (ignore operand))
   (set-flag cpu :carry 0))
+
+(defun :cld (cpu operand)
+  (declare (ignore operand))
+  (set-flag cpu :decimal 0))
+
+(defun :clv (cpu operand)
+  (declare (ignore operand))
+  (set-flag cpu :overflow 0))
+
+(defun :cmp (cpu operand)
+  (with-accessors ((accum cpu-accum)) cpu
+    (let ((result (- accum operand)))
+      (set-flag-zn cpu result)
+      (set-flag cpu :carry (if (>= accum operand) 1 0)))))
+
+(defun :cpx (cpu operand)
+  (with-accessors ((x cpu-x)) cpu
+    (let ((result (- x operand)))
+      (set-flag-zn cpu result)
+      (set-flag cpu :carry (if (>= x operand) 1 0)))))
+
+(defun :cpy (cpu operand)
+  (with-accessors ((y cpu-y)) cpu
+    (let ((result (- y operand)))
+      (set-flag-zn cpu result)
+      (set-flag cpu :carry (if (>= y operand) 1 0)))))
+
+(defun :dex (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((x cpu-x)) cpu
+    (let ((result (logand (1- x) #xFF)))
+      (setf x result)
+      (set-flag-zn cpu result))))
+
+(defun :dey (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((y cpu-y)) cpu
+    (let ((result (logand (1- y) #xFF)))
+      (setf y result)
+      (set-flag-zn cpu result))))
+
+(defun :eor (cpu operand)
+  (with-accessors ((accum cpu-accum)) cpu
+    (let ((result (logxor accum operand)))
+      (set-flag-zn cpu result)
+      (setf accum result))))
+
+(defun :inx (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((x cpu-x)) cpu
+    (let ((result (logand (1+ x) #xFF)))
+      (setf x result)
+      (set-flag-zn cpu result))))
+
+(defun :iny (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((y cpu-y)) cpu
+    (let ((result (logand (1+ y) #xFF)))
+      (setf y result)
+      (set-flag-zn cpu result))))
 
 (defun :jmp (cpu operand)
   (setf (cpu-pc cpu) operand))
@@ -219,27 +300,65 @@
   (setf (cpu-x cpu) operand)
   (set-flag-zn cpu operand))
 
+(defun :ldy (cpu operand)
+  (setf (cpu-y cpu) operand)
+  (set-flag-zn cpu operand))
+
 (defun :nop (cpu operand)
   (declare (ignore cpu operand)))
+
+(defun :ora (cpu operand)
+  (with-accessors ((accum cpu-accum)) cpu
+    (let ((result (logior accum operand)))
+      (setf accum result)
+      (set-flag-zn cpu result))))
+
+(defun :pha (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((stack cpu-stack)) cpu
+    (store (cpu-memory cpu) (+ #x100 stack) (cpu-accum cpu))
+    (decf stack)))
 
 (defun :php (cpu operand)
   (declare (ignore operand))
   (with-accessors ((stack cpu-stack)) cpu
-    (store (cpu-memory cpu) stack (cpu-status cpu))
+    (let ((status (deposit-field #x10 (byte 1 4) (cpu-status cpu))))
+      (store (cpu-memory cpu) (+ #x100 stack) status))
     (decf stack)))
 
 (defun :pla (cpu operand)
   (declare (ignore operand))
   (with-accessors ((stack cpu-stack)) cpu
-    (let ((result (fetch (cpu-memory cpu) (1+ stack))))
-      (setf (cpu-accum cpu) (logior result #b0010000))
-      (set-flag-zn cpu result))
-    (incf stack)))
+    (incf stack)
+    (let ((result (fetch (cpu-memory cpu) (+ #x100 stack))))
+      (setf (cpu-accum cpu) result)
+      (set-flag-zn cpu result))))
+
+(defun :plp (cpu operand)
+  (declare (ignore operand))
+  (with-accessors ((stack cpu-stack)) cpu
+    (incf stack)
+    (let ((new-status (fetch (cpu-memory cpu) (+ #x100 stack))))
+      (setf (cpu-status cpu) new-status)
+      (set-flag cpu :break 0)
+      (set-flag cpu :unused 1))))
 
 (defun :rts (cpu operand)
   (declare (ignore operand))
   (let ((return-address (stack-pop-address cpu)))
     (setf (cpu-pc cpu) return-address)))
+
+(defun :sbc (cpu operand)
+  (with-accessors ((accum cpu-accum)) cpu
+    (let* ((carry-bit (if (status? :carry) 0 1))
+           (result (- accum operand carry-bit))
+           (top-bit (ldb (byte 1 7) operand))
+           (flipped (dpb (logxor top-bit 1) (byte 1 7) operand))
+           (wrapped (logand result #xFF)))
+      (set-flag cpu :overflow (if (overflow? accum flipped result) 1 0))
+      (set-flag cpu :carry (if (not (minusp result)) 1 0))
+      (set-flag-zn cpu wrapped)
+      (setf accum wrapped))))
 
 (defun :sec (cpu operand)
   (declare (ignore operand))
@@ -260,3 +379,32 @@
 (defun :stx (cpu operand)
   (with-accessors ((memory cpu-memory)) cpu
     (store memory operand (cpu-x cpu))))
+
+(defun :tax (cpu operand)
+  (declare (ignore operand))
+  (let ((result (setf (cpu-x cpu) (cpu-accum cpu))))
+    (set-flag-zn cpu result)))
+
+(defun :tay (cpu operand)
+  (declare (ignore operand))
+  (let ((result (setf (cpu-y cpu) (cpu-accum cpu))))
+    (set-flag-zn cpu result)))
+
+(defun :tsx (cpu operand)
+  (declare (ignore operand))
+  (let ((result (setf (cpu-x cpu) (cpu-stack cpu))))
+    (set-flag-zn cpu result)))
+
+(defun :txa (cpu operand)
+  (declare (ignore operand))
+  (let ((result (setf (cpu-accum cpu) (cpu-x cpu))))
+    (set-flag-zn cpu result)))
+
+(defun :txs (cpu operand)
+  (declare (ignore operand))
+  (setf (cpu-stack cpu) (cpu-x cpu)))
+
+(defun :tya (cpu operand)
+  (declare (ignore operand))
+  (let ((result (setf (cpu-accum cpu) (cpu-y cpu))))
+    (set-flag-zn cpu result)))
