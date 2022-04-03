@@ -6,7 +6,7 @@
 (in-package :clones.opcodes)
 
 (defsection @opcodes (:title "Opcode Data")
-  (*opcode-table* variable)
+  (find-opcode function)
   (opcode-name structure-accessor)
   (opcode-code structure-accessor)
   (opcode-size structure-accessor)
@@ -237,3 +237,7 @@
    indexed by their hex code. Illegal 6502 opcodes
    have a default name of `ILLEGAL` and arbitrarily
    are assigned a hex code of 22.")
+
+(defun find-opcode (byte)
+  "Find the OPCODE encoded as BYTE."
+  (aref *opcode-table* byte))

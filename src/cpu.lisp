@@ -96,8 +96,7 @@
   (with-accessors ((pc cpu-pc)
                    (cycles cpu-cycles)
                    (memory cpu-memory)) cpu
-    (let* ((byte (fetch memory pc))
-           (opcode (aref *opcode-table* byte))
+    (let* ((opcode (find-opcode (fetch memory pc)))
            (handler (opcode-name opcode))
            (operand (get-operand cpu opcode)))
       (when (eql handler :illegal)

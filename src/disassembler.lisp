@@ -1,7 +1,6 @@
 (mgl-pax:define-package :clones.disassembler
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.opcodes)
-  (:import-from :clones.memory #:fetch))
+  (:use :clones.opcodes :clones.memory))
 
 (in-package :clones.disassembler)
 
@@ -36,8 +35,7 @@
 (defun disassemble-instruction (memory index &key (stream t))
   "Disassemble a single instruction from MEMORY beginning at INDEX.
    STREAM is the FORMAT destination of the disassembly output."
-  (let* ((byte (fetch memory index))
-         (opcode (aref *opcode-table* byte))
+  (let* ((opcode (find-opcode (fetch memory index)))
          (code (opcode-code opcode))
          (size (opcode-size opcode))
          (mode (opcode-addressing-mode opcode))
