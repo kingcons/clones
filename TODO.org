@@ -33,16 +33,22 @@
 ****** https://git.sr.ht/~kingcons/clones/commit/dd3cadaf94a56bbfecd6d7cec5977e6719ddb715
 ***** Worth calling out that both keywords as function names and structures are antipatterns
 ****** https://www.reddit.com/r/lisp/comments/4tihvq/keywords_as_function_names/
-****** Structs is a bit of a premature optimization but why use classes for something that isn't polymorphic?
+****** Simple REPL tests suggest (funcall (find-symbol "X")) is 10x slower than (funcall 'x).
+****** Dispatching 1M opcodes the latter way takes ~15M host CPU cycles on my machine, ~160-170M for former.
+****** On my MBP, that's still only ~0.05 seconds for "find-symbol" dispatch so could be okay to try later.
+****** Structs could be a premature optimization but why use classes for something that isn't polymorphic?
 ***** Keep notes on any weird / tricky things to implement we encounter (rmw, page boundary bonus cycle, etc)
+***** Does it make a difference to use ASH/+ to combine bytes into an address vs DPB?
+***** No difference. SHL ADD MOV vs SHL OR MOV.
+***** What's the difference between DPB and DEPOSIT-FIELD?
+***** Difference is bit significance, see: https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node132.html
+**** DONE Rewrite SET-FLAG-ZN to not hurt my soul.
+***** Probably a SET-FLAG helper macro is the way. dpb ,value (byte 1 ,flag-index) (cpu-status ,cpu)
+***** SET-FLAG-IF is tempting but less general / no improvement on (set-flag cpu :carry (if (zerop x) 1 0))
+***** Rewrite status locations to reference the helper. Maybe add a STATUS? helper for branch-if.
+***** To update: SEC/CLC and friends, BIT, BCC/BCS and friends, SET-FLAG-ZN
+**** TODO Factor out FETCH-WORD from absolute addressing and STACK-POP-ADDRESS. Rename stack ops.
 **** TODO Opcode Boss Rush Pt. 2!
-***** Does it make a difference to use ASH/+ to combine bytes into an address, or would DPB be any better?
-***** What is the best way to set arbitrary bits in the status register?
-****** What's the difference between DPB and DEPOSIT-FIELD?
-**** TODO Rewrite SET-FLAG-ZN to not hurt my soul.
-**** TODO Maybe extract STACK-PUSH-WORD out from JSR if we need it again?
-**** TODO Fix the horrific docs for *opcode-table* and/or structure constructors like make-cpu?
-**** TODO Add support for working with status register in terms of status keywords like :interrupt :carry etc
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?

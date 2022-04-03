@@ -121,16 +121,32 @@
                    (incf (cpu-cycles ,cpu))))
              (incf ,pc 2))))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun %flag-index (flag)
+    (let ((flags '(:carry :zero :interrupt :decimal
+                   :break :unused :overflow :sign)))
+      (position flag flags))))
+
+(defmacro set-flag (cpu flag form)
+  "Set the bit corresponding to FLAG in the status register of
+   CPU to the result of the supplied FORM using (SETF LDB)."
+  (let ((position (%flag-index flag)))
+    `(setf (ldb (byte 1 ,position) (cpu-status ,cpu)) ,form)))
+
+(defmacro status? (flag)
+  "Check if a FLAG is enabled in the CPU's status register.
+   Note that this macro is unhygienic and assumes a variable
+   named CPU is bound in the lexical environment to a CPU struture."
+  (let ((position (%flag-index flag)))
+    `(logbitp ,position (cpu-status cpu))))
+
 (defun page-crossed? (start end)
   (not (= (ldb (byte 8 8) start)
           (ldb (byte 8 8) end))))
 
 (defun set-flag-zn (cpu operand)
-  (with-accessors ((status cpu-status)) cpu
-    (let ((zero-bit (if (zerop operand) 1 0))
-          (sign-bit (if (logbitp 7 operand) 1 0)))
-      (setf status (dpb sign-bit (byte 1 7)
-                        (dpb zero-bit (byte 1 1) status))))))
+  (set-flag cpu :zero (if (zerop operand) 1 0))
+  (set-flag cpu :sign (if (logbitp 7 operand) 1 0)))
 
 (defun stack-pop-address (cpu)
   (with-accessors ((memory cpu-memory)
@@ -157,36 +173,35 @@
       (set-flag-zn cpu result))))
 
 (defun :bcc (cpu operand)
-  (branch-if cpu (not (logbitp 0 (cpu-status cpu))) operand))
+  (branch-if cpu (not (status? :carry)) operand))
 
 (defun :bcs (cpu operand)
-  (branch-if cpu (logbitp 0 (cpu-status cpu)) operand))
+  (branch-if cpu (status? :carry) operand))
 
 (defun :beq (cpu operand)
-  (branch-if cpu (logbitp 1 (cpu-status cpu)) operand))
+  (branch-if cpu (status? :zero) operand))
 
 (defun :bit (cpu operand)
   (let ((result (logand (cpu-accum cpu) operand)))
-    (with-accessors ((status cpu-status)) cpu
-      (setf status (deposit-field operand (byte 2 6) status))
-      (setf status (dpb (if (zerop result) 1 0) (byte 1 1) status)))))
+    (set-flag cpu :zero (if (zerop result) 1 0))
+    (set-flag cpu :overflow (if (logbitp 6 operand) 1 0))
+    (set-flag cpu :sign (if (logbitp 7 operand) 1 0))))
 
 (defun :bne (cpu operand)
-  (branch-if cpu (not (logbitp 1 (cpu-status cpu))) operand))
+  (branch-if cpu (not (status? :zero)) operand))
 
 (defun :bpl (cpu operand)
-  (branch-if cpu (not (logbitp 7 (cpu-status cpu))) operand))
+  (branch-if cpu (not (status? :sign)) operand))
 
 (defun :bvc (cpu operand)
-  (branch-if cpu (not (logbitp 6 (cpu-status cpu))) operand))
+  (branch-if cpu (not (status? :overflow)) operand))
 
 (defun :bvs (cpu operand)
-  (branch-if cpu (logbitp 6 (cpu-status cpu)) operand))
+  (branch-if cpu (status? :overflow) operand))
 
 (defun :clc (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((status cpu-status)) cpu
-    (setf status (logand status #b11111110))))
+  (set-flag cpu :carry 0))
 
 (defun :jmp (cpu operand)
   (setf (cpu-pc cpu) operand))
@@ -228,18 +243,15 @@
 
 (defun :sec (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((status cpu-status)) cpu
-    (setf status (logior status #b00000001))))
+  (set-flag cpu :carry 1))
 
 (defun :sed (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((status cpu-status)) cpu
-    (setf status (logior status #b00001000))))
+  (set-flag cpu :decimal 1))
 
 (defun :sei (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((status cpu-status)) cpu
-    (setf status (logior status #b00000100))))
+  (set-flag cpu :interrupt 1))
 
 (defun :sta (cpu operand)
   (with-accessors ((memory cpu-memory)) cpu
