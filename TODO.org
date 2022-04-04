@@ -47,10 +47,15 @@
 ***** SET-FLAG-IF is tempting but less general / no improvement on (set-flag cpu :carry (if (zerop x) 1 0))
 ***** Rewrite status locations to reference the helper. Maybe add a STATUS? helper for branch-if.
 ***** To update: SEC/CLC and friends, BIT, BCC/BCS and friends, SET-FLAG-ZN
-**** TODO Factor out FETCH-WORD from absolute addressing and STACK-POP-ADDRESS. Rename stack ops.
-**** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
+**** DONE Opcode Boss Rush Pt. 2!
+**** TODO Opcode Boss Rush Pt. 3!
 **** TODO Rewrite all stack interactions. Stack is 0x100 -> 0x1FF but I was treating it as zero page.
-**** TODO Opcode Boss Rush Pt. 2!
+**** TODO Factor out FETCH-WORD from absolute addressing and STACK-POP-ADDRESS. Rename stack ops.
+**** TODO Handling of the :unused status bit is wonky in PHP.
+***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
+**** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
+**** TODO Need an update strategy for read-modify-write commands. :-(
+***** Not very tough if we're willing to allocate a list or closure in GET-OPERAND.
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
@@ -71,3 +76,7 @@
 ** Carry bit having different meanings when adding or subtracting led to some confusion.
 ** Didn't write dedicated stack helpers and then was confused when stack pointer and zero page overlapped.
 *** I.e. Had to debug absolute loading from stack which didn't show the right data.
+** RTI and RTS both need to make minor off by one adjustments to their address to behave properly.
+*** JSR winds up accounting for this by adding PC+2 instead of PC+3 to the stack.
+*** RTI currently subtracts one from it's return address since they are pushed in tests by LDA/PHA.
+*** In both cases it's because they aren't :access-pattern :jump. Logically, it feels like they should be.
