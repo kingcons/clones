@@ -156,23 +156,28 @@
   (set-flag cpu :zero (if (zerop operand) 1 0))
   (set-flag cpu :sign (if (logbitp 7 operand) 1 0)))
 
-(defun stack-pop-address (cpu)
+(defun stack-pop (cpu)
   (with-accessors ((memory cpu-memory)
                    (stack cpu-stack)) cpu
-    (let ((low-byte (fetch memory (1+ stack)))
-          (high-byte (fetch memory (+ stack 2))))
-      (incf stack 2)
-      (dpb high-byte (byte 8 8) low-byte))))
+    (incf stack)
+    (fetch memory (+ #x100 stack))))
 
-(defun stack-push-address (cpu address)
+(defun stack-push (cpu value)
   (with-accessors ((memory cpu-memory)
                    (stack cpu-stack)) cpu
-    (let ((low-byte (ldb (byte 8 0) address))
-          (high-byte (ldb (byte 8 8) address)))
-      (store memory stack high-byte)
-      (decf stack)
-      (store memory stack low-byte)
-      (decf stack))))
+    (store memory (+ #x100 stack) value)
+    (decf stack)))
+
+(defun stack-pop-word (cpu)
+  (let ((low-byte (stack-pop cpu))
+        (high-byte (stack-pop cpu)))
+    (dpb high-byte (byte 8 8) low-byte)))
+
+(defun stack-push-word (cpu address)
+  (let ((low-byte (ldb (byte 8 0) address))
+        (high-byte (ldb (byte 8 8) address)))
+    (stack-push cpu high-byte)
+    (stack-push cpu low-byte)))
 
 (defun :adc (cpu operand)
   (with-accessors ((accum cpu-accum)) cpu
@@ -289,7 +294,7 @@
 
 (defun :jsr (cpu operand)
   (let ((return-address (+ (cpu-pc cpu) 2)))
-    (stack-push-address cpu return-address)
+    (stack-push-word cpu return-address)
     (setf (cpu-pc cpu) operand)))
 
 (defun :lda (cpu operand)
@@ -315,37 +320,26 @@
 
 (defun :pha (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((stack cpu-stack)) cpu
-    (store (cpu-memory cpu) (+ #x100 stack) (cpu-accum cpu))
-    (decf stack)))
+  (stack-push cpu (cpu-accum cpu)))
 
 (defun :php (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((stack cpu-stack)) cpu
-    (let ((status (deposit-field #x10 (byte 1 4) (cpu-status cpu))))
-      (store (cpu-memory cpu) (+ #x100 stack) status))
-    (decf stack)))
+  (stack-push cpu (dpb 1 (byte 1 4) (cpu-status cpu))))
 
 (defun :pla (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((stack cpu-stack)) cpu
-    (incf stack)
-    (let ((result (fetch (cpu-memory cpu) (+ #x100 stack))))
-      (setf (cpu-accum cpu) result)
-      (set-flag-zn cpu result))))
+  (let ((result (setf (cpu-accum cpu) (stack-pop cpu))))
+    (set-flag-zn cpu result)))
 
 (defun :plp (cpu operand)
   (declare (ignore operand))
-  (with-accessors ((stack cpu-stack)) cpu
-    (incf stack)
-    (let ((new-status (fetch (cpu-memory cpu) (+ #x100 stack))))
-      (setf (cpu-status cpu) new-status)
-      (set-flag cpu :break 0)
-      (set-flag cpu :unused 1))))
+  (setf (cpu-status cpu) (stack-pop cpu))
+  (set-flag cpu :break 0)
+  (set-flag cpu :unused 1))
 
 (defun :rts (cpu operand)
   (declare (ignore operand))
-  (let ((return-address (stack-pop-address cpu)))
+  (let ((return-address (stack-pop-word cpu)))
     (setf (cpu-pc cpu) return-address)))
 
 (defun :sbc (cpu operand)
