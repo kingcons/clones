@@ -337,6 +337,13 @@
   (set-flag cpu :break 0)
   (set-flag cpu :unused 1))
 
+(defun :rti (cpu operand)
+  (declare (ignore operand))
+  (let ((new-status (dpb 1 (byte 1 5) (stack-pop cpu)))
+        (return-address (1- (stack-pop-word cpu))))
+    (setf (cpu-status cpu) new-status
+          (cpu-pc cpu) return-address)))
+
 (defun :rts (cpu operand)
   (declare (ignore operand))
   (let ((return-address (stack-pop-word cpu)))

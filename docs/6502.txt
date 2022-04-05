@@ -47,7 +47,7 @@ the 6510 (the C64 processor).
   all of the transformations you can make to the accumulator, and the X
   register. But there are other instructions for things that only the Y
   register can do. Various machine language instructions allow you to copy
-v  the contents of a memory location into the Y register, copy the contents
+  the contents of a memory location into the Y register, copy the contents
   of the Y register into a memory location, and modify the contents of the
   Y, or some other register directly.
 
