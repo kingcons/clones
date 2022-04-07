@@ -181,7 +181,7 @@ the 6510 (the C64 processor).
   low byte first).
 
   9) Pre-indexed indirect
-  In this mode a zer0-page address is added to the contents of the X-register
+  In this mode a zero-page address is added to the contents of the X-register
   to give the address of the bytes holding the address of the operand. The
   indirection is indicated by parenthesis in assembly language.
   eg.  LDA ($3E, X)

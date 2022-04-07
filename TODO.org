@@ -50,12 +50,14 @@
 **** DONE Opcode Boss Rush Pt. 2!
 **** TODO Opcode Boss Rush Pt. 3!
 **** DONE Rewrite all stack interactions. Stack is 0x100 -> 0x1FF but I was treating it as zero page.
+**** DONE Need an update strategy for read-modify-write commands. :-(
+***** Not very tough if we're willing to allocate a list or closure in GET-OPERAND.
+***** May want to pass the mode as an argument to these instructions and push logic inside later to avoid alloc.
 **** TODO Factor out FETCH-WORD from absolute addressing.
+**** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
 **** TODO Handling of the :unused status bit is wonky in PHP.
 ***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
-**** TODO Need an update strategy for read-modify-write commands. :-(
-***** Not very tough if we're willing to allocate a list or closure in GET-OPERAND.
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?

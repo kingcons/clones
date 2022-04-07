@@ -67,6 +67,7 @@
     (flet ((get-address (addressing-mode)
              (case addressing-mode
                (:implied nil)
+               (:accumulator nil)
                (:immediate (1+ pc))
                (:zero-page (fetch memory (1+ pc)))
                (:absolute (let ((low-byte (fetch memory (1+ pc)))
@@ -80,13 +81,23 @@
                (otherwise (error 'addressing-mode-not-implemented
                                  :mode addressing-mode
                                  :opcode opcode)))))
-      (let ((address (get-address (opcode-addressing-mode opcode)))
-            (access-pattern (opcode-access-pattern opcode)))
+      (let* ((mode (opcode-addressing-mode opcode))
+             (address (get-address mode))
+             (access-pattern (opcode-access-pattern opcode)))
         (case access-pattern
           (:read (fetch memory address))
           (:write address)
           (:jump address)
-          (:static address)
+          (:static nil)
+          (:read-modify-write (if (eql mode :accumulator)
+                                  (lambda (&optional new-value)
+                                    (if new-value
+                                        (setf (cpu-accum cpu) new-value)
+                                        (cpu-accum cpu)))
+                                  (lambda (&optional new-value)
+                                    (if new-value
+                                        (store (cpu-memory cpu) address new-value)
+                                        (fetch (cpu-memory cpu) address)))))
           (otherwise (error 'access-pattern-not-implemented
                             :access-pattern access-pattern
                             :opcode opcode)))))))
@@ -194,6 +205,13 @@
     (let ((result (logand accum operand)))
       (setf accum result)
       (set-flag-zn cpu result))))
+
+(defun :asl (cpu accessor)
+  (let* ((operand (funcall accessor))
+         (result (ldb (byte 8 0) (ash operand 1))))
+    (set-flag cpu :carry (ldb (byte 1 7) operand))
+    (set-flag-zn cpu result)
+    (funcall accessor result)))
 
 (defun :bcc (cpu operand)
   (branch-if cpu (not (status? :carry)) operand))
@@ -309,6 +327,13 @@
   (setf (cpu-y cpu) operand)
   (set-flag-zn cpu operand))
 
+(defun :lsr (cpu accessor)
+  (let* ((operand (funcall accessor))
+         (result (ash operand -1)))
+    (set-flag cpu :carry (ldb (byte 1 0) operand))
+    (set-flag-zn cpu result)
+    (funcall accessor result)))
+
 (defun :nop (cpu operand)
   (declare (ignore cpu operand)))
 
@@ -336,6 +361,23 @@
   (setf (cpu-status cpu) (stack-pop cpu))
   (set-flag cpu :break 0)
   (set-flag cpu :unused 1))
+
+(defun :rol (cpu accessor)
+  (let* ((operand (funcall accessor))
+         (carry-bit (ldb (byte 1 0) (cpu-status cpu)))
+         (rotate-with-carry (dpb carry-bit (byte 1 0) (ash operand 1)))
+         (result (ldb (byte 8 0) rotate-with-carry)))
+    (set-flag cpu :carry (ldb (byte 1 7) operand))
+    (set-flag-zn cpu result)
+    (funcall accessor result)))
+
+(defun :ror (cpu accessor)
+  (let* ((operand (funcall accessor))
+         (carry-bit (ldb (byte 1 0) (cpu-status cpu)))
+         (result (dpb carry-bit (byte 1 7) (ash operand -1))))
+    (set-flag cpu :carry (ldb (byte 1 0) operand))
+    (set-flag-zn cpu result)
+    (funcall accessor result)))
 
 (defun :rti (cpu operand)
   (declare (ignore operand))
