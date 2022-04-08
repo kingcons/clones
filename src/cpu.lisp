@@ -73,6 +73,11 @@
                (:absolute (let ((low-byte (fetch memory (1+ pc)))
                                 (high-byte (fetch memory (+ pc 2))))
                             (dpb high-byte (byte 8 8) low-byte)))
+               (:indirect-x (let* ((start (+ (fetch memory (1+ pc)) (cpu-x cpu)))
+                                   (wrapped (ldb (byte 8 0) start))
+                                   (low-byte (fetch memory wrapped))
+                                   (high-byte (fetch memory (ldb (byte 8 0) (1+ wrapped)))))
+                              (dpb high-byte (byte 8 8) low-byte)))
                (:relative (let ((offset (fetch memory (+ pc 1)))
                                 (next (+ pc 2))) ; Instruction after the branch
                             (if (logbitp 7 offset) ; Branch backwards when negative
@@ -123,7 +128,7 @@
 (defmacro branch-if (cpu condition destination)
   (with-gensyms (start pc)
     `(with-accessors ((,pc cpu-pc)) ,cpu
-       (let ((,start ,pc))
+       (let ((,start (+ ,pc 2)))
          (if ,condition
              (progn
                (setf ,pc ,destination)
@@ -273,6 +278,12 @@
       (set-flag-zn cpu result)
       (set-flag cpu :carry (if (>= y operand) 1 0)))))
 
+(defun :dec (cpu address)
+  (with-accessors ((memory cpu-memory)) cpu
+    (let ((result (ldb (byte 8 0) (1- (fetch memory address)))))
+      (set-flag-zn cpu result)
+      (store memory address result))))
+
 (defun :dex (cpu operand)
   (declare (ignore operand))
   (with-accessors ((x cpu-x)) cpu
@@ -292,6 +303,12 @@
     (let ((result (logxor accum operand)))
       (set-flag-zn cpu result)
       (setf accum result))))
+
+(defun :inc (cpu address)
+  (with-accessors ((memory cpu-memory)) cpu
+    (let ((result (ldb (byte 8 0) (1+ (fetch memory address)))))
+      (set-flag-zn cpu result)
+      (store memory address result))))
 
 (defun :inx (cpu operand)
   (declare (ignore operand))
@@ -422,6 +439,10 @@
 (defun :stx (cpu operand)
   (with-accessors ((memory cpu-memory)) cpu
     (store memory operand (cpu-x cpu))))
+
+(defun :sty (cpu operand)
+  (with-accessors ((memory cpu-memory)) cpu
+    (store memory operand (cpu-y cpu))))
 
 (defun :tax (cpu operand)
   (declare (ignore operand))
