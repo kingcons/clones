@@ -1,6 +1,9 @@
 (defpackage :clones.test.cpu
   (:use :cl :clones.cpu :try)
-  (:export #:test-cpu))
+  (:export #:test-cpu)
+  (:import-from :serapeum
+                #:~>>
+                #:op))
 
 (in-package :clones.test.cpu)
 
@@ -20,21 +23,37 @@
 
 (deftest test-legal-opcodes ()
   (let ((cpu (make-cpu))
-        (disassemble? nil))
+        (disassemble? nil)
+        (perfect-log
+          (~>> "roms/nestest_cpu.log"
+               (asdf:system-relative-pathname :clones)
+               (alexandria:read-file-into-string)
+               (split-sequence:split-sequence #\Newline)
+               (map 'vector (op (string-trim '(#\Return) _))))))
     (setf (cpu-pc cpu) #xC000)
-    (with-open-file (in (asdf:system-relative-pathname :clones "roms/nestest_cpu.log"))
-      (loop for count = 0 then (1+ count)
-            for percent = (* 100 (/ count 5002.0))
-            for line = (read-line in nil)
-            until (= (cpu-pc cpu) #xC6BD) ; First Illegal Opcode
-            do (let ((expected (string-trim '(#\Return) line))
-                     (actual (debug-log cpu)))
-                 (when disassemble?
-                   (let ((state (now cpu :stream nil)))
-                     (format t "~2,2$% | ~A" percent state)))
-                 (assert (string-equal expected actual))
-                 (single-step cpu))
-            finally (is (= (cpu-pc cpu) #xC6BD))))))
+    (loop for count = 0 then (1+ count)
+          for percent = (* 100 (/ count 5002.0))
+          for line = (aref perfect-log count)
+          until (= (cpu-pc cpu) #xC6BD) ; First Illegal Opcode
+          do (let ((expected line)
+                   (actual (debug-log cpu)))
+               (when disassemble?
+                 (let ((state (now cpu :stream nil)))
+                   (format t "~2,2$% | ~A" percent state)))
+               (assert (string-equal expected actual))
+               (single-step cpu))
+          finally (is (= (cpu-pc cpu) #xC6BD)))))
+
+(deftest test-opcodes-do-not-allocate ()
+  (let ((cpu (make-cpu)))
+    (setf (cpu-pc cpu) #xC000)
+    (let ((bytes-allocated (sb-ext:get-bytes-consed)))
+      (loop until (= (cpu-pc cpu) #xC6BD) ; First Illegal Opcode
+            do (single-step cpu))
+      (setf (cpu-pc cpu) #xC000
+            (cpu-status cpu) #x24
+            (cpu-stack cpu) #xFD)
+      (is (= bytes-allocated (sb-ext:get-bytes-consed))))))
 
 (defun debug-log (cpu)
   (with-accessors ((pc cpu-pc)
