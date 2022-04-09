@@ -19,12 +19,10 @@
   (now function))
 
 (define-condition addressing-mode-not-implemented (error)
-  ((opcode :initarg :opcode :reader error-opcode)
-   (mode :initarg :mode :reader error-mode))
+  ((mode :initarg :mode :reader error-mode))
   (:report (lambda (condition stream)
-             (format stream "Could not find Addressing Mode ~S for Opcode ~A"
-                     (error-mode condition)
-                     (error-opcode condition)))))
+             (format stream "Could not find Addressing Mode ~S"
+                     (error-mode condition)))))
 
 (define-condition access-pattern-not-implemented (error)
   ((opcode :initarg :opcode :reader error-opcode)
@@ -61,38 +59,74 @@
    STREAM is the FORMAT destination for the disassembly."
   (disassemble-instruction (cpu-memory cpu) (cpu-pc cpu) :stream stream))
 
+(defun wrap-byte (value)
+  (declare (fixnum value))
+  (ldb (byte 8 0) value))
+
+(defun wrap-word (value)
+  (declare (fixnum value))
+  (ldb (byte 16 0) value))
+
+(defun wrap-page (value)
+  (declare (fixnum value))
+  (let ((high-byte (ldb (byte 8 8) value)))
+    (dpb high-byte (byte 8 8) (1+ value))))
+
+(defun get-address (cpu addressing-mode)
+  (with-accessors ((memory cpu-memory)
+                   (pc cpu-pc)) cpu
+    (case addressing-mode
+      (:implied nil)
+      (:accumulator nil)
+      (:immediate (1+ pc))
+      (:zero-page (fetch memory (1+ pc)))
+      (:zero-page-x (let ((start (fetch memory (1+ pc))))
+                      (wrap-byte (+ start (cpu-x cpu)))))
+      (:zero-page-y (let ((start (fetch memory (1+ pc))))
+                      (wrap-byte (+ start (cpu-y cpu)))))
+      (:absolute (fetch-word memory (1+ pc)))
+      (:absolute-x (let* ((start (fetch-word memory (1+ pc)))
+                          (destination (wrap-word (+ start (cpu-x cpu)))))
+                     (values destination start)))
+      (:absolute-y (let* ((start (fetch-word memory (1+ pc)))
+                          (destination (wrap-word (+ start (cpu-y cpu)))))
+                     (values destination start)))
+      (:indirect (let* ((start (fetch-word memory (1+ pc)))
+                        (low-byte (fetch memory start))
+                        (high-byte (fetch memory (wrap-page start))))
+                   (dpb high-byte (byte 8 8) low-byte)))
+      (:indirect-x (let* ((start (+ (fetch memory (1+ pc)) (cpu-x cpu)))
+                          (wrapped (wrap-byte start))
+                          (low-byte (fetch memory wrapped))
+                          (high-byte (fetch memory (wrap-byte (1+ wrapped)))))
+                     (dpb high-byte (byte 8 8) low-byte)))
+      (:indirect-y (let* ((offset (fetch memory (1+ pc)))
+                          (low-byte (fetch memory offset))
+                          (high-byte (fetch memory (wrap-byte (1+ offset))))
+                          (start (dpb high-byte (byte 8 8) low-byte))
+                          (destination (ldb (byte 16 0) (+ start (cpu-y cpu)))))
+                     (values destination start)))
+      (:relative (let ((offset (fetch memory (+ pc 1)))
+                       (next (+ pc 2)))   ; Instruction after the branch
+                   (if (logbitp 7 offset) ; Branch backwards when negative
+                       (- next (ldb (byte 7 0) offset))
+                       (+ next offset))))
+      (otherwise (error 'addressing-mode-not-implemented
+                        :mode addressing-mode)))))
+
 (defun get-operand (cpu opcode)
   (with-accessors ((memory cpu-memory)
                    (pc cpu-pc)) cpu
-    (flet ((get-address (addressing-mode)
-             (case addressing-mode
-               (:implied nil)
-               (:accumulator nil)
-               (:immediate (1+ pc))
-               (:zero-page (fetch memory (1+ pc)))
-               (:absolute (let ((low-byte (fetch memory (1+ pc)))
-                                (high-byte (fetch memory (+ pc 2))))
-                            (dpb high-byte (byte 8 8) low-byte)))
-               (:indirect-x (let* ((start (+ (fetch memory (1+ pc)) (cpu-x cpu)))
-                                   (wrapped (ldb (byte 8 0) start))
-                                   (low-byte (fetch memory wrapped))
-                                   (high-byte (fetch memory (ldb (byte 8 0) (1+ wrapped)))))
-                              (dpb high-byte (byte 8 8) low-byte)))
-               (:relative (let ((offset (fetch memory (+ pc 1)))
-                                (next (+ pc 2))) ; Instruction after the branch
-                            (if (logbitp 7 offset) ; Branch backwards when negative
-                                (- next (ldb (byte 7 0) offset))
-                                (+ next offset))))
-               (otherwise (error 'addressing-mode-not-implemented
-                                 :mode addressing-mode
-                                 :opcode opcode)))))
-      (let* ((mode (opcode-addressing-mode opcode))
-             (address (get-address mode))
-             (access-pattern (opcode-access-pattern opcode)))
+    (let ((mode (opcode-addressing-mode opcode))
+          (access-pattern (opcode-access-pattern opcode)))
+      (multiple-value-bind (destination start) (get-address cpu mode)
         (case access-pattern
-          (:read (fetch memory address))
-          (:write address)
-          (:jump address)
+          (:read (progn
+                   (when (and start (page-crossed? start destination))
+                     (incf (cpu-cycles cpu)))
+                   (fetch memory destination)))
+          (:write destination)
+          (:jump destination)
           (:static nil)
           (:read-modify-write (if (eql mode :accumulator)
                                   (lambda (&optional new-value)
@@ -101,8 +135,8 @@
                                         (cpu-accum cpu)))
                                   (lambda (&optional new-value)
                                     (if new-value
-                                        (store (cpu-memory cpu) address new-value)
-                                        (fetch (cpu-memory cpu) address)))))
+                                        (store (cpu-memory cpu) destination new-value)
+                                        (fetch (cpu-memory cpu) destination)))))
           (otherwise (error 'access-pattern-not-implemented
                             :access-pattern access-pattern
                             :opcode opcode)))))))
@@ -190,7 +224,7 @@
     (dpb high-byte (byte 8 8) low-byte)))
 
 (defun stack-push-word (cpu address)
-  (let ((low-byte (ldb (byte 8 0) address))
+  (let ((low-byte (wrap-byte address))
         (high-byte (ldb (byte 8 8) address)))
     (stack-push cpu high-byte)
     (stack-push cpu low-byte)))
@@ -213,7 +247,7 @@
 
 (defun :asl (cpu accessor)
   (let* ((operand (funcall accessor))
-         (result (ldb (byte 8 0) (ash operand 1))))
+         (result (wrap-byte (ash operand 1))))
     (set-flag cpu :carry (ldb (byte 1 7) operand))
     (set-flag-zn cpu result)
     (funcall accessor result)))
@@ -242,6 +276,13 @@
 (defun :bpl (cpu operand)
   (branch-if cpu (not (status? :sign)) operand))
 
+(defun :brk (cpu operand)
+  (stack-push-word cpu (1+ (cpu-pc cpu)))
+  (set-flag cpu :break 1)
+  (stack-push cpu (cpu-status cpu))
+  (set-flag cpu :interrupt 1)
+  (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFE)))
+
 (defun :bvc (cpu operand)
   (branch-if cpu (not (status? :overflow)) operand))
 
@@ -255,6 +296,10 @@
 (defun :cld (cpu operand)
   (declare (ignore operand))
   (set-flag cpu :decimal 0))
+
+(defun :cli (cpu operand)
+  (declare (ignore operand))
+  (set-flag cpu :interrupt 0))
 
 (defun :clv (cpu operand)
   (declare (ignore operand))
@@ -280,7 +325,7 @@
 
 (defun :dec (cpu address)
   (with-accessors ((memory cpu-memory)) cpu
-    (let ((result (ldb (byte 8 0) (1- (fetch memory address)))))
+    (let ((result (wrap-byte (1- (fetch memory address)))))
       (set-flag-zn cpu result)
       (store memory address result))))
 
@@ -306,7 +351,7 @@
 
 (defun :inc (cpu address)
   (with-accessors ((memory cpu-memory)) cpu
-    (let ((result (ldb (byte 8 0) (1+ (fetch memory address)))))
+    (let ((result (wrap-byte (1+ (fetch memory address)))))
       (set-flag-zn cpu result)
       (store memory address result))))
 
@@ -383,7 +428,7 @@
   (let* ((operand (funcall accessor))
          (carry-bit (ldb (byte 1 0) (cpu-status cpu)))
          (rotate-with-carry (dpb carry-bit (byte 1 0) (ash operand 1)))
-         (result (ldb (byte 8 0) rotate-with-carry)))
+         (result (wrap-byte rotate-with-carry)))
     (set-flag cpu :carry (ldb (byte 1 7) operand))
     (set-flag-zn cpu result)
     (funcall accessor result)))

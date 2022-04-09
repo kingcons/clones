@@ -205,8 +205,8 @@ the 6510 (the C64 processor).
 
   10) Post-indexed indirect
   In this mode the contents of a zero-page address (and the following byte)
-  give the indirect addressm which is added to the contents of the Y-register
-  to yield the actual address of the operand. Again, inassembly language,
+  give the indirect address which is added to the contents of the Y-register
+  to yield the actual address of the operand. Again, in assembly language,
   the instruction is indicated by parenthesis.
   eg.  LDA ($4C), Y
   Note that the parenthesis are only around the 2nd byte of the instruction

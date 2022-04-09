@@ -15,7 +15,8 @@
   (memory class)
   (make-memory function)
   (fetch function)
-  (store function))
+  (store function)
+  (fetch-word function))
 
 (defstruct memory
   (ram (make-octet-vector #x800) :type octet-vector)
@@ -38,3 +39,8 @@
            nil)
           (t ;; write to cartridge
            (set-prg cart address value)))))
+
+(defun fetch-word (memory address)
+  (let ((low-byte (fetch memory address))
+        (high-byte (fetch memory (1+ address))))
+    (dpb high-byte (byte 8 8) low-byte)))
