@@ -20,11 +20,11 @@
 
 (deftest test-legal-opcodes ()
   (let ((cpu (make-cpu))
-        (disassemble? t))
+        (disassemble? nil))
     (setf (cpu-pc cpu) #xC000)
     (with-open-file (in (asdf:system-relative-pathname :clones "roms/nestest_cpu.log"))
       (loop for count = 0 then (1+ count)
-            for percent = (* 100 (/ count 5003.0))
+            for percent = (* 100 (/ count 5002.0))
             for line = (read-line in nil)
             until (= (cpu-pc cpu) #xC6BD) ; First Illegal Opcode
             do (let ((expected (string-trim '(#\Return) line))
@@ -32,7 +32,7 @@
                  (when disassemble?
                    (let ((state (now cpu :stream nil)))
                      (format t "~2,2$% | ~A" percent state)))
-                 (is (string-equal expected actual))
+                 (assert (string-equal expected actual))
                  (single-step cpu))
             finally (is (= (cpu-pc cpu) #xC6BD))))))
 

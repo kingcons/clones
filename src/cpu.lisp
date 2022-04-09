@@ -18,26 +18,6 @@
   (single-step function)
   (now function))
 
-(define-condition addressing-mode-not-implemented (error)
-  ((mode :initarg :mode :reader error-mode))
-  (:report (lambda (condition stream)
-             (format stream "Could not find Addressing Mode ~S"
-                     (error-mode condition)))))
-
-(define-condition access-pattern-not-implemented (error)
-  ((opcode :initarg :opcode :reader error-opcode)
-   (access-pattern :initarg :access-pattern :reader error-pattern))
-  (:report (lambda (condition stream)
-             (format stream "Could not find Access Pattern ~S for Opcode ~A"
-                     (error-pattern condition)
-                     (error-opcode condition)))))
-
-(define-condition opcode-not-implemented (error)
-  ((opcode :initarg :opcode :reader error-opcode))
-  (:report (lambda (condition stream)
-             (format stream "Could not find handler for Opcode ~A"
-                     (error-opcode condition)))))
-
 (define-condition illegal-opcode (error)
   ((opcode :initarg :opcode :reader error-opcode))
   (:report (lambda (condition stream)
@@ -67,15 +47,19 @@
   (declare (fixnum value))
   (ldb (byte 16 0) value))
 
-(defun wrap-page (value)
-  (declare (fixnum value))
-  (let ((high-byte (ldb (byte 8 8) value)))
-    (dpb high-byte (byte 8 8) (1+ value))))
+(defun fetch-indirect (memory start)
+  (flet ((wrap-page (value)
+           (dpb (ldb (byte 8 8) start)
+                (byte 8 8)
+                value)))
+    (let ((low-byte (fetch memory start))
+          (high-byte (fetch memory (wrap-page (1+ start)))))
+      (dpb high-byte (byte 8 8) low-byte))))
 
 (defun get-address (cpu addressing-mode)
   (with-accessors ((memory cpu-memory)
                    (pc cpu-pc)) cpu
-    (case addressing-mode
+    (ecase addressing-mode
       (:implied nil)
       (:accumulator nil)
       (:immediate (1+ pc))
@@ -91,28 +75,19 @@
       (:absolute-y (let* ((start (fetch-word memory (1+ pc)))
                           (destination (wrap-word (+ start (cpu-y cpu)))))
                      (values destination start)))
-      (:indirect (let* ((start (fetch-word memory (1+ pc)))
-                        (low-byte (fetch memory start))
-                        (high-byte (fetch memory (wrap-page start))))
-                   (dpb high-byte (byte 8 8) low-byte)))
-      (:indirect-x (let* ((start (+ (fetch memory (1+ pc)) (cpu-x cpu)))
-                          (wrapped (wrap-byte start))
-                          (low-byte (fetch memory wrapped))
-                          (high-byte (fetch memory (wrap-byte (1+ wrapped)))))
-                     (dpb high-byte (byte 8 8) low-byte)))
+      (:indirect (let ((start (fetch-word memory (1+ pc))))
+                   (fetch-indirect memory start)))
+      (:indirect-x (let* ((start (+ (fetch memory (1+ pc)) (cpu-x cpu))))
+                     (fetch-indirect memory (wrap-byte start))))
       (:indirect-y (let* ((offset (fetch memory (1+ pc)))
-                          (low-byte (fetch memory offset))
-                          (high-byte (fetch memory (wrap-byte (1+ offset))))
-                          (start (dpb high-byte (byte 8 8) low-byte))
+                          (start (fetch-indirect memory offset))
                           (destination (ldb (byte 16 0) (+ start (cpu-y cpu)))))
                      (values destination start)))
       (:relative (let ((offset (fetch memory (+ pc 1)))
                        (next (+ pc 2)))   ; Instruction after the branch
                    (if (logbitp 7 offset) ; Branch backwards when negative
                        (- next (ldb (byte 7 0) offset))
-                       (+ next offset))))
-      (otherwise (error 'addressing-mode-not-implemented
-                        :mode addressing-mode)))))
+                       (+ next offset)))))))
 
 (defun get-operand (cpu opcode)
   (with-accessors ((memory cpu-memory)
@@ -120,7 +95,7 @@
     (let ((mode (opcode-addressing-mode opcode))
           (access-pattern (opcode-access-pattern opcode)))
       (multiple-value-bind (destination start) (get-address cpu mode)
-        (case access-pattern
+        (ecase access-pattern
           (:read (progn
                    (when (and start (page-crossed? start destination))
                      (incf (cpu-cycles cpu)))
@@ -136,10 +111,7 @@
                                   (lambda (&optional new-value)
                                     (if new-value
                                         (store (cpu-memory cpu) destination new-value)
-                                        (fetch (cpu-memory cpu) destination)))))
-          (otherwise (error 'access-pattern-not-implemented
-                            :access-pattern access-pattern
-                            :opcode opcode)))))))
+                                        (fetch (cpu-memory cpu) destination))))))))))
 
 (defun single-step (cpu)
   "Step the CPU over the current instruction."
@@ -151,8 +123,6 @@
            (operand (get-operand cpu opcode)))
       (when (eql handler :illegal)
         (error 'illegal-opcode :opcode opcode))
-      (unless (fboundp handler)
-        (error 'opcode-not-implemented :opcode opcode))
       (funcall handler cpu operand)
       ;; Update the program counter and cycle count
       (unless (eql (opcode-access-pattern opcode) :jump)

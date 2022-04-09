@@ -54,9 +54,8 @@
 ***** Not very tough if we're willing to allocate a list or closure in GET-OPERAND.
 ***** May want to pass the mode as an argument to these instructions and push logic inside later to avoid alloc.
 **** DONE Factor out FETCH-WORD from absolute addressing.
-**** TODO Remove unnecessary errors like ADDRESSING-MODE-NOT-IMPLEMENTED and ACCESS-PATTERN-NOT-IMPLEMENTED.
-**** TODO Consider adding fetch-indirect and/or cleaning up page wrapping weirdness with indirect addressing.
-**** TODO 
+**** DONE Remove errors like ADDRESSING-MODE-NOT-IMPLEMENTED, ACCESS-PATTERN-NOT-IMPLEMENTED, OPCODE-NOT-IMPLEMENTED.
+**** DONE Consider adding fetch-indirect and/or cleaning up page wrapping weirdness with indirect addressing.
 **** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
 **** TODO Handling of the :unused status bit is wonky in PHP.
 ***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
