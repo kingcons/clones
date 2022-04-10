@@ -7,6 +7,7 @@
 (deftest test-all ()
   (clones.test.rom:test-rom)
   (clones.test.mappers:test-mappers)
+  (clones.test.ppu:test-ppu)
   (clones.test.memory:test-memory)
   (clones.test.cpu:test-cpu))
 

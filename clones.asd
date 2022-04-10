@@ -16,6 +16,7 @@
                 :components
                 ((:file "rom")
                  (:file "mappers")
+                 (:file "ppu")
                  (:file "memory")
                  (:file "opcodes")
                  (:file "disassembler")
@@ -34,6 +35,7 @@
                 :serial t
                 :components ((:file "rom")
                              (:file "mappers")
+                             (:file "ppu")
                              (:file "memory")
                              (:file "cpu")
                              (:file "tests"))))

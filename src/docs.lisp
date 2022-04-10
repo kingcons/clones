@@ -11,7 +11,8 @@
   (clones.memory:@memory section)
   (clones.opcodes:@opcodes section)
   (clones.disassembler:@disassembler section)
-  (clones.cpu:@cpu section))
+  (clones.cpu:@cpu section)
+  (clones.ppu:@ppu section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones
