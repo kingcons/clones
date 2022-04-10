@@ -49,9 +49,7 @@
 
 (defun fetch-indirect (memory start)
   (flet ((wrap-page (value)
-           (dpb (ldb (byte 8 8) start)
-                (byte 8 8)
-                value)))
+           (deposit-field start (byte 8 8) value)))
     (let ((low-byte (fetch memory start))
           (high-byte (fetch memory (wrap-page (1+ start)))))
       (dpb high-byte (byte 8 8) low-byte))))
@@ -81,7 +79,7 @@
                      (fetch-indirect memory (wrap-byte start))))
       (:indirect-y (let* ((offset (fetch memory (1+ pc)))
                           (start (fetch-indirect memory offset))
-                          (destination (ldb (byte 16 0) (+ start (cpu-y cpu)))))
+                          (destination (wrap-word (+ start (cpu-y cpu)))))
                      (values destination start)))
       (:relative (let ((offset (fetch memory (+ pc 1)))
                        (next (+ pc 2)))   ; Instruction after the branch
@@ -116,7 +114,6 @@
 (defun single-step (cpu)
   "Step the CPU over the current instruction."
   (with-accessors ((pc cpu-pc)
-                   (cycles cpu-cycles)
                    (memory cpu-memory)) cpu
     (let* ((opcode (find-opcode (fetch memory pc)))
            (handler (opcode-name opcode))
@@ -127,7 +124,7 @@
       ;; Update the program counter and cycle count
       (unless (eql (opcode-access-pattern opcode) :jump)
         (incf pc (opcode-size opcode)))
-      (incf cycles (opcode-time opcode)))))
+      (incf (cpu-cycles cpu) (opcode-time opcode)))))
 
 (defmacro branch-if (cpu condition destination)
   (with-gensyms (start pc)
