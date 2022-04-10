@@ -14,7 +14,8 @@
   :components ((:module "src"
                 :serial t
                 :components
-                ((:file "rom")
+                ((:file "util")
+                 (:file "rom")
                  (:file "mappers")
                  (:file "ppu")
                  (:file "memory")

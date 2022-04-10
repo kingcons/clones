@@ -1,6 +1,6 @@
 (mgl-pax:define-package :clones.cpu
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.opcodes :clones.memory)
+  (:use :clones.opcodes :clones.memory :clones.util)
   (:import-from :clones.disassembler #:disassemble-instruction))
 
 (in-package :clones.cpu)
@@ -38,14 +38,6 @@
   "Disassemble the current instruction pointed to by the CPU's program counter.
    STREAM is the FORMAT destination for the disassembly."
   (disassemble-instruction (cpu-memory cpu) (cpu-pc cpu) :stream stream))
-
-(defun wrap-byte (value)
-  (declare (fixnum value))
-  (ldb (byte 8 0) value))
-
-(defun wrap-word (value)
-  (declare (fixnum value))
-  (ldb (byte 16 0) value))
 
 (defun get-address (cpu addressing-mode)
   (with-accessors ((memory cpu-memory)
