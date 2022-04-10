@@ -15,7 +15,6 @@
 
 (defsection @ppu (:title "Picture Processing Unit")
   (ppu class)
-  (ppu-mapper structure-accessor)
   (make-ppu function)
   (read-ppu function)
   (write-ppu function))

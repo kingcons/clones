@@ -67,7 +67,8 @@ Work has just begun so nothing is playable yet. Hang in there.
 
 * ROM Support: ✅
 * NROM Mapper: ✅
-* CPU Opcodes: ❌
+* CPU Opcodes: ✅
+* PPU Registers: ⌛
 * Rendering - Backgrounds: ❌
 * Rendering - Sprites: ❌
 * Input Handling: ❌
