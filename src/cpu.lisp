@@ -47,13 +47,6 @@
   (declare (fixnum value))
   (ldb (byte 16 0) value))
 
-(defun fetch-indirect (memory start)
-  (flet ((wrap-page (value)
-           (deposit-field start (byte 8 8) value)))
-    (let ((low-byte (fetch memory start))
-          (high-byte (fetch memory (wrap-page (1+ start)))))
-      (dpb high-byte (byte 8 8) low-byte))))
-
 (defun get-address (cpu addressing-mode)
   (with-accessors ((memory cpu-memory)
                    (pc cpu-pc)) cpu
