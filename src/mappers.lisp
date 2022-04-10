@@ -33,11 +33,11 @@ CPU for purposes of accessing program code (PRG)."))
   (:documentation "Signalled when no subclass of MAPPER implements the
 cartridge for the file supplied to LOAD-ROM."))
 
-(defun load-rom (pathname)
+(defun load-rom (&optional (pathname (asdf:system-relative-pathname :clones "roms/nestest.nes")))
   "Given a PATHNAME to a valid Nintendo ROM, process the file using PARSE-ROM
 and return an appropriate instance of MAPPER for the cartridge type of the game.
 An UNIMPLEMENTED-MAPPER condition will be signalled if the cartridge type is not
-yet supported by clones."
+yet supported by clones. If no PATHNAME is supplied, the NEStest ROM will be used."
   (let* ((mapper-args (parse-rom pathname))
          (mapper-name (getf mapper-args :mapper-name)))
     (remove-from-plistf mapper-args :mirroring :mapper-name)

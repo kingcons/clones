@@ -18,7 +18,7 @@
 (defstruct memory
   (ram (make-octet-vector #x800) :type octet-vector)
   (ppu (make-ppu) :type ppu)
-  (cart (load-rom (asdf:system-relative-pathname :clones "roms/nestest.nes")) :type mapper))
+  (cart (load-rom) :type mapper))
 
 (defun fetch (memory address)
   (with-slots (ram ppu cart) memory
