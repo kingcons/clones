@@ -1,11 +1,15 @@
 (mgl-pax:define-package :clones.ppu
   (:use :cl :alexandria :mgl-pax)
+  (:use :clones.util)
   (:import-from :serapeum
                 #:octet
-                #:octet-vector)
+                #:octet-vector
+                #:make-octet-vector)
   (:import-from :clones.mappers
                 #:mapper
-                #:load-rom))
+                #:load-rom
+                #:get-chr
+                #:set-chr))
 
 (in-package :clones.ppu)
 
@@ -24,12 +28,135 @@
   (scroll 0 :type (unsigned-byte 16))
   (address 0 :type (unsigned-byte 16))
   (data 0 :type octet)
-  (nametable (make-array #x1000 :element-type 'octet) :type octet-vector)
-  (palette (make-array 32 :element-type 'octet) :type octet-vector)
-  (mapper (load-rom) :type mapper))
+  (fine-x 0 :type octet)
+  (write-latch nil :type boolean)
+  (palette (make-octet-vector #x20) :type octet-vector)
+  (oam (make-octet-vector #x100) :type octet-vector)
+  (name-table (make-octet-vector #x1000) :type octet-vector)
+  (pattern-table (load-rom) :type mapper))
 
 (defun read-ppu (ppu address)
-  address)
+  (cond ((= address 2) ;; PPUSTATUS
+         (read-status ppu))
+        ((= address 4) ;; OAMDATA
+         (aref (ppu-oam ppu) (ppu-oam-addr ppu)))
+        ((= address 7) ;; PPUDATA
+         (read-vram ppu))
+        (t 0)))
 
 (defun write-ppu (ppu address value)
-  value)
+  (cond ((= address 0) ;; PPUCTRL
+         (setf (ppu-ctrl ppu) value)
+         (setf (ldb (byte 2 10) (ppu-scroll ppu)) (ldb (byte 2 0) value)))
+        ((= address 1) ;; PPUMASK
+         (setf (ppu-mask ppu) value))
+        ((= address 3) ;; OAMADDR
+         (setf (ppu-oam-addr ppu) value))
+        ((= address 4) ;; OAMDATA
+         (write-oam ppu value))
+        ((= address 5) ;; PPUSCROLL
+         (write-scroll ppu value))
+        ((= address 6) ;; PPUADDR
+         (write-address ppu value))
+        ((= address 7) ;; PPUDATA
+         (write-vram ppu value))
+        (t 0)))
+
+(defun nametable-address (ppu)
+  (let ((nt-index (ldb (byte 2 0) (ppu-ctrl ppu))))
+    (ecase nt-index
+      (0 #x2000)
+      (1 #x2400)
+      (2 #x2800)
+      (3 #x2C00))))
+
+(defun vram-increment (ppu)
+  (if (logbitp 2 (ppu-ctrl ppu))
+      32
+      1))
+
+(defun sprite-address (ppu)
+  (* #x1000 (ldb (byte 1 3) (ppu-ctrl ppu))))
+
+(defun background-address (ppu)
+  (* #x1000 (ldb (byte 1 4) (ppu-ctrl ppu))))
+
+(defun sprite-size (ppu)
+  (if (logbitp 5 (ppu-ctrl ppu))
+      :8x16
+      :8x8))
+
+(defun vblank-nmi? (ppu)
+  (logbitp 7 (ppu-ctrl ppu)))
+
+(macrolet ((define-bit-test (function-name index)
+               `(defun ,function-name (ppu)
+                  (logbitp ,index (ppu-mask ppu)))))
+  (define-bit-test grayscale? 0)
+  (define-bit-test show-background-left? 1)
+  (define-bit-test show-sprite-left? 2)
+  (define-bit-test show-background? 3)
+  (define-bit-test show-sprite? 4))
+
+(defun read-status (ppu)
+  (let ((result (ppu-status ppu)))
+    (setf (ldb (byte 1 7) (ppu-status ppu)) 0)
+    (setf (ppu-write-latch ppu) nil)
+    result))
+
+(defun read-vram (ppu)
+  (with-accessors ((address ppu-address)
+                   (palette ppu-palette)
+                   (nametable ppu-name-table)
+                   (cartridge ppu-pattern-table)) ppu
+    (prog1
+        (cond ((< address #x2000)
+               (get-chr cartridge address))
+              ((< address #x3F00)
+               (aref nametable (ldb (byte 12 0) address)))
+              (t
+               (aref palette (ldb (byte 5 0) address))))
+      (incf address (vram-increment ppu)))))
+
+(defun write-oam (ppu value)
+  (with-accessors ((oam-addr ppu-oam-addr)) ppu
+    (setf (aref (ppu-oam ppu) oam-addr) value)
+    (setf oam-addr (wrap-byte (1+ oam-addr)))))
+
+(defun write-scroll (ppu value)
+  (with-accessors ((scroll ppu-scroll)
+                   (fine-x ppu-fine-x)
+                   (write-latch ppu-write-latch)) ppu
+    (if (null write-latch)
+        (setf (ldb (byte 5 0) scroll) (ldb (byte 5 3) value)
+              fine-x (ldb (byte 3 0) value)
+              write-latch t)
+        (setf (ldb (byte 5 5) scroll) (ldb (byte 5 3) value)
+              (ldb (byte 3 12) scroll) (ldb (byte 3 0) value)
+              write-latch nil))))
+
+(defun write-address (ppu value)
+  (with-accessors ((scroll ppu-scroll)
+                   (address ppu-address)
+                   (write-latch ppu-write-latch)) ppu
+    (if (null write-latch)
+        (setf (ldb (byte 6 8) scroll) (ldb (byte 6 0) value)
+              (ldb (byte 1 14) scroll) 0
+              write-latch t)
+        (setf (ldb (byte 8 0) scroll) value
+              address scroll
+              write-latch nil))))
+
+(defun write-vram (ppu value)
+  (with-accessors ((address ppu-address)
+                   (palette ppu-palette)
+                   (nametable ppu-name-table)
+                   (cartridge ppu-pattern-table)) ppu
+    (prog1
+        (cond ((< address #x2000)
+               (set-chr cartridge address value))
+              ((< address #x3F00)
+               (setf (aref nametable (ldb (byte 12 0) address)) value))
+              (t
+               (setf (aref palette (ldb (byte 5 0) address)) value)))
+      (incf address (vram-increment ppu)))))

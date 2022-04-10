@@ -35,7 +35,7 @@
   (with-slots (ram ppu cart) memory
     (cond ((< address #x2000) ;; write to RAM
            (setf (aref ram (logand address #x7ff)) value))
-          ((< address #x4000)
+          ((< address #x4000) ;; write to PPU
            (write-ppu ppu (logand address #x7) value))
           ((< address #x8000) ;; write to peripherals (ppu, apu, input)
            nil)

@@ -62,11 +62,17 @@
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
 **** WAIT Maybe get Klaus' 6502 perfect tests running on NES?
 *** Implement PPU
-**** TODO Scaffold PPU module
+**** DONE Scaffold PPU module
 **** Get PPU Registers working
-***** TODO Find docs + Write tests
+***** DONE Find docs + Write tests
+***** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
+***** TODO Finish bulk of PPU register behavior
+***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
+***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 **** Get PPU Timing correct
 ***** TODO Find docs + Write tests
+*** TODO Consider rewriting structs to be classes, all about whether performance is tolerable
+**** No need for methods or GFs since there is no dispatch, just use functions and slots and slot-value
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
