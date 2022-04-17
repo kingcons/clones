@@ -69,6 +69,7 @@ Work has just begun so nothing is playable yet. Hang in there.
 * NROM Mapper: ✅
 * CPU Opcodes: ✅
 * PPU Registers: ⌛
+* PPU Timing: ❌
 * Rendering - Backgrounds: ❌
 * Rendering - Sprites: ❌
 * Input Handling: ❌
@@ -83,4 +84,7 @@ Work has just begun so nothing is playable yet. Hang in there.
   (update-asdf-system-html-docs
    @clones :clones
    :target-dir (asdf:system-relative-pathname :clones "site/")
-   :pages `((:objects (,clones.docs:@clones)))))
+   :pages `((:objects (,clones.docs:@clones)
+             :source-uri-fn ,(make-git-source-uri-fn
+                              :clones "https://git.sr.ht/~kingcons/clones"
+                              :uri-format-string "~A/tree/~A/item/~A#L~D")))))

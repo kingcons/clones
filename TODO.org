@@ -65,14 +65,17 @@
 **** DONE Scaffold PPU module
 **** Get PPU Registers working
 ***** DONE Find docs + Write tests
+***** TODO Finish bulk of PPU register behavior (ppu read buffer)
 ***** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
-***** TODO Finish bulk of PPU register behavior
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 **** Get PPU Timing correct
-***** TODO Find docs + Write tests
+***** TODO Start on PPU Timing
 *** TODO Consider rewriting structs to be classes, all about whether performance is tolerable
 **** No need for methods or GFs since there is no dispatch, just use functions and slots and slot-value
+*** Docs and Tests
+**** DONE Update doc generation to link to code on sourcehut
+
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
