@@ -9,7 +9,8 @@
   (clones.test.mappers:test-mappers)
   (clones.test.ppu:test-ppu)
   (clones.test.memory:test-memory)
-  (clones.test.cpu:test-cpu))
+  (clones.test.cpu:test-cpu)
+  (clones.test.render:test-render))
 
 (defun test (&key (debug nil) (print 'unexpected) (describe 'unexpected))
   (warn-on-tests-not-run ((find-package :clones-test))
