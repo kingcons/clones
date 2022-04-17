@@ -105,17 +105,21 @@
 
 (defun read-vram (ppu)
   (with-accessors ((address ppu-address)
-                   (palette ppu-palette)
-                   (nametable ppu-name-table)
                    (cartridge ppu-pattern-table)) ppu
-    (prog1
-        (cond ((< address #x2000)
-               (get-chr cartridge address))
-              ((< address #x3F00)
-               (aref nametable (ldb (byte 12 0) address)))
-              (t
-               (aref palette (ldb (byte 5 0) address))))
-      (incf address (vram-increment ppu)))))
+    (let ((buffer (ppu-data ppu))
+          (new-value
+            (cond ((< address #x2000)
+                   (get-chr cartridge address))
+                  ((< address #x3F00)
+                   (aref (ppu-name-table ppu) (ldb (byte 12 0) address)))
+                  (t
+                   (aref (ppu-palette ppu) (ldb (byte 5 0) address))))))
+      (setf (ppu-data ppu) new-value)
+      (prog1 
+          (if (< address #x3F00)
+              buffer
+              (aref (ppu-palette ppu) (ldb (byte 5 0) address)))
+        (incf address (vram-increment ppu))))))
 
 (defun write-oam (ppu value)
   (with-accessors ((oam-addr ppu-oam-addr)) ppu

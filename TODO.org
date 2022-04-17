@@ -65,7 +65,7 @@
 **** DONE Scaffold PPU module
 **** Get PPU Registers working
 ***** DONE Find docs + Write tests
-***** TODO Finish bulk of PPU register behavior (ppu read buffer)
+***** DONE Finish bulk of PPU register behavior (ppu read buffer)
 ***** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?

@@ -130,20 +130,32 @@
   (test-vram-buffer ppu))
 
 (deftest test-vram-access (ppu)
-  ;; TODO: Separate tests for vram increment during read and write from tests for read/write.
   (setf (clones.ppu::ppu-address ppu) #x3535)
   (is (= (clones.ppu::vram-increment ppu) 1))
   (is (= (read-ppu ppu 7) 0))
   (is (= (clones.ppu::ppu-address ppu) #x3536))
-  (write-ppu ppu 7 42)
+  (write-ppu ppu 7 #xBB)
   (is (= (clones.ppu::ppu-address ppu) #x3537))
   (setf (clones.ppu::ppu-address ppu) #x3536)
-  (is (= (read-ppu ppu 7) 42))
+  (read-ppu ppu 7)
   (is (= (clones.ppu::ppu-address ppu) #x3537)))
 
-(defun test-vram-buffer (ppu)
-  ;; TODO: Test PPU read buffer
-  )
+(deftest test-vram-buffer (ppu)
+  (test-regular-vram-buffer ppu)
+  (test-palette-vram-buffer ppu))
+
+(deftest test-regular-vram-buffer (ppu)
+  (setf (clones.ppu::ppu-address ppu) #x3636)
+  (write-ppu ppu 7 42)
+  (setf (clones.ppu::ppu-address ppu) #x3636)
+  (read-ppu ppu 7)
+  (is (= (read-ppu ppu 7) 42)))
+
+(deftest test-palette-vram-buffer (ppu)
+  (setf (clones.ppu::ppu-address ppu) #x3F10)
+  (write-ppu ppu 7 25)
+  (setf (clones.ppu::ppu-address ppu) #x3F10)
+  (is (= (read-ppu ppu 7) 25)))
 
 #+nil
 (try 'test-ppu)
