@@ -1,28 +1,24 @@
 * Clones Tasks
-*** Implement ROM parsing, returning a plist
+*** DONE Implement ROM parsing, returning a plist
 **** DONE Function parse-rom (pathname) -> plist of attributes
 **** DONE Add pathname as an attribute in parse-rom output
 **** DONE Finish tests for parse-rom
 **** DONE Write docs for exported symbols in ROM module
-*** Implement mapper class, then nrom support
+*** DONE Implement mapper class, then nrom support
 **** DONE mapper interface -> get-prg, set-prg, get-chr, set-chr, load-rom
 **** DONE add nice docs for mapper module
-**** add a pretty printer for mappers?
-*** Implement Disassembler
+*** DONE Implement Disassembler
 **** DONE Add a nice instruction reference
 **** DONE Add a simple memory interface fetch/store, just RAM and mapper for now, 0s if doing other I/O
 **** DONE Write tests for the memory interface
 **** DONE Add opcode-data
 **** DONE Build opcode table from instruction-data. Can this be shared with CPU? array of opcode structs
-***** Opcodes: name, access pattern, code, bytes, cycles, addressing mode. Skip docs?
-***** Access pattern: static/jump/read/write/rmw
 **** DONE Build disassembler skipping arg formatting, just hex bytes
-*** Stream Warmup
+*** DONE Stream Warmup
 **** DONE Fix unbound pathname in default mapper / nestest
 **** DONE Convert uses of initform to default-initargs
 **** DONE Build out a correct arg formatter for the different addressing modes. Maybe use trivia/defunion?
 **** DONE Measure build-opcode-table consing. Export *opcode-table* var instead of rebuilding on demand
-**** TODO Write tests for the disassembler. Adding a stream keyarg would help.
 *** Implement CPU
 **** DONE Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
 **** DONE Add a CPU structure with correct default values and slots
@@ -60,9 +56,9 @@
 **** TODO Handling of the :unused status bit is wonky in PHP.
 ***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
-**** WAIT Maybe get Klaus' 6502 perfect tests running on NES?
 *** Implement PPU
 **** DONE Scaffold PPU module
+**** TODO Add support for NMI and DMA
 **** Get PPU Registers working
 ***** DONE Find docs + Write tests
 ***** DONE Finish bulk of PPU register behavior (ppu read buffer)
@@ -71,10 +67,23 @@
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 **** Get PPU Timing correct
 ***** TODO Start on PPU Timing
-*** TODO Consider rewriting structs to be classes, all about whether performance is tolerable
-**** No need for methods or GFs since there is no dispatch, just use functions and slots and slot-value
+*** Struct -> Class cleanups
+**** TODO Update Memory
+**** TODO Update CPU
+**** Keep Opcodes as structs
+***** Opcodes are the most "struct-like" thing of the bunch. Dumb read only record only used for metadata.
+***** Fine with not updating them provided I can find a way to better describe the data structure in MGL-PAX.
+**** TODO Update PPU? 🤔
+*** Explore Raylib
+**** TODO Create bindings for raygui so I can use simple widgets and windowing tools
+**** TODO Wire up a disassembler and CPU single stepping
 *** Docs and Tests
 **** DONE Update doc generation to link to code on sourcehut
+**** TODO Get Klaus functional tests built for NES and wire up in test
+**** TODO Add tests for disassembler
+**** TODO Add narrative docs for ROM
+**** TODO Add narrative docs for Mappers
+**** TODO Add narrative docs for Memory
 
 
 * External dependencies
@@ -101,3 +110,12 @@
 *** RTI currently subtracts one from it's return address since they are pushed in tests by LDA/PHA.
 *** In both cases it's because they aren't :access-pattern :jump. Logically, it feels like they should be.
 ** Forgot that stack ops invert. I.e. If stack-push does store/decf stack, stack-pop should incf/fetch
+
+* Cl-raylib notes
+** Easy fix to load even though it isn't on my path:
+
+```
+(let* ((raylib-path "/home/cons/projects/clones/raylib/src/")
+       (cffi:*foreign-library-directories* (list raylib-path)))
+  (ql:quickload :cl-raylib))
+```
