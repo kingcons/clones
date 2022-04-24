@@ -76,7 +76,7 @@
 **** Keep Opcodes as structs
 ***** Opcodes are the most "struct-like" thing of the bunch. Dumb read only record only used for metadata.
 ***** Fine with not updating them provided I can find a way to better describe the data structure in MGL-PAX.
-**** TODO Update PPU? 🤔
+**** DONE Update PPU
 *** Explore Raylib
 **** TODO Create bindings for raygui so I can use simple widgets and windowing tools
 **** TODO Wire up a disassembler and CPU single stepping
