@@ -19,6 +19,13 @@
 **** DONE Convert uses of initform to default-initargs
 **** DONE Build out a correct arg formatter for the different addressing modes. Maybe use trivia/defunion?
 **** DONE Measure build-opcode-table consing. Export *opcode-table* var instead of rebuilding on demand
+*** DONE Struct -> Class cleanups
+**** DONE Update Memory
+**** DONE Update CPU
+**** Keep Opcodes as structs
+***** Opcodes are the most "struct-like" thing of the bunch. Dumb read only record only used for metadata.
+***** Fine with not updating them provided I can find a way to better describe the data structure in MGL-PAX.
+**** DONE Update PPU
 *** Implement CPU
 **** DONE Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
 **** DONE Add a CPU structure with correct default values and slots
@@ -68,18 +75,15 @@
 ***** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
-**** Get PPU Timing correct
-***** TODO Start on PPU Timing
-*** Struct -> Class cleanups
-**** DONE Update Memory
-**** DONE Update CPU
-**** Keep Opcodes as structs
-***** Opcodes are the most "struct-like" thing of the bunch. Dumb read only record only used for metadata.
-***** Fine with not updating them provided I can find a way to better describe the data structure in MGL-PAX.
-**** DONE Update PPU
-*** Explore Raylib
+*** Implement Rendering algorithm
+**** TODO Add a render object that tracks the current scanline and accepts an NMI callback
+**** TODO Add an on-frame callback to render and implement STEP-FRAME
+***** Initially, don't really render. Just have an arbitrary byte array that is used in on-frame.
+*** WAIT Explore Raylib
 **** TODO Create bindings for raygui so I can use simple widgets and windowing tools
 **** TODO Wire up a disassembler and CPU single stepping
+*** Implement SDL2 debugger
+**** TODO See how much of a pain it is to have a single stepping debugger UI in raw SDL2
 *** Docs and Tests
 **** DONE Update doc generation to link to code on sourcehut
 **** TODO Get Klaus functional tests built for NES and wire up in test
@@ -118,7 +122,7 @@
 ** Easy fix to load even though it isn't on my path:
 
 ```
-(let* ((raylib-path "/home/cons/projects/clones/raylib/src/")
+(let* ((raylib-path "/home/cons/projects/clones/raylib/build/raylib/")
        (cffi:*foreign-library-directories* (list raylib-path)))
   (ql:quickload :cl-raylib))
 ```
