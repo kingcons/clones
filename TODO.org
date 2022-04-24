@@ -58,7 +58,10 @@
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
 *** Implement PPU
 **** DONE Scaffold PPU module
-**** TODO Add support for NMI and DMA
+**** DONE Add support for NMI
+**** TODO Add support for DMA
+**** TODO Enable the PPU to trigger NMI
+**** DONE Support combining tile bytes in the pattern table
 **** Get PPU Registers working
 ***** DONE Find docs + Write tests
 ***** DONE Finish bulk of PPU register behavior (ppu read buffer)

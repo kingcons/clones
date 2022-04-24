@@ -17,7 +17,8 @@
   (cpu-pc structure-accessor)
   (cpu-cycles structure-accessor)
   (single-step function)
-  (now function))
+  (now function)
+  (nmi function))
 
 (define-condition illegal-opcode (error)
   ((opcode :initarg :opcode :reader error-opcode))
@@ -192,6 +193,11 @@
         (high-byte (ldb (byte 8 8) address)))
     (stack-push cpu high-byte)
     (stack-push cpu low-byte)))
+
+(defun nmi (cpu)
+  (stack-push cpu (cpu-status cpu))
+  (stack-push-word cpu (cpu-pc cpu))
+  (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFA)))
 
 (defun :adc (cpu operand)
   (with-accessors ((accum cpu-accum)) cpu

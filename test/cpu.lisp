@@ -9,7 +9,9 @@
 
 (deftest test-cpu ()
   (test-initial-values)
-  (test-legal-opcodes))
+  (test-legal-opcodes)
+  (test-opcodes-do-not-allocate)
+  (test-nmi))
 
 (deftest test-initial-values ()
   (let ((cpu (make-cpu)))
@@ -54,6 +56,18 @@
             (cpu-status cpu) #x24
             (cpu-stack cpu) #xFD)
       (is (= bytes-allocated (sb-ext:get-bytes-consed))))))
+
+(deftest test-nmi ()
+  (let ((cpu (make-cpu))
+        (return-address 0))
+    (setf (cpu-pc cpu) #xC000)
+    (dotimes (i 100)
+      (single-step cpu))
+    (setf return-address (cpu-pc cpu))
+    (nmi cpu)
+    (is (equal (cpu-pc cpu)
+               (clones.memory:fetch-word (cpu-memory cpu) #xFFFA)))
+    (is (equal return-address (clones.cpu::stack-pop-word cpu)))))
 
 (defun debug-log (cpu)
   (with-accessors ((pc cpu-pc)
