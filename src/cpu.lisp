@@ -1,7 +1,8 @@
 (mgl-pax:define-package :clones.cpu
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.opcodes :clones.memory :clones.util)
-  (:import-from :clones.disassembler #:disassemble-instruction))
+  (:import-from :clones.disassembler #:disassemble-instruction)
+  (:import-from :serapeum #:octet))
 
 (in-package :clones.cpu)
 
@@ -24,15 +25,26 @@
              (format stream "Clones does not support Illegal Opcode ~A"
                      (error-opcode condition)))))
 
-(defstruct cpu
-  (memory (make-memory) :type memory)
-  (accum 0 :type (unsigned-byte 8))
-  (x 0 :type (unsigned-byte 8))
-  (y 0 :type (unsigned-byte 8))
-  (status #x24 :type (unsigned-byte 8))
-  (stack #xFD :type (unsigned-byte 8))
-  (pc #xFFFC :type (unsigned-byte 16))
-  (cycles 0 :type fixnum))
+(defclass cpu ()
+  ((memory :initarg :memory :type memory
+           :accessor cpu-memory)
+   (accum :initform 0 :type octet
+          :accessor cpu-accum)
+   (x :initform 0 :type octet
+      :accessor cpu-x)
+   (y :initform 0 :type octet
+      :accessor cpu-y)
+   (status :initform #x24 :type octet
+           :accessor cpu-status)
+   (stack :initform #xFD :type octet
+          :accessor cpu-stack)
+   (pc :initform #xFFFC :type (unsigned-byte 16)
+       :accessor cpu-pc)
+   (cycles :initform 0 :type fixnum
+           :accessor cpu-cycles)))
+
+(defun make-cpu (&key (memory (make-memory)))
+  (make-instance 'cpu :memory memory))
 
 (defun now (cpu &key (stream t))
   "Disassemble the current instruction pointed to by the CPU's program counter.

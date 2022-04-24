@@ -15,10 +15,14 @@
   (fetch-word function)
   (fetch-indirect function))
 
-(defstruct memory
-  (ram (make-octet-vector #x800) :type octet-vector)
-  (ppu (make-ppu) :type ppu)
-  (cart (load-rom) :type mapper))
+(defclass memory ()
+  ((ram :initarg :ram :type octet-vector)
+   (ppu :initarg :ppu :type ppu)
+   (cart :initarg :cart :type mapper)))
+
+(defun make-memory (&key (ram (make-octet-vector #x800))
+                      (ppu (make-ppu)) (cart (load-rom)))
+  (make-instance 'memory :ram ram :ppu ppu :cart cart))
 
 (defun fetch (memory address)
   (with-slots (ram ppu cart) memory

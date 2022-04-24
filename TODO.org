@@ -68,8 +68,8 @@
 **** Get PPU Timing correct
 ***** TODO Start on PPU Timing
 *** Struct -> Class cleanups
-**** TODO Update Memory
-**** TODO Update CPU
+**** DONE Update Memory
+**** DONE Update CPU
 **** Keep Opcodes as structs
 ***** Opcodes are the most "struct-like" thing of the bunch. Dumb read only record only used for metadata.
 ***** Fine with not updating them provided I can find a way to better describe the data structure in MGL-PAX.
