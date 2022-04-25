@@ -67,7 +67,6 @@
 **** DONE Scaffold PPU module
 **** DONE Add support for NMI
 **** TODO Add support for DMA
-**** TODO Enable the PPU to trigger NMI
 **** DONE Support combining tile bytes in the pattern table
 **** Get PPU Registers working
 ***** DONE Find docs + Write tests
@@ -76,9 +75,16 @@
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 *** Implement Rendering algorithm
-**** TODO Add a render object that tracks the current scanline and accepts an NMI callback
-**** TODO Add an on-frame callback to render and implement STEP-FRAME
-***** Initially, don't really render. Just have an arbitrary byte array that is used in on-frame.
+**** TODO Add a render object that tracks the current scanline
+**** TODO Add a sync method (or similar) to render that can trigger NMI
+**** TODO Add a toplevel STEP-FRAME driver in clones.lisp
+*** Implement Nametable rendering
+**** TODO Add a framebuffer to the renderer
+**** TODO Add a RENDER-NAMETABLE method that takes an address
+***** Loop for 32x30 tiles calling render-tile
+***** Fetch pattern bytes, attribute byte, quad => compute palette indexes
+***** Use indexes to place pixels for current tile+scanline into framebuffer
+**** TODO Add a way to draw framebuffer to a file (maybe with cl-png)
 *** WAIT Explore Raylib
 **** TODO Create bindings for raygui so I can use simple widgets and windowing tools
 **** TODO Wire up a disassembler and CPU single stepping
