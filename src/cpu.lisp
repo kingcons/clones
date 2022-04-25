@@ -7,6 +7,7 @@
 (in-package :clones.cpu)
 
 (defsection @cpu (:title "CPU Core")
+  (cpu class)
   (make-cpu function)
   (cpu-memory (accessor cpu))
   (cpu-accum (accessor cpu))

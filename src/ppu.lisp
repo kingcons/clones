@@ -17,7 +17,8 @@
   (ppu class)
   (make-ppu function)
   (read-ppu function)
-  (write-ppu function))
+  (write-ppu function)
+  (set-vblank! function))
 
 (defclass ppu ()
   ((ctrl :initform 0 :type octet :accessor ppu-ctrl)
@@ -91,6 +92,10 @@
 (defun vblank-nmi? (ppu)
   (logbitp 7 (ppu-ctrl ppu)))
 
+(defun set-vblank! (ppu value)
+  (with-accessors ((status ppu-status)) ppu
+    (setf (ldb (byte 1 7) status) value)))
+
 (macrolet ((define-bit-test (function-name index)
                `(defun ,function-name (ppu)
                   (logbitp ,index (ppu-mask ppu)))))
@@ -100,9 +105,13 @@
   (define-bit-test show-background? 3)
   (define-bit-test show-sprite? 4))
 
+(defun rendering-enabled? (ppu)
+  (or (show-background? ppu)
+      (show-sprite? ppu)))
+
 (defun read-status (ppu)
   (let ((result (ppu-status ppu)))
-    (setf (ldb (byte 1 7) (ppu-status ppu)) 0)
+    (set-vblank! ppu 0)
     (setf (ppu-write-latch ppu) nil)
     result))
 

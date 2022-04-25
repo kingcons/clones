@@ -23,8 +23,8 @@
                  (:file "disassembler")
                  (:file "cpu")
                  (:file "renderer")
-                 (:file "docs")
-                 (:file "clones"))))
+                 (:file "clones")
+                 (:file "docs"))))
   :in-order-to ((test-op (test-op clones/test))))
 
 (defsystem clones/test

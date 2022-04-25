@@ -75,9 +75,11 @@
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 *** Implement Rendering algorithm
-**** TODO Add a render object that tracks the current scanline
-**** TODO Add a sync method (or similar) to render that can trigger NMI
+**** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
+**** TODO Add a sync method (or similar) that operates on renderer
 **** TODO Add a toplevel STEP-FRAME driver in clones.lisp
+**** TODO What do we test?
+**** TODO Add a way to change cartridge loaded after initializing nintendo
 *** Implement Nametable rendering
 **** TODO Add a framebuffer to the renderer
 **** TODO Add a RENDER-NAMETABLE method that takes an address
