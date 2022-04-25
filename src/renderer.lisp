@@ -1,11 +1,19 @@
-(mgl-pax:define-package :clones.render
+(mgl-pax:define-package :clones.renderer
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.cpu :clones.ppu))
 
-(in-package :clones.render)
+(in-package :clones.renderer)
 
-(defsection @render (:title "The Rendering Logic")
-  )
+(defsection @renderer (:title "The Rendering Logic")
+  (make-renderer function))
+
+(defclass renderer ()
+  ((ppu :initarg :ppu :type ppu)
+   (scanline :initform 0 :type (integer 0 262))
+   (on-nmi :initarg :on-nmi :type function)))
+
+(defun make-renderer (ppu on-nmi)
+  (make-instance 'renderer :ppu ppu :on-nmi on-nmi))
 
 (defun combine-tile-bytes (low-byte high-byte)
   "Given the low and high byte of a pattern table tile,

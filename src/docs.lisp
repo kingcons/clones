@@ -13,7 +13,7 @@
   (clones.disassembler:@disassembler section)
   (clones.cpu:@cpu section)
   (clones.ppu:@ppu section)
-  (clones.render:@render section))
+  (clones.renderer:@renderer section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones
