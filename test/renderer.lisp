@@ -1,16 +1,16 @@
-(defpackage :clones.test.render
-  (:use :cl :clones.render :try)
-  (:export #:test-render))
+(defpackage :clones.test.renderer
+  (:use :cl :clones.renderer :try)
+  (:export #:test-renderer))
 
-(in-package :clones.test.render)
+(in-package :clones.test.renderer)
 
-(deftest test-render ()
+(deftest test-renderer ()
   (test-pattern-pixels))
 
 (deftest test-pattern-pixels ()
   (let ((tile-low-byte #b01000001)
         (tile-high-byte #b00000001))
-    (is (equalp (clones.render::combine-tile-bytes tile-low-byte tile-high-byte)
+    (is (equalp (clones.renderer::combine-tile-bytes tile-low-byte tile-high-byte)
                 #b0001000000000011))))
 
 ;; (deftest test-pattern-pixels ()

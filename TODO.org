@@ -76,7 +76,7 @@
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 *** Implement Rendering algorithm
 **** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
-**** TODO Add a sync method (or similar) that operates on renderer
+**** DONE Add a sync method (or similar) that operates on renderer
 **** TODO Add a toplevel STEP-FRAME driver in clones.lisp
 **** TODO What do we test?
 **** TODO Add a way to change cartridge loaded after initializing nintendo

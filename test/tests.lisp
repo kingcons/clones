@@ -10,7 +10,7 @@
   (clones.test.ppu:test-ppu)
   (clones.test.memory:test-memory)
   (clones.test.cpu:test-cpu)
-  (clones.test.render:test-render))
+  (clones.test.renderer:test-renderer))
 
 (defun test (&key (debug nil) (print 'unexpected) (describe 'unexpected))
   (warn-on-tests-not-run ((find-package :clones-test))
