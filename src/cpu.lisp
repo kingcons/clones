@@ -1,8 +1,10 @@
 (mgl-pax:define-package :clones.cpu
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.opcodes :clones.memory :clones.util)
-  (:import-from :clones.disassembler #:disassemble-instruction)
-  (:import-from :serapeum #:octet))
+  (:import-from :clones.disassembler
+                #:disassemble-instruction)
+  (:import-from :serapeum
+                #:octet))
 
 (in-package :clones.cpu)
 

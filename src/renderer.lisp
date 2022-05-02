@@ -1,8 +1,10 @@
 (mgl-pax:define-package :clones.renderer
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.cpu :clones.ppu)
-  (:import-from :serapeum #:octet)
-  (:import-from :alexandria #:define-constant))
+  (:import-from :serapeum
+                #:octet)
+  (:import-from :alexandria
+                #:define-constant))
 
 (in-package :clones.renderer)
 
@@ -23,7 +25,7 @@
     (make-array (* screen-width screen-height 3) :element-type 'octet)))
 
 (deftype framebuffer ()
-  '(simple-array (unsigned-byte 8) (184320)))
+  '(simple-array octet (184320)))
 
 (defclass renderer ()
   ((ppu :initarg :ppu :type ppu :accessor renderer-ppu)

@@ -1,5 +1,8 @@
 (mgl-pax:define-package :clones.rom
-  (:use :cl :alexandria :mgl-pax))
+  (:use :cl :alexandria :mgl-pax)
+  (:import-from :serapeum
+                #:octet
+                #:make-octet-vector))
 
 (in-package :clones.rom)
 
@@ -48,8 +51,8 @@
     (read-byte stream))
   (let* ((prg-size (* #x4000 (getf metadata :prg-count)))
          (chr-size (* #x2000 (getf metadata :chr-count)))
-         (prg (make-array prg-size :element-type '(unsigned-byte 8)))
-         (chr (make-array chr-size :element-type '(unsigned-byte 8))))
+         (prg (make-octet-vector prg-size))
+         (chr (make-octet-vector chr-size)))
     (read-sequence prg stream)
     (read-sequence chr stream)
     (list :prg prg :chr chr)))
@@ -67,7 +70,7 @@ to the [iNES format](http://rocknes.web.fc2.com/ines.txt)."))
 a property list suitable for passing to MAKE-INSTANCE for an appropriate
 [`MAPPER`][clones.mappers:mapper]. An INVALID-ROM condition will be signalled if
 the header does not conform to the [iNES format](http://rocknes.web.fc2.com/ines.txt)."
-  (with-open-file (input pathname :element-type '(unsigned-byte 8))
+  (with-open-file (input pathname :element-type octet)
     (unless (valid-header? input)
       (error 'invalid-rom :pathname pathname))
     (let* ((metadata (extract-metadata input pathname))

@@ -1,6 +1,9 @@
 (mgl-pax:define-package :clones.mappers
   (:use :cl :alexandria :mgl-pax)
-  (:import-from :clones.rom #:parse-rom))
+  (:import-from :clones.rom
+                #:parse-rom)
+  (:import-from :serapeum
+                #:octet-vector))
 
 (in-package :clones.mappers)
 
@@ -17,8 +20,8 @@
   ((pathname :initarg :pathname :reader mapper-pathname)
    (prg-count :initarg :prg-count :reader prg-count)
    (chr-count :initarg :chr-count :reader chr-count)
-   (prg :initarg :prg :type (simple-array (unsigned-byte 8) *))
-   (chr :initarg :chr :type (simple-array (unsigned-byte 8) *)))
+   (prg :initarg :prg :type octet-vector)
+   (chr :initarg :chr :type octet-vector))
   (:documentation "A Mapper is a virtual representation of a game cartridge,
 referenced by the PPU for purposes of accessing graphical data (CHR) and by the
 CPU for purposes of accessing program code (PRG)."))
