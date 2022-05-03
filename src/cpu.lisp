@@ -90,7 +90,7 @@
       (:relative (let* ((start (1+ pc))
                         (offset (fetch memory start)))
                    (if (logbitp 7 offset) ; Branch backwards when negative
-                       (- start (logxor #xfb #xff))
+                       (- start (logxor offset #xff))
                        (+ start offset 1)))))))
 
 (defun get-operand (cpu opcode)
