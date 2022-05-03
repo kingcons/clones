@@ -228,7 +228,7 @@ the 6510 (the C64 processor).
   the mode you will use most often. A 1 byte value is added to the program
   counter, and the program continues execution from that address. The 1
   byte number is treated as a signed number - i.e. if bit 7 is 1, the number
-  given byt bits 0-6 is negative; if bit 7 is 0, the number is positive. This
+  given bits 0-6 is negative; if bit 7 is 0, the number is positive. This
   enables a branch displacement of up to 127 bytes in either direction.
   eg  bit no.  7 6 5 4 3 2 1 0    signed value          unsigned value
       value    1 0 1 0 0 1 1 1    -39                   $A7

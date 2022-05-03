@@ -20,6 +20,7 @@
   (cpu-pc (accessor cpu))
   (cpu-cycles (accessor cpu))
   (single-step function)
+  (reset function)
   (now function)
   (nmi function))
 
@@ -46,6 +47,10 @@
        :accessor cpu-pc)
    (cycles :initform 0 :type fixnum
            :accessor cpu-cycles)))
+
+(define-printer cpu (accum x y status stack pc cycles)
+                "Acc: ~2,'0X X: ~2,'0X Y: ~2,'0X Status: ~2,'0X Stack: ~2,'0X PC: ~4,'0X Cycles: ~D"
+                accum x y status stack pc cycles)
 
 (defun make-cpu (&key (memory (make-memory)))
   (make-instance 'cpu :memory memory))
@@ -82,11 +87,11 @@
                           (start (fetch-indirect memory offset))
                           (destination (wrap-word (+ start (cpu-y cpu)))))
                      (values destination start)))
-      (:relative (let ((offset (fetch memory (+ pc 1)))
-                       (next (+ pc 2)))   ; Instruction after the branch
+      (:relative (let* ((start (1+ pc))
+                        (offset (fetch memory start)))
                    (if (logbitp 7 offset) ; Branch backwards when negative
-                       (- next (ldb (byte 7 0) offset))
-                       (+ next offset)))))))
+                       (- start (logxor #xfb #xff))
+                       (+ start offset 1)))))))
 
 (defun get-operand (cpu opcode)
   (with-accessors ((memory cpu-memory)
@@ -128,16 +133,16 @@
       (incf (cpu-cycles cpu) (opcode-time opcode)))))
 
 (defmacro branch-if (cpu condition destination)
-  (with-gensyms (start pc)
+  (with-gensyms (next pc)
     `(with-accessors ((,pc cpu-pc)) ,cpu
-       (let ((,start (+ ,pc 2)))
+       (let ((,next (+ ,pc 2)))
          (if ,condition
              (progn
                (setf ,pc ,destination)
-               (if (page-crossed? ,start ,destination)
+               (if (page-crossed? ,next ,destination)
                    (incf (cpu-cycles ,cpu) 2)
                    (incf (cpu-cycles ,cpu))))
-             (incf ,pc 2))))))
+             (setf ,pc ,next))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %flag-index (flag)
@@ -201,6 +206,9 @@
   (stack-push cpu (cpu-status cpu))
   (stack-push-word cpu (cpu-pc cpu))
   (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFA)))
+
+(defun reset (cpu)
+  (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFC)))
 
 (defun :adc (cpu operand)
   (with-accessors ((accum cpu-accum)) cpu

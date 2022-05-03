@@ -63,6 +63,7 @@
 **** TODO Handling of the :unused status bit is wonky in PHP.
 ***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
+**** TODO Add a test case for relative addressing that would strain the LDA PPUSTATUS; BPL &FB trick.
 *** Implement PPU
 **** DONE Scaffold PPU module
 **** DONE Add support for NMI
@@ -77,11 +78,11 @@
 *** Implement Rendering algorithm
 **** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
 **** DONE Add a sync method (or similar) that operates on renderer
+**** DONE Add a framebuffer to the renderer
 **** TODO Add a toplevel STEP-FRAME driver in clones.lisp
 **** TODO What do we test?
 **** TODO Add a way to change cartridge loaded after initializing nintendo
 *** Implement Nametable rendering
-**** TODO Add a framebuffer to the renderer
 **** TODO Add a RENDER-NAMETABLE method that takes an address
 ***** Loop for 32x30 tiles calling render-tile
 ***** Fetch pattern bytes, attribute byte, quad => compute palette indexes
@@ -125,6 +126,8 @@
 *** RTI currently subtracts one from it's return address since they are pushed in tests by LDA/PHA.
 *** In both cases it's because they aren't :access-pattern :jump. Logically, it feels like they should be.
 ** Forgot that stack ops invert. I.e. If stack-push does store/decf stack, stack-pop should incf/fetch
+** Relative addressing passed all tests but was definitely still wrong. BPL &FB was the test case.
+*** I.e. Waiting on a PPU frame render did not behave as intended. At all.
 
 * Cl-raylib notes
 ** Easy fix to load even though it isn't on my path:

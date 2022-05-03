@@ -64,7 +64,7 @@
            (prerender-scanline renderer)))))
 
 (defun render-visible-scanline (renderer)
-  ;; If scanline 0-239, do some drawing to the framebuffer.
+  ;; As long as either background rendering or sprite rendering is enabled, draw to the framebuffer.
   )
 
 (defun prerender-scanline (renderer)
