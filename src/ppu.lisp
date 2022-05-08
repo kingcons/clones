@@ -18,7 +18,8 @@
   (make-ppu function)
   (read-ppu function)
   (write-ppu function)
-  (set-vblank! function))
+  (set-vblank! function)
+  (vblank-nmi? function))
 
 (defclass ppu ()
   ((ctrl :initform 0 :type octet :accessor ppu-ctrl)

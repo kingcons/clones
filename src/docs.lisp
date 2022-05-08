@@ -70,8 +70,8 @@ Work has just begun so nothing is playable yet. Hang in there.
 * NROM Mapper: ✅
 * CPU Opcodes: ✅
 * PPU Registers: ✅
-* PPU Timing: ⌛
-* Rendering - Backgrounds: ❌
+* PPU Timing: ✅
+* Rendering - Backgrounds: ⌛
 * Rendering - Sprites: ❌
 * Input Handling: ❌
 * MMC1 Mapper: ❌

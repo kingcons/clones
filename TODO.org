@@ -69,13 +69,13 @@
 **** DONE Add support for NMI
 **** TODO Add support for DMA
 **** DONE Support combining tile bytes in the pattern table
-**** Get PPU Registers working
+**** TODO Get PPU Registers working
 ***** DONE Find docs + Write tests
 ***** DONE Finish bulk of PPU register behavior (ppu read buffer)
 ***** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
-**** TODO Add PPU Timing tests
+**** DONE Add PPU Timing tests
 *** Implement Rendering algorithm
 **** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
 **** DONE Add a sync method (or similar) that operates on renderer
@@ -83,6 +83,7 @@
 **** TODO Add a toplevel STEP-FRAME driver in clones.lisp
 **** TODO What do we test?
 **** TODO Add a way to change cartridge loaded after initializing nintendo
+**** TODO Add an option to render to an SDL/OpenGL window
 *** Implement Nametable rendering
 **** TODO Add a RENDER-NAMETABLE method that takes an address
 ***** Loop for 32x30 tiles calling render-tile

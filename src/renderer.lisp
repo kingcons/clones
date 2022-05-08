@@ -10,7 +10,8 @@
 
 (defsection @renderer (:title "The Rendering Logic")
   (renderer class)
-  (make-renderer function))
+  (make-renderer function)
+  (sync generic-function))
 
 (define-constant +scanlines-per-frame+ 262
   :documentation "The number of scanlines rendered by the PPU per frame.")
@@ -33,7 +34,7 @@
    (scanline :initform 0 :type (integer 0 261) :accessor renderer-scanline)
    (framebuffer :initform (make-framebuffer) :type framebuffer :accessor renderer-framebuffer)))
 
-(defun make-renderer (ppu on-nmi)
+(defun make-renderer (&key (ppu (make-ppu)) (on-nmi (constantly nil)))
   (make-instance 'renderer :ppu ppu :on-nmi on-nmi))
 
 (defgeneric sync (renderer cpu)
@@ -58,7 +59,8 @@
            (render-visible-scanline renderer))
           ((= scanline 241)
            (set-vblank! ppu 1)
-           (funcall on-nmi))
+           (when (vblank-nmi? ppu)
+             (funcall on-nmi)))
           ((= scanline 261)
            (set-vblank! ppu 0)
            (prerender-scanline renderer)))))
