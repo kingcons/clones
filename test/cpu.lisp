@@ -11,7 +11,8 @@
   (test-initial-values)
   (test-legal-opcodes)
   (test-opcodes-do-not-allocate)
-  (test-nmi))
+  (test-nmi)
+  (test-backwards-branch))
 
 (deftest test-initial-values ()
   (let ((cpu (make-cpu)))
@@ -68,6 +69,14 @@
     (is (equal (cpu-pc cpu)
                (clones.memory:fetch-word (cpu-memory cpu) #xFFFA)))
     (is (equal return-address (clones.cpu::stack-pop-word cpu)))))
+
+(deftest test-backwards-branch ()
+  (let ((cpu (make-cpu)))
+    (setf (cpu-pc cpu) #xC009) ;; LDA $2002
+    (single-step cpu)
+    (is (= (cpu-pc cpu) #xC00C)) ;; BPL &FB
+    (single-step cpu)
+    (is (= (cpu-pc cpu) #xC009))))
 
 (defun debug-log (cpu)
   (with-accessors ((pc cpu-pc)

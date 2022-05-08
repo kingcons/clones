@@ -59,11 +59,11 @@
 **** DONE Factor out FETCH-WORD from absolute addressing.
 **** DONE Remove errors like ADDRESSING-MODE-NOT-IMPLEMENTED, ACCESS-PATTERN-NOT-IMPLEMENTED, OPCODE-NOT-IMPLEMENTED.
 **** DONE Consider adding fetch-indirect and/or cleaning up page wrapping weirdness with indirect addressing.
+**** DONE Add a test case for relative addressing that would strain the LDA PPUSTATUS; BPL &FB trick.
 **** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
 **** TODO Handling of the :unused status bit is wonky in PHP.
 ***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
-**** TODO Add a test case for relative addressing that would strain the LDA PPUSTATUS; BPL &FB trick.
 *** Implement PPU
 **** DONE Scaffold PPU module
 **** DONE Add support for NMI
@@ -75,6 +75,7 @@
 ***** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
+**** TODO Add PPU Timing tests
 *** Implement Rendering algorithm
 **** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
 **** DONE Add a sync method (or similar) that operates on renderer

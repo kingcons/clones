@@ -87,11 +87,11 @@
                           (start (fetch-indirect memory offset))
                           (destination (wrap-word (+ start (cpu-y cpu)))))
                      (values destination start)))
-      (:relative (let* ((start (1+ pc))
-                        (offset (fetch memory start)))
+      (:relative (let* ((next-instruction (+ pc 2))
+                        (offset (fetch memory (1+ pc))))
                    (if (logbitp 7 offset) ; Branch backwards when negative
-                       (- start (logxor offset #xff))
-                       (+ start offset 1)))))))
+                       (+ next-instruction (logior offset -128))
+                       (+ next-instruction offset)))))))
 
 (defun get-operand (cpu opcode)
   (with-accessors ((memory cpu-memory)
