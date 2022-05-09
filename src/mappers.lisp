@@ -66,7 +66,7 @@ yet supported by clones. If no PATHNAME is supplied, the NEStest ROM will be use
 
 (defmethod get-prg ((mapper nrom) address)
   (with-slots (prg) mapper
-    (aref prg (logand address (1- (length prg))))))
+    (aref prg (logand address #x3FFF))))
 
 (defmethod set-prg ((mapper nrom) address value)
   (declare (ignore address value))
@@ -74,7 +74,7 @@ yet supported by clones. If no PATHNAME is supplied, the NEStest ROM will be use
 
 (defmethod get-chr ((mapper nrom) address)
   (with-slots (chr) mapper
-    (aref chr (logand address (1- (length chr))))))
+    (aref chr (logand address #x1FFF))))
 
 (defmethod set-chr ((mapper nrom) address value)
   (declare (ignore address value))

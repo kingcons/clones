@@ -31,9 +31,9 @@
       (otherwise :unsupported))))
 
 (defun get-mirroring (ctrl-byte)
-  (if (zerop (logand ctrl-byte 1))
-      :horizontal
-      :vertical))
+  (if (logbitp 1 ctrl-byte)
+      :vertical
+      :horizontal))
 
 (defun extract-metadata (stream pathname)
   (let ((prg-count (read-byte stream))
