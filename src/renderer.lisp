@@ -67,7 +67,7 @@
            (prerender-scanline renderer)))))
 
 (defun render-visible-scanline (renderer)
-  ;; As long as either background rendering or sprite rendering is enabled, draw to the framebuffer.
+  "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
   (let ((ppu (renderer-ppu renderer)))
     (when (rendering-enabled? ppu)
       (let ((nametable-byte (fetch-nt-byte ppu))
@@ -96,6 +96,7 @@
     (aref (clones.ppu::ppu-name-table ppu) at-index)))
 
 (defun fetch-pattern-bytes (ppu nt-byte)
+  "See: https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing"
   (let* ((address (clones.ppu::ppu-address ppu))
          (fine-y-bits (ldb (byte 3 12) address))
          (bg-table (ldb (byte 1 4) (clones.ppu::ppu-ctrl ppu)))

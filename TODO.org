@@ -76,6 +76,10 @@
 ***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 **** DONE Add PPU Timing tests
+**** DONE Add fetching code for Nametable byte, Attribute byte, Pattern bytes
+**** TODO Compute palette indices and pixel priority from fetched bytes
+**** TODO Support fetching two tiles at a time to support fine x scrolling
+***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
 *** Implement Rendering algorithm
 **** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
 **** DONE Add a sync method (or similar) that operates on renderer
