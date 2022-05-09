@@ -73,7 +73,8 @@
       (let ((nametable-byte (fetch-nt-byte ppu))
             (attribute-byte (fetch-at-byte ppu)))
         (multiple-value-bind (pattern-lo pattern-hi) (fetch-pattern-bytes ppu nametable-byte)
-          (break))))))
+          ;; (break)
+          )))))
 
 (defun fetch-nt-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
@@ -104,8 +105,8 @@
                 (dpb nt-byte (byte 8 4))
                 (dpb bg-table (byte 1 12)))))
     (values
-     (aref (clones.ppu::ppu-pattern-table ppu) pt-index)
-     (aref (clones.ppu::ppu-pattern-table ppu) (+ pt-index 8)))))
+     (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) pt-index)
+     (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) (+ pt-index 8)))))
 
 (defun coarse-scroll-horizontal! (ppu)
   "A scroll operation that conceptually occurs at the end of each 8-pixel tile."
