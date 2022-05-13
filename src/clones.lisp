@@ -7,5 +7,9 @@
 
 (in-package :clones)
 
-(defun main ()
-  )
+(defun main (cpu renderer)
+  (clones.cpu:reset cpu)
+  (loop for count = (single-step cpu)
+        do (progn
+             (now cpu)
+             (sync renderer cpu))))

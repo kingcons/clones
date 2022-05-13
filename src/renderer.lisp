@@ -12,7 +12,8 @@
 (defsection @renderer (:title "The Rendering Logic")
   (renderer class)
   (make-renderer function)
-  (sync generic-function))
+  (sync generic-function)
+  (renderer-framebuffer generic-function))
 
 (define-constant +scanlines-per-frame+ 262
   :documentation "The number of scanlines rendered by the PPU per frame.")
@@ -20,6 +21,26 @@
 (define-constant +cycles-per-scanline+ (/ 341 3)
   :documentation "The number of PPU clock cycles in a single scanline.
   Note that 1 CPU cycle is equivalent to 3 PPU cycles.")
+
+(define-constant +palette+
+    #(#(84 84 84)    #(0 30 116)    #(8 16 144)    #(48 0 136)
+      #(68 0 100)    #(92 0 48)     #(84 4 0)      #(60 24  0)
+      #(32 42  0)    #(8  58 0)     #(0 64 0)      #(0  60  0)
+      #(0  50 60)    #(0   0 0)     #(152 150 152) #(8  76 196)
+      #(48 50 236)   #(92 30 228)   #(136  20 176) #(160 20 100)
+      #(152 34 32)   #(120 60  0)   #(84  90   0)  #(40 114   0)
+      #(8 124   0)   #(0 118  40)   #(0 102 120)   #(0   0   0)
+      #(236 238 236) #(76 154 236)  #(120 124 236) #(176 98 236)
+      #(228  84 236) #(236 88 180)  #(236 106 100) #(212 136  32)
+      #(160 170   0) #(116 196  0)  #(76 208  32)  #(56 204 108)
+      #(56 180 204)  #(60  60  60)  #(236 238 236) #(168 204 236)
+      #(188 188 236) #(212 178 236) #(236 174 236) #(236 174 212)
+      #(236 180 176) #(228 196 144) #(204 210 120) #(180 222 120)
+      #(168 226 144) #(152 226 180) #(160 214 228) #(160 162 160))
+  :documentation "The Palette information used to generate NTSC video signals
+decoded as RGB by the television set. We may later support a VGA palette format
+to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
+  :test #'equalp)
 
 (defun make-framebuffer ()
   (let ((screen-width 256)
@@ -32,17 +53,19 @@
 (defclass renderer ()
   ((ppu :initarg :ppu :type ppu :accessor renderer-ppu)
    (on-nmi :initarg :on-nmi :type function :accessor renderer-on-nmi)
+   (on-frame :initarg :on-frame :type function :accessor renderer-on-frame)
    (scanline :initform 0 :type (integer 0 261) :accessor renderer-scanline)
    (framebuffer :initform (make-framebuffer) :type framebuffer :accessor renderer-framebuffer)))
 
-(defun make-renderer (&key (ppu (make-ppu)) (on-nmi (constantly nil)))
-  (make-instance 'renderer :ppu ppu :on-nmi on-nmi))
+(defun make-renderer (&key (ppu (make-ppu)) (on-nmi (constantly nil)) on-frame)
+  (make-instance 'renderer :ppu ppu :on-nmi on-nmi :on-frame on-frame))
 
 (defgeneric sync (renderer cpu)
   (:documentation "Synchronize the renderer to the current state of the CPU."))
 
 (defmethod sync ((renderer renderer) (cpu cpu))
-  (with-accessors ((scanline renderer-scanline)) renderer
+  (with-accessors ((scanline renderer-scanline)
+                   (on-frame renderer-on-frame)) renderer
     (with-accessors ((cycles cpu-cycles)) cpu
       (when (> cycles +cycles-per-scanline+)
         (render-scanline renderer)
@@ -54,27 +77,53 @@
 
 (defmethod render-scanline ((renderer renderer))
   (with-accessors ((scanline renderer-scanline)
-                   (on-nmi renderer-on-nmi)
                    (ppu renderer-ppu)) renderer
-    (cond ((< scanline 240)
-           (render-visible-scanline renderer))
-          ((= scanline 241)
-           (set-vblank! ppu 1)
-           (when (vblank-nmi? ppu)
-             (funcall on-nmi)))
-          ((= scanline 261)
-           (set-vblank! ppu 0)
-           (prerender-scanline renderer)))))
+    (let ((enabled? (rendering-enabled? ppu)))
+      (cond ((< scanline 240)
+             (when enabled?
+               (render-visible-scanline renderer)))
+            ((= scanline 241)
+             (set-vblank! ppu 1)
+             (new-frame! renderer ppu))
+            ((= scanline 261)
+             (set-vblank! ppu 0)
+             (when enabled?
+               (prerender-scanline renderer)))))))
+
+(defun new-frame! (renderer ppu)
+  (with-accessors ((on-frame renderer-on-frame)
+                   (on-nmi renderer-on-nmi)) renderer
+    (when (vblank-nmi? ppu)
+      (funcall on-nmi))
+    (when on-frame
+      (funcall on-frame renderer))))
 
 (defun render-visible-scanline (renderer)
   "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
   (let ((ppu (renderer-ppu renderer)))
-    (when (rendering-enabled? ppu)
-      (let ((nametable-byte (fetch-nt-byte ppu))
-            (attribute-byte (fetch-at-byte ppu)))
-        (multiple-value-bind (pattern-lo pattern-hi) (fetch-pattern-bytes ppu nametable-byte)
-          ;; (break)
-          )))))
+    (dotimes (tile 32)
+      (render-tile renderer ppu)
+      (coarse-scroll-horizontal! ppu))))
+
+(defun render-tile (renderer ppu)
+  ;; Rough code for rendering an individual tile below
+  (let ((nametable-byte (fetch-nt-byte ppu))
+        (attribute-byte (fetch-at-byte ppu)))
+    (multiple-value-bind (pattern-low pattern-high) (fetch-pattern-bytes ppu nametable-byte)
+      (dotimes (pixel-index 8)
+        (let* ((palette-low-bits (dpb (ldb (byte 1 pixel-index) pattern-high)
+                                      (byte 1 1)
+                                      (ldb (byte 1 pixel-index) pattern-low)))
+               (palette-high-bits (case (quad-position ppu)
+                                    (:top-left (ldb (byte 2 0) attribute-byte))
+                                    (:top-right (ldb (byte 2 2) attribute-byte))
+                                    (:bottom-left (ldb (byte 2 4) attribute-byte))
+                                    (:bottom-right (ldb (byte 2 6) attribute-byte))))
+               (palette-index (dpb palette-high-bits (byte 2 2) palette-low-bits))
+               (color-index (get-color-index ppu palette-index)))
+          #+nil
+          (format t "~2,'0B ~2,'0B ~4,'0B~%" palette-low-bits palette-high-bits palette-index)
+          (render-pixel renderer color-index pixel-index))))))
 
 (defun fetch-nt-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
@@ -109,6 +158,32 @@
      (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) pt-index)
      (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) (+ pt-index 8)))))
 
+(defun quad-position (ppu)
+  (let* ((address (clones.ppu::ppu-address ppu))
+         (on-right (logbitp 1 address))
+         (on-bottom (logbitp 6 address)))
+    (cond ((and on-right on-bottom)  :bottom-right)
+          (on-bottom                 :bottom-left)
+          (on-right                  :top-right)
+          (t                         :top-left))))
+
+(defun get-color-index (ppu index)
+  (let ((palette (clones.ppu::ppu-palette ppu)))
+    (aref palette index)))
+
+(defun render-pixel (renderer color-index pixel-index)
+  (with-accessors ((ppu renderer-ppu)
+                   (scanline renderer-scanline)
+                   (framebuffer renderer-framebuffer)) renderer
+    (let* ((coarse-x (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))
+           (offset (+ (* scanline 256)
+                      (* coarse-x 8)
+                      pixel-index))
+           (rgb-value (aref +palette+ color-index)))
+      (dotimes (i 3)
+        (setf (aref framebuffer (+ offset i))
+              (aref rgb-value i))))))
+
 (defun coarse-scroll-horizontal! (ppu)
   "A scroll operation that conceptually occurs at the end of each 8-pixel tile."
   (let ((address (clones.ppu::ppu-address ppu)))
@@ -139,20 +214,4 @@
 
 (defun prerender-scanline (renderer)
   (let ((ppu (renderer-ppu renderer)))
-    (when (rendering-enabled? ppu)
-      (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu)))))
-
-(defun combine-tile-bytes (low-byte high-byte)
-  "Given the low and high byte of a pattern table tile,
-   construct the appropriate bitfield for its pixels.
-   See: https://www.nesdev.org/wiki/PPU_pattern_tables"
-  (flet ((interleave-bits (i)
-           (+ (ash (ldb (byte 1 i) high-byte) 1)
-              (ldb (byte 1 i) low-byte))))
-    (loop with result = 0
-          for i below 8
-          do (setf result (dpb
-                           (interleave-bits i)
-                           (byte 2 (* i 2))
-                           result))
-          finally (return result))))
+    (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))))

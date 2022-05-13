@@ -77,7 +77,8 @@
 ***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 **** DONE Add PPU Timing tests
 **** DONE Add fetching code for Nametable byte, Attribute byte, Pattern bytes
-**** TODO Compute palette indices and pixel priority from fetched bytes
+**** DONE Compute palette indices from fetched bytes
+**** TODO Uncover why NMI is not happening on every frame
 **** TODO Support fetching two tiles at a time to support fine x scrolling
 ***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
 *** Implement Rendering algorithm
@@ -94,6 +95,7 @@
 ***** Fetch pattern bytes, attribute byte, quad => compute palette indexes
 ***** Use indexes to place pixels for current tile+scanline into framebuffer
 **** TODO Add a way to draw framebuffer to a file (maybe with cl-png)
+*** TODO Implement Input handling
 *** WAIT Explore Raylib
 **** TODO Create bindings for raygui so I can use simple widgets and windowing tools
 **** TODO Wire up a disassembler and CPU single stepping
