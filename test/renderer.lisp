@@ -7,7 +7,8 @@
 (deftest test-renderer ()
   (test-nmi-disabled)
   (test-nmi-timing)
-  (test-pattern-pixels))
+;  (test-vertical-scroll)
+  )
 
 (deftest test-nmi-disabled ()
   (flet ((nmi-handler () (error 'nmi-fired)))
@@ -44,18 +45,14 @@
     (clones.cpu:reset cpu)
     (list cpu renderer)))
 
-;; (deftest test-pattern-pixels ()
-;;   (let ((tile #(#x41 #xC2 #x44 #x48 #x10 #x20 #x40 #x80
-;;                 #x01 #x02 #x04 #x08 #x16 #x21 #x42 #x87)))
-;;     (is (equalp (tile-pixels tile)
-;;                 #(0 1 0 0 0 0 0 3
-;;                   1 1 0 0 0 0 3 0
-;;                   0 1 0 0 0 3 0 0
-;;                   0 1 0 0 3 0 0 0
-;;                   0 0 0 3 0 2 2 0
-;;                   0 0 3 0 0 0 0 2
-;;                   0 3 0 0 0 0 2 0
-;;                   3 0 0 0 0 2 2 2)))))
+(defun test-frame (renderer)
+  (with-accessors ((framebuffer renderer-framebuffer)) renderer
+    (let ((image (make-instance 'zpng:png
+                                :color-type :truecolor
+                                :width 256
+                                :height 240
+                                :image-data framebuffer)))
+      (zpng:write-png image (asdf:system-relative-pathname :clones "test/background.png")))))
 
 #+nil
 (try 'test-renderer)
