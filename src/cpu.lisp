@@ -203,8 +203,8 @@
     (stack-push cpu low-byte)))
 
 (defun nmi (cpu)
-  (stack-push cpu (cpu-status cpu))
   (stack-push-word cpu (cpu-pc cpu))
+  (stack-push cpu (cpu-status cpu))
   (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFA)))
 
 (defun reset (cpu)
