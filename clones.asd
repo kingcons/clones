@@ -32,7 +32,7 @@
   :author "Brit Butler"
   :license "MIT"
   :description "Tests for Clones."
-  :depends-on (:clones :try)
+  :depends-on (:clones :try :zpng)
   :components ((:module "test"
                 :serial t
                 :components ((:file "rom")
