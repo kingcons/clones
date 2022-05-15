@@ -14,14 +14,16 @@
   (get-prg generic-function)
   (set-prg generic-function)
   (get-chr generic-function)
-  (set-chr generic-function))
+  (set-chr generic-function)
+  (get-mirroring generic-function))
 
 (defclass mapper ()
   ((pathname :initarg :pathname :reader mapper-pathname)
    (prg-count :initarg :prg-count :reader prg-count)
    (chr-count :initarg :chr-count :reader chr-count)
    (prg :initarg :prg :type octet-vector)
-   (chr :initarg :chr :type octet-vector))
+   (chr :initarg :chr :type octet-vector)
+   (mirroring :initarg :mirroring :reader get-mirroring))
   (:documentation "A Mapper is a virtual representation of a game cartridge,
 referenced by the PPU for purposes of accessing graphical data (CHR) and by the
 CPU for purposes of accessing program code (PRG)."))
@@ -43,7 +45,7 @@ An UNIMPLEMENTED-MAPPER condition will be signalled if the cartridge type is not
 yet supported by clones. If no PATHNAME is supplied, the NEStest ROM will be used."
   (let* ((mapper-args (parse-rom pathname))
          (mapper-name (getf mapper-args :mapper-name)))
-    (remove-from-plistf mapper-args :mirroring :mapper-name)
+    (remove-from-plistf mapper-args :mapper-name)
     (case mapper-name
       (:nrom (apply 'make-instance 'nrom mapper-args))
       (otherwise (error 'unimplemented-mapper :pathname pathname :mapper-name mapper-name)))))

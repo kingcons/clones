@@ -1,6 +1,8 @@
 (mgl-pax:define-package :clones.renderer
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.cpu :clones.ppu)
+  (:import-from :clones.mappers
+                #:get-mirroring)
   (:import-from :serapeum
                 #:octet
                 #:callf
@@ -127,8 +129,14 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 
 (defun fetch-nt-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
-  (let ((nt-index (ldb (byte 12 0) (clones.ppu::ppu-address ppu))))
-    (aref (clones.ppu::ppu-name-table ppu) nt-index)))
+  (aref (clones.ppu::ppu-name-table ppu) (nametable-index ppu)))
+
+(defun nametable-index (ppu)
+  (let ((address (ldb (byte 12 0) (clones.ppu::ppu-address ppu)))
+        (mirroring (clones.mappers:get-mirroring (clones.ppu::ppu-pattern-table ppu))))
+    (ecase mirroring
+      (:horizontal (mod address #x800))
+      (:vertical (dpb 0 (byte 1 10) address)))))
 
 (defun fetch-at-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
@@ -183,7 +191,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 
 (defun coarse-scroll-horizontal! (ppu)
   "A scroll operation that conceptually occurs at the end of each 8-pixel tile."
-  (symbol-macrolet ((nt-index (ldb (byte 1 10) (clones.ppu::ppu-address ppu)))
+  (symbol-macrolet ((nt-index (ldb (byte 1 11) (clones.ppu::ppu-address ppu)))
                     (coarse-x (ldb (byte 5 0) (clones.ppu::ppu-address ppu))))
     (cond ((= coarse-x 31)
            (setf coarse-x 0
@@ -193,7 +201,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 
 (defun fine-scroll-vertical! (ppu)
   "A scroll operation that conceptually occurs at the end of each scanline."
-  (symbol-macrolet ((nt-index (ldb (byte 1 11) (clones.ppu::ppu-address ppu)))
+  (symbol-macrolet ((nt-index (ldb (byte 1 12) (clones.ppu::ppu-address ppu)))
                     (coarse-y (ldb (byte 5 5) (clones.ppu::ppu-address ppu)))
                     (fine-y (ldb (byte 3 12) (clones.ppu::ppu-address ppu))))
     (when (< fine-y 7)
