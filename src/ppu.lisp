@@ -20,6 +20,7 @@
   (write-ppu function)
   (set-vblank! function)
   (vblank-nmi? function)
+  (read-palette function)
   (rendering-enabled? function))
 
 (defclass ppu ()
@@ -127,13 +128,16 @@
                   ((< address #x3F00)
                    (aref (ppu-name-table ppu) (ldb (byte 12 0) address)))
                   (t
-                   (aref (ppu-palette ppu) (ldb (byte 5 0) address))))))
+                   (read-palette ppu address)))))
       (setf (ppu-data ppu) new-value)
       (prog1 
           (if (< address #x3F00)
               buffer
-              (aref (ppu-palette ppu) (ldb (byte 5 0) address)))
+              (read-palette ppu address))
         (incf address (vram-increment ppu))))))
+
+(defun read-palette (ppu address)
+  (aref (ppu-palette ppu) (palette-index address)))
 
 (defun write-oam (ppu value)
   (with-accessors ((oam-addr ppu-oam-addr)) ppu
@@ -175,5 +179,12 @@
               ((< address #x3F00)
                (setf (aref nametable (ldb (byte 12 0) address)) value))
               (t
-               (setf (aref palette (ldb (byte 5 0) address)) value)))
+               (setf (aref palette (palette-index address)) value)))
       (incf address (vram-increment ppu)))))
+
+(defun palette-index (address)
+  (let ((index (ldb (byte 5 0) address)))
+    (if (and (zerop (mod index 4))
+             (> index #x0F))
+        (- index 16)
+        index)))

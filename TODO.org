@@ -78,7 +78,7 @@
 **** DONE Add PPU Timing tests
 **** DONE Add fetching code for Nametable byte, Attribute byte, Pattern bytes
 **** DONE Compute palette indices from fetched bytes
-**** TODO Uncover why NMI is not happening on every frame
+**** DONE Uncover why NMI is not happening on every frame
 **** TODO Support fetching two tiles at a time to support fine x scrolling
 ***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
 *** Implement Rendering algorithm
@@ -140,6 +140,8 @@
 *** Why the hell isn't the NMI page on nesdev more clear about this? Working backwards from RTI would have been better.
 ** Tricky scroll issue where after each tile we incremented local var instead of actual PPUADDR.
 ** Forgot to multiply by three when computing framebuffer offset (for each RGB byte in a pixel)
+** When computing palette-low-bits, was treating least significant bit as leftmost pixel instead of rightmost.
+*** I.e. When dealing with bit planes in the pattern table, bits should be read left to right not LSB to MSB.
 
 * Cl-raylib notes
 ** Easy fix to load even though it isn't on my path:

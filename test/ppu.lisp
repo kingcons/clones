@@ -5,7 +5,8 @@
 (in-package :clones.test.ppu)
 
 (deftest test-ppu ()
-  (test-registers))
+  (test-registers)
+  (test-palette-mirroring))
 
 (deftest test-registers ()
   (let ((ppu (make-ppu)))
@@ -152,10 +153,22 @@
   (is (= (read-ppu ppu 7) 42)))
 
 (deftest test-palette-vram-buffer (ppu)
-  (setf (clones.ppu::ppu-address ppu) #x3F10)
+  (setf (clones.ppu::ppu-address ppu) #x3F00)
   (write-ppu ppu 7 25)
-  (setf (clones.ppu::ppu-address ppu) #x3F10)
+  (setf (clones.ppu::ppu-address ppu) #x3F00)
   (is (= (read-ppu ppu 7) 25)))
+
+(deftest test-palette-mirroring ()
+  (let ((ppu (make-ppu)))
+    (setf (clones.ppu::ppu-address ppu) #x3F10)
+    (clones.ppu::write-vram ppu #x0D)
+    (setf (clones.ppu::ppu-address ppu) #x3F08)
+    (clones.ppu::write-vram ppu #x03)
+    (setf (clones.ppu::ppu-address ppu) #x3F18)
+    (clones.ppu::write-vram ppu #x1A)
+    (is (= (read-palette ppu #x3F00) #x0D))
+    (is (= (read-palette ppu #x3F08) #x1A))
+    (is (= (read-palette ppu #x3F18) #x1A))))
 
 #+nil
 (try 'test-ppu)

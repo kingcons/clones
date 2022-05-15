@@ -6,9 +6,7 @@
 
 (deftest test-renderer ()
   (test-nmi-disabled)
-  (test-nmi-timing)
-;  (test-vertical-scroll)
-  )
+  (test-nmi-timing))
 
 (deftest test-nmi-disabled ()
   (flet ((nmi-handler () (error 'nmi-fired)))
