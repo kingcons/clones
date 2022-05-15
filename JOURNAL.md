@@ -44,11 +44,11 @@ bindings myself. In the meantime, here's what I think about building a PPU:
 3. Nametable rendering. Backgrounds can work independently of sprites and
    scrolling so they're a logical next step. It can also be tested without
    leaning on SDL2 because you can render to a framebuffer and then dump that
-   using cl-png or similar. Once a reference image is obtained, write a test
+   using zpng or similar. Once a reference image is obtained, write a test
    to compare it with the output of the background renderer. There's no need
    to worry about accurate scrolling yet. Just support looping over the
    nametable, looking up the pattern bytes, attribute byte, and quad to
-   construct a tile object. With each tile, compute the palette index for the
+   construct a tile object. With each tile, compute the palette indexes for the
    current scanline and write the pixels to the right spot in the framebuffer.
 4. VRAM quirks. This could be a good time to resolve issues like the PPU
    address not wrapping correctly after VRAM reads, or palette mirroring not
@@ -79,3 +79,53 @@ It's not an easy road but it's worth it.
 [scrolling]: https://www.nesdev.org/wiki/PPU_scrolling
 [szh]: https://www.nesdev.org/wiki/PPU_OAM#Sprite_zero_hits
 [ntm]: https://www.nesdev.org/wiki/Mirroring#Nametable_Mirroring
+
+## 05/15 - Working on Background Rendering
+
+Three weeks have flown by. I've probably spent the same number of hours in the
+past 3 weeks as I spent in a single week previously. I have a nice 4 day weekend
+though so I've been making some progress. Rather than talking about the current
+status though, I'd like to talk about things that were more painful than they
+could have been in the last 2 weeks.
+
+A few things come to mind. When summarizing the work of the past few weeks,
+there were 2 tricky bugs that took up a meaningful amount of hacking time. The
+first was that relative branches only worked going forwards, not backwards. It
+not only took a while to see what was happening, but also to figure out the
+right way to work with an 8-bit value in two's complement form in Common Lisp.
+It perhaps adds insult to injury that NEStest didn't cover this.
+
+The second bug was that NMI was throwing values on the stack in the wrong order.
+I was pushing the status register then the program counter instead of the other
+way around. I'm not bothered by the fact that NEStest doesn't specifically
+cover NMI as you won't be triggering NMI until the CPU is finished and the PPU
+is started. The Nesdev wiki page could have more clearly called out the behavior
+when NMI is triggered.
+
+In both cases, part of the problem is that I assumed these were things that
+would be tested already or break _immediately_ if they weren't working. Instead,
+they half-worked until disaster ensued. In the future, it would be valuable to
+either get Klaus' 6502 tests running and see if that covers relative branching
+and NMI better, or manually test those pieces.
+
+Tests would also be nice to have in the renderer though I haven't encountered
+many difficult bugs _yet_. Once I finish background rendering, I may put some
+tests in before getting too occupied with sprite rendering or other changes.
+
+My testing strategy for background rendering as a whole has been to rely on
+Xach's zpng and dump the framebuffer to a PNG file for inspection. This is fine
+as an integration level test, but we could definitely do better where unit tests
+are concerned. An initial improvement would be unit tests that after nametables
+are initialized appropriately, the correct attribute and pattern bytes are
+fetched. Writing tests for the coarse-x (tile) and fine-y (scanline) scrolling
+helpers would also have caught a small bug with updating a local variable rather
+than the PPU address.
+
+All of that is dependent on first having a working rendering loop / sync method.
+There are tests around NMI timing but they could definitely be strengthened and
+there are details I ommitted. PPUSCROLL -> PPUADDR at end of frame, for example.
+Or that the on-frame handler is called at the proper time. Overall, things are
+going pretty well. I would love to think through how to test the individual
+pieces of RENDER-TILE with greater confidence though. Iterating in smaller
+chunks with higher confidence is always good and while I'm pretty confident in
+the fetching code, the remainder of the palette computation feels more dubious.

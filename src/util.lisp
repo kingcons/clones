@@ -4,17 +4,10 @@
 (in-package :clones.util)
 
 (defsection @util (:title "Assorted Utilities")
+  (define-printer macro)
   (wrap-byte function)
   (wrap-word function)
-  (define-printer macro))
-
-(defun wrap-byte (value)
-  (declare (fixnum value))
-  (ldb (byte 8 0) value))
-
-(defun wrap-word (value)
-  (declare (fixnum value))
-  (ldb (byte 16 0) value))
+  (scale-2x function))
 
 (defmacro define-printer (type (&rest vars) format-string &rest args)
   "Define printer is a helper macro for generating a PRINT-OBJECT
@@ -27,3 +20,24 @@ slot values need to be safely displayed but not read back in."
        (print-unreadable-object (,type stream :type t)
          (let ((*print-pretty* nil))
            (format stream ,format-string ,@args))))))
+
+(defun wrap-byte (value)
+  (declare (fixnum value))
+  (ldb (byte 8 0) value))
+
+(defun wrap-word (value)
+  (declare (fixnum value))
+  (ldb (byte 16 0) value))
+
+(defun scale-2x (width height image-data)
+  (let ((output (make-array (* width height 3) :element-type 'serapeum:octet)))
+    (dotimes (h height)
+      (dotimes (w width)
+        (let ((offset (+ (* (floor width 2)
+                            (floor h 2))
+                         (floor w 2)))
+              (scaled (+ (* width h) w)))
+          (dotimes (pixel 3)
+            (setf (aref output (+ (* scaled 3) pixel))
+                  (aref image-data (+ (* offset 3) pixel)))))))
+    output))

@@ -65,8 +65,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   (:documentation "Synchronize the renderer to the current state of the CPU."))
 
 (defmethod sync ((renderer renderer) (cpu cpu))
-  (with-accessors ((scanline renderer-scanline)
-                   (on-frame renderer-on-frame)) renderer
+  (with-accessors ((scanline renderer-scanline)) renderer
     (with-accessors ((cycles cpu-cycles)) cpu
       (when (> cycles +cycles-per-scanline+)
         (render-scanline renderer)
@@ -105,7 +104,8 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   (let ((ppu (renderer-ppu renderer)))
     (dotimes (tile 32)
       (render-tile renderer ppu)
-      (coarse-scroll-horizontal! ppu))))
+      (coarse-scroll-horizontal! ppu))
+    (fine-scroll-vertical! ppu)))
 
 (defun render-tile (renderer ppu)
   ;; Rough code for rendering an individual tile below
@@ -178,9 +178,10 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
                    (scanline renderer-scanline)
                    (framebuffer renderer-framebuffer)) renderer
     (let* ((coarse-x (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))
-           (offset (+ (* scanline 256)
-                      (* coarse-x 8)
-                      pixel-index))
+           (offset (* (+ (* scanline 256)
+                         (* coarse-x 8)
+                         pixel-index)
+                      3))
            (rgb-value (aref +palette+ color-index)))
       (dotimes (i 3)
         (setf (aref framebuffer (+ offset i))
@@ -188,31 +189,29 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 
 (defun coarse-scroll-horizontal! (ppu)
   "A scroll operation that conceptually occurs at the end of each 8-pixel tile."
-  (let ((address (clones.ppu::ppu-address ppu)))
-    (symbol-macrolet ((nt-index (ldb (byte 1 10) address))
-                      (coarse-x (ldb (byte 5 0) address)))
-      (cond ((= coarse-x 31)
-             (setf coarse-x 0
-                   nt-index (if (zerop nt-index) 1 0)))
-            (t
-             (incf coarse-x))))))
+  (symbol-macrolet ((nt-index (ldb (byte 1 10) (clones.ppu::ppu-address ppu)))
+                    (coarse-x (ldb (byte 5 0) (clones.ppu::ppu-address ppu))))
+    (cond ((= coarse-x 31)
+           (setf coarse-x 0
+                 nt-index (if (zerop nt-index) 1 0)))
+          (t
+           (incf coarse-x)))))
 
 (defun fine-scroll-vertical! (ppu)
   "A scroll operation that conceptually occurs at the end of each scanline."
-  (let ((address (clones.ppu::ppu-address ppu)))
-    (symbol-macrolet ((nt-index (ldb (byte 1 11) address))
-                      (coarse-y (ldb (byte 5 5) address))
-                      (fine-y (ldb (byte 3 12) address)))
-      (when (< fine-y 7)
-        (return-from fine-scroll-vertical! (incf fine-y)))
-      (setf fine-y 0)
-      (cond ((= coarse-y 29)
-             (setf coarse-y 0
-                   nt-index (if (zerop nt-index) 1 0)))
-            ((= coarse-y 31)
-             (error 'not-yet-implemented))
-            (t
-             (incf coarse-y))))))
+  (symbol-macrolet ((nt-index (ldb (byte 1 11) (clones.ppu::ppu-address ppu)))
+                    (coarse-y (ldb (byte 5 5) (clones.ppu::ppu-address ppu)))
+                    (fine-y (ldb (byte 3 12) (clones.ppu::ppu-address ppu))))
+    (when (< fine-y 7)
+      (return-from fine-scroll-vertical! (incf fine-y)))
+    (setf fine-y 0)
+    (cond ((= coarse-y 29)
+           (setf coarse-y 0
+                 nt-index (if (zerop nt-index) 1 0)))
+          ((= coarse-y 31)
+           (error 'not-yet-implemented))
+          (t
+           (incf coarse-y)))))
 
 (defun prerender-scanline (renderer)
   (let ((ppu (renderer-ppu renderer)))

@@ -28,12 +28,6 @@
             do (sync renderer cpu)))
     (is (= (slot-value renderer 'clones.renderer::scanline) 241))))
 
-(deftest test-pattern-pixels ()
-  (let ((tile-low-byte #b01000001)
-        (tile-high-byte #b00000001))
-    (is (equalp (clones.renderer::combine-tile-bytes tile-low-byte tile-high-byte)
-                #b0001000000000011))))
-
 (defun build-renderer (&key on-nmi)
   (let* ((cpu (clones.cpu:make-cpu))
          (ppu (slot-value (clones.cpu:cpu-memory cpu) 'clones.memory::ppu))
@@ -49,9 +43,9 @@
   (with-accessors ((framebuffer renderer-framebuffer)) renderer
     (let ((image (make-instance 'zpng:png
                                 :color-type :truecolor
-                                :width 256
-                                :height 240
-                                :image-data framebuffer)))
+                                :width 512
+                                :height 480
+                                :image-data (clones.util:scale-2x 512 480 framebuffer))))
       (zpng:write-png image (asdf:system-relative-pathname :clones "test/background.png")))))
 
 #+nil

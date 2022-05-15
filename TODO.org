@@ -136,6 +136,10 @@
 ** Forgot that stack ops invert. I.e. If stack-push does store/decf stack, stack-pop should incf/fetch
 ** Relative addressing passed all tests but was definitely still wrong. BPL &FB was the test case.
 *** I.e. Waiting on a PPU frame render did not behave as intended. At all.
+** Extremely painful bug from NMI pushing status then PC instead of other way around.
+*** Why the hell isn't the NMI page on nesdev more clear about this? Working backwards from RTI would have been better.
+** Tricky scroll issue where after each tile we incremented local var instead of actual PPUADDR.
+** Forgot to multiply by three when computing framebuffer offset (for each RGB byte in a pixel)
 
 * Cl-raylib notes
 ** Easy fix to load even though it isn't on my path:
