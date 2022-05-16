@@ -1,8 +1,6 @@
 (mgl-pax:define-package :clones.renderer
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.cpu :clones.ppu)
-  (:import-from :clones.mappers
-                #:get-mirroring)
   (:import-from :serapeum
                 #:octet
                 #:callf
@@ -131,14 +129,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 
 (defun fetch-nt-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
-  (aref (clones.ppu::ppu-name-table ppu) (nametable-index ppu)))
-
-(defun nametable-index (ppu)
-  (let ((address (ldb (byte 12 0) (clones.ppu::ppu-address ppu)))
-        (mirroring (clones.mappers:get-mirroring (clones.ppu::ppu-pattern-table ppu))))
-    (ecase mirroring
-      (:horizontal (mod address #x800))
-      (:vertical (dpb 0 (byte 1 10) address)))))
+  (aref (clones.ppu::ppu-name-table ppu) (nt-mirror ppu (clones.ppu::ppu-address ppu))))
 
 (defun fetch-at-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
@@ -152,7 +143,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
                 (dpb coarse-y-bits (byte 3 3))
                 (dpb attribute-offset (byte 4 6))
                 (dpb nt-select (byte 2 10)))))
-    (aref (clones.ppu::ppu-name-table ppu) at-index)))
+    (aref (clones.ppu::ppu-name-table ppu) (nt-mirror ppu at-index))))
 
 (defun fetch-pattern-bytes (ppu nt-byte)
   "See: https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing"

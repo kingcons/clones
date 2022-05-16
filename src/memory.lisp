@@ -1,6 +1,11 @@
 (mgl-pax:define-package :clones.memory
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.mappers :clones.ppu)
+  (:use :clones.mappers)
+  (:import-from :clones.ppu
+                #:ppu
+                #:make-ppu
+                #:read-ppu
+                #:write-ppu)
   (:import-from :serapeum
                 #:make-octet-vector
                 #:octet-vector))

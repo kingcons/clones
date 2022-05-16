@@ -21,6 +21,8 @@
   (set-vblank! function)
   (vblank-nmi? function)
   (read-palette function)
+  (get-mirroring function)
+  (nt-mirror function)
   (rendering-enabled? function))
 
 (defclass ppu ()
@@ -181,6 +183,15 @@
               (t
                (setf (aref palette (palette-index address)) value)))
       (incf address (vram-increment ppu)))))
+
+(defun get-mirroring (ppu)
+  (clones.mappers:get-mirroring (ppu-pattern-table ppu)))
+
+(defun nt-mirror (ppu address)
+  (let ((result (ecase (get-mirroring ppu)
+                  (:horizontal (mod address #x800))
+                  (:vertical (dpb 0 (byte 1 10) address)))))
+    (ldb (byte 12 0) result)))
 
 (defun palette-index (address)
   (let ((index (ldb (byte 5 0) address)))

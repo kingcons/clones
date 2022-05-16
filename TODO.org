@@ -146,6 +146,9 @@
 *** This led to a weird "missing every other scanline" effect. It took tracing the NT bytes and PPUADDR of a specific tile (10) on a few scanlines every frame (40-44) to debug.
 ** The PPU Palette values on Nesdev wiki for 2C02 appear to be incorrect.
 *** I adjusted by using values from clones and rawbones but can't figure out where those were sourced from.
+** Nametable mirroring was being handled in FETCH-NT-BYTE but not FETCH-AT-BYTE. Oops.
+*** Should be very careful in the future to sequence: scroll code -> mirroring code -> fetching code.
+*** Or, alternately, do fetching naively first and know that both scroll and mirroring updates must follow.
 
 * Cl-raylib notes
 ** Easy fix to load even though it isn't on my path:
