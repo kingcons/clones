@@ -2,6 +2,7 @@
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.util)
   (:import-from :serapeum
+                #:~>>
                 #:octet
                 #:octet-vector
                 #:make-octet-vector)
@@ -22,8 +23,13 @@
   (vblank-nmi? function)
   (read-palette function)
   (get-mirroring function)
-  (nt-mirror function)
-  (rendering-enabled? function))
+  (quad-position function)
+  (fetch-nt-byte function)
+  (fetch-at-byte function)
+  (fetch-pattern-bytes function)
+  (rendering-enabled? function)
+  (fine-scroll-vertical! function)
+  (coarse-scroll-horizontal! function))
 
 (defclass ppu ()
   ((ctrl :initform 0 :type octet :accessor ppu-ctrl)
@@ -199,3 +205,70 @@
              (> index #x0F))
         (- index 16)
         index)))
+
+(defun fetch-nt-byte (ppu)
+  "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
+  (aref (clones.ppu::ppu-name-table ppu) (nt-mirror ppu (clones.ppu::ppu-address ppu))))
+
+(defun fetch-at-byte (ppu)
+  "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
+  (let* ((address (clones.ppu::ppu-address ppu))
+         (coarse-x-bits (ldb (byte 3 2) address))
+         (coarse-y-bits (ldb (byte 3 7) address))
+         (nt-select (ldb (byte 2 10) address))
+         (attribute-offset #b1111)
+         (at-index
+           (~>> coarse-x-bits
+                (dpb coarse-y-bits (byte 3 3))
+                (dpb attribute-offset (byte 4 6))
+                (dpb nt-select (byte 2 10)))))
+    (aref (clones.ppu::ppu-name-table ppu) (nt-mirror ppu at-index))))
+
+(defun fetch-pattern-bytes (ppu nt-byte)
+  "See: https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing"
+  (let* ((address (clones.ppu::ppu-address ppu))
+         (fine-y-bits (ldb (byte 3 12) address))
+         (bg-table (ldb (byte 1 4) (clones.ppu::ppu-ctrl ppu)))
+         (pt-index
+           (~>> fine-y-bits
+                (dpb 0 (byte 1 3))
+                (dpb nt-byte (byte 8 4))
+                (dpb bg-table (byte 1 12)))))
+    (values
+     (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) pt-index)
+     (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) (+ pt-index 8)))))
+
+(defun quad-position (ppu)
+  (let* ((address (clones.ppu::ppu-address ppu))
+         (on-right (logbitp 1 address))
+         (on-bottom (logbitp 6 address)))
+    (cond ((and on-right on-bottom)  :bottom-right)
+          (on-bottom                 :bottom-left)
+          (on-right                  :top-right)
+          (t                         :top-left))))
+
+(defun coarse-scroll-horizontal! (ppu)
+  "A scroll operation that conceptually occurs at the end of each 8-pixel tile."
+  (symbol-macrolet ((nt-index (ldb (byte 1 11) (ppu-address ppu)))
+                    (coarse-x (ldb (byte 5 0) (ppu-address ppu))))
+    (cond ((= coarse-x 31)
+           (setf coarse-x 0
+                 nt-index (if (zerop nt-index) 1 0)))
+          (t
+           (incf coarse-x)))))
+
+(defun fine-scroll-vertical! (ppu)
+  "A scroll operation that conceptually occurs at the end of each scanline."
+  (symbol-macrolet ((nt-index (ldb (byte 1 12) (ppu-address ppu)))
+                    (coarse-y (ldb (byte 5 5) (ppu-address ppu)))
+                    (fine-y (ldb (byte 3 12) (ppu-address ppu))))
+    (when (< fine-y 7)
+      (return-from fine-scroll-vertical! (incf fine-y)))
+    (setf fine-y 0)
+    (cond ((= coarse-y 29)
+           (setf coarse-y 0
+                 nt-index (if (zerop nt-index) 1 0)))
+          ((= coarse-y 31)
+           (error 'not-yet-implemented))
+          (t
+           (incf coarse-y)))))

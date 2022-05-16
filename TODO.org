@@ -85,17 +85,17 @@
 **** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
 **** DONE Add a sync method (or similar) that operates on renderer
 **** DONE Add a framebuffer to the renderer
+**** DONE Add a way to change cartridge loaded after initializing nintendo
 **** TODO Add a toplevel STEP-FRAME driver in clones.lisp
 **** TODO What do we test?
-**** TODO Add a way to change cartridge loaded after initializing nintendo
 **** TODO Add an option to render to an SDL/OpenGL window
 *** Implement Nametable rendering
 **** TODO Add a RENDER-NAMETABLE method that takes an address
 ***** Loop for 32x30 tiles calling render-tile
 ***** Fetch pattern bytes, attribute byte, quad => compute palette indexes
 ***** Use indexes to place pixels for current tile+scanline into framebuffer
-**** TODO Add a way to draw framebuffer to a file (maybe with cl-png)
-*** TODO Implement Input handling
+**** DONE Add a way to draw framebuffer to a file (maybe with zpng)
+***** This exists in clones/test as clones.test.renderer::test-frame
 *** WAIT Explore Raylib
 **** TODO Create bindings for raygui so I can use simple widgets and windowing tools
 **** TODO Wire up a disassembler and CPU single stepping
@@ -112,6 +112,7 @@
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
+
 
 * Weird issues
 ** Hit a confusing disassembler bug because of a missing ' after the , in a format string. Eg. ~2,'0X
