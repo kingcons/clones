@@ -142,6 +142,8 @@
 ** Forgot to multiply by three when computing framebuffer offset (for each RGB byte in a pixel)
 ** When computing palette-low-bits, was treating least significant bit as leftmost pixel instead of rightmost.
 *** I.e. When dealing with bit planes in the pattern table, bits should be read left to right not LSB to MSB.
+** Scrolling code was switching nametables before nametable mirroring was written!
+*** This led to a weird "missing every other scanline" effect. It took tracing the NT bytes and PPUADDR of a specific tile (10) on a few scanlines every frame (40-44) to debug.
 ** The PPU Palette values on Nesdev wiki for 2C02 appear to be incorrect.
 *** I adjusted by using values from clones and rawbones but can't figure out where those were sourced from.
 
