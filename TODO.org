@@ -142,6 +142,8 @@
 ** Forgot to multiply by three when computing framebuffer offset (for each RGB byte in a pixel)
 ** When computing palette-low-bits, was treating least significant bit as leftmost pixel instead of rightmost.
 *** I.e. When dealing with bit planes in the pattern table, bits should be read left to right not LSB to MSB.
+** The PPU Palette values on Nesdev wiki for 2C02 appear to be incorrect.
+*** I adjusted by using values from clones and rawbones but can't figure out where those were sourced from.
 
 * Cl-raylib notes
 ** Easy fix to load even though it isn't on my path:
