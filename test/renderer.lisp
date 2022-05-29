@@ -67,7 +67,8 @@
 
 (defun test-frame (renderer)
   (declare (ignore renderer))
-  (let ((image (make-image (clones.util:scale-2x 512 480 *framebuffer*) :width 512 :height 480)))
+  (let* ((data (clones.util:scale-2x 512 480 *framebuffer*))
+         (image (make-image data :width 512 :height 480)))
     (zpng:write-png image (asdf:system-relative-pathname :clones "test/debug.png"))
     (break)))
 

@@ -201,7 +201,7 @@
       (incf address (vram-increment ppu)))))
 
 (defun get-mirroring (ppu)
-  (clones.mappers:get-mirroring (ppu-pattern-table ppu)))
+  (clones.mappers:mirroring (ppu-pattern-table ppu)))
 
 (defun nt-mirror (ppu address)
   (let ((result (ecase (get-mirroring ppu)

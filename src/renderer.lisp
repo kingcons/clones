@@ -5,7 +5,8 @@
                 #:octet
                 #:callf)
   (:import-from :alexandria
-                #:define-constant))
+                #:define-constant)
+  (:export #:*framebuffer*))
 
 (in-package :clones.renderer)
 
@@ -13,8 +14,7 @@
   (renderer class)
   (make-renderer function)
   (sync generic-function)
-  (render-nametable function)
-  (*framebuffer* variable))
+  (render-nametable function))
 
 (define-constant +scanlines-per-frame+ 262
   :documentation "The number of scanlines rendered by the PPU per frame.")

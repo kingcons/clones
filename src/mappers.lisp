@@ -15,7 +15,7 @@
   (set-prg generic-function)
   (get-chr generic-function)
   (set-chr generic-function)
-  (get-mirroring generic-function))
+  (mirroring (accessor mapper)))
 
 (defclass mapper ()
   ((pathname :initarg :pathname :reader mapper-pathname)
@@ -23,7 +23,7 @@
    (chr-count :initarg :chr-count :reader chr-count)
    (prg :initarg :prg :type octet-vector)
    (chr :initarg :chr :type octet-vector)
-   (mirroring :initarg :mirroring :reader get-mirroring))
+   (mirroring :initarg :mirroring :accessor mirroring))
   (:documentation "A Mapper is a virtual representation of a game cartridge,
 referenced by the PPU for purposes of accessing graphical data (CHR) and by the
 CPU for purposes of accessing program code (PRG)."))
