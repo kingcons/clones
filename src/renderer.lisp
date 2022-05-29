@@ -13,7 +13,8 @@
   (renderer class)
   (make-renderer function)
   (sync generic-function)
-  (renderer-framebuffer generic-function))
+  (render-nametable function)
+  (*framebuffer* variable))
 
 (define-constant +scanlines-per-frame+ 262
   :documentation "The number of scanlines rendered by the PPU per frame.")
@@ -52,12 +53,17 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 (deftype framebuffer ()
   '(simple-array octet (184320)))
 
+(defvar *framebuffer* (make-framebuffer)
+  "The primary framebuffer used by the emulator for drawing the NES output.")
+
+(defvar *debug-framebuffer* (make-framebuffer)
+  "A framebuffer for use by debugging tools, not tied to the main renderer.")
+
 (defclass renderer ()
   ((ppu :initarg :ppu :type ppu :accessor renderer-ppu)
    (on-nmi :initarg :on-nmi :type function :accessor renderer-on-nmi)
    (on-frame :initarg :on-frame :type function :accessor renderer-on-frame)
    (scanline :initform 0 :type (integer 0 261) :accessor renderer-scanline)
-   (framebuffer :initform (make-framebuffer) :type framebuffer :accessor renderer-framebuffer)
    (bg-bits :initform (make-array 256) :type octet-vector :accessor renderer-bg-bits
             :documentation "An array of palette indexes for the background of the current scanline.")
    (sprite-bits :initform (make-array 256) :type octet-vector :accessor renderer-sprite-bits
@@ -104,21 +110,45 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
     (when on-frame
       (funcall on-frame renderer))))
 
+(defun render-nametable (ppu nt-index)
+  "Render the nametable of the PPU selected by NT-INDEX.
+Scroll information is not taken into account."
+  (let ((return-address (clones.ppu::ppu-address ppu))
+        (nt-address (* #x400 nt-index)))
+    ;; TODO: The base address for a nametable should be offset by #x2000 right?
+    ;; If viewing the nametable bytes yes, but the PPUADDR is set to the pattern
+    ;; bytes to draw, not the nametable address. Setting low bits in PPUCTRL may
+    ;; be the right approach here. Need to test with other ROMs/nametables.
+    (setf (clones.ppu::ppu-address ppu) nt-address)
+    (dotimes (scanline 240)
+      (flet ((writer-callback (scanline-x-index value)
+               (let ((*framebuffer* *debug-framebuffer*))
+                 (render-pixel ppu scanline scanline-x-index value))))
+        (dotimes (tile 32)
+          (render-tile ppu #'writer-callback)
+          (coarse-scroll-horizontal! ppu)))
+      (fine-scroll-vertical! ppu))
+    (setf (clones.ppu::ppu-address ppu) return-address)
+    *debug-framebuffer*))
+
 (defun render-visible-scanline (renderer)
   "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
-  (let ((ppu (renderer-ppu renderer))
-        (bg-bits (renderer-bg-bits renderer))
-        (sprite-bits (renderer-sprite-bits renderer)))
-    (dotimes (tile 32)
-      (render-tile renderer ppu)
-      (coarse-scroll-horizontal! ppu))
+  (with-accessors ((ppu renderer-ppu)
+                   (scanline renderer-scanline)
+                   (bg-bits renderer-bg-bits)
+                   (sprite-bits renderer-sprite-bits)) renderer
+    (flet ((writer-callback (scanline-x-index value)
+             (setf (aref bg-bits scanline-x-index) value)))
+      (dotimes (tile 32)
+        (render-tile ppu #'writer-callback)
+        (coarse-scroll-horizontal! ppu)))
     (when (render-sprites? ppu)
       (render-sprites renderer ppu))
-    (dotimes (pixel 256)
-      (symbol-macrolet ((bg-pixel (aref bg-bits pixel))
-                        (sprite-pixel (aref sprite-bits pixel)))
+    (dotimes (pixel-index 256)
+      (symbol-macrolet ((bg-pixel (aref bg-bits pixel-index))
+                        (sprite-pixel (aref sprite-bits pixel-index)))
         (let ((palette-index (pixel-priority bg-pixel sprite-pixel)))
-          (render-pixel renderer palette-index pixel))))
+          (render-pixel ppu scanline pixel-index palette-index))))
     ;; TODO: Do we need to clear the bits between scanlines?
     (fine-scroll-vertical! ppu)))
 
@@ -159,10 +189,9 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
                     current-sprite (1+ current-sprite))))))
     visible-sprites))
 
-(defun render-tile (renderer ppu)
+(defun render-tile (ppu writer-callback)
   (let* ((nametable-byte (fetch-nt-byte ppu))
          (attribute-byte (fetch-at-byte ppu))
-         (bg-bits (renderer-bg-bits renderer))
          (coarse-x-offset (* 8 (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))))
     (multiple-value-bind (pattern-low pattern-high) (fetch-pattern-bytes ppu nametable-byte)
       (let ((palette-high-bits (ecase (quad-position ppu)
@@ -175,22 +204,17 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
                                         (byte 1 1)
                                         (ldb (byte 1 (- 7 pixel-index)) pattern-low)))
                  (palette-index (dpb palette-high-bits (byte 2 2) palette-low-bits)))
-            (setf (aref bg-bits (+ coarse-x-offset pixel-index)) palette-index)))))))
+            (funcall writer-callback (+ coarse-x-offset pixel-index) palette-index)))))))
 
-(defun render-pixel (renderer palette-index pixel-index)
-  (with-accessors ((ppu renderer-ppu)
-                   (scanline renderer-scanline)
-                   (framebuffer renderer-framebuffer)) renderer
-    (let* ((color-index (read-palette ppu palette-index))
-           (coarse-x (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))
-           (offset (* (+ (* scanline 256)
-                         (* coarse-x 8)
-                         pixel-index)
-                      3))
-           (rgb-value (aref +palette+ color-index)))
-      (dotimes (i 3)
-        (setf (aref framebuffer (+ offset i))
-              (aref rgb-value i))))))
+(defun render-pixel (ppu scanline pixel-index palette-index)
+  (let* ((color-index (read-palette ppu palette-index))
+         (offset (* (+ (* scanline 256)
+                       pixel-index)
+                    3))
+         (rgb-value (aref +palette+ color-index)))
+    (dotimes (i 3)
+      (setf (aref *framebuffer* (+ offset i))
+            (aref rgb-value i)))))
 
 (defun prerender-scanline (renderer)
   (let ((ppu (renderer-ppu renderer)))

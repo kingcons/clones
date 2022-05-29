@@ -79,11 +79,8 @@
 **** DONE Add a framebuffer to the renderer
 **** DONE Add a way to change cartridge loaded after initializing nintendo
 **** DONE Add a toplevel STEP-FRAME driver in clones.lisp
-*** Implement Nametable rendering
-**** TODO Add a RENDER-NAMETABLE method that takes an address
-***** Loop for 32x30 tiles calling render-tile
-***** Fetch pattern bytes, attribute byte, quad => compute palette indexes
-***** Use indexes to place pixels for current tile+scanline into framebuffer
+*** DONE Implement Nametable rendering
+**** DONE Add a RENDER-NAMETABLE method
 **** DONE Add a way to draw framebuffer to a file (maybe with zpng)
 ***** This exists in clones/test as clones.test.renderer::test-frame
 *** Implement Sprite rendering
@@ -137,7 +134,6 @@
 **** TODO Add narrative docs for ROM
 **** TODO Add narrative docs for Mappers
 **** TODO Add narrative docs for Memory
-
 **** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
 **** TODO Add a test that we mirror down PPUADDR writes above 0x3FFF
 
@@ -146,6 +142,7 @@
 **** TODO Wire up a disassembler and CPU single stepping
 *** Implement SDL2 debugger
 **** TODO See how much of a pain it is to have a single stepping debugger UI in raw SDL2
+
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
