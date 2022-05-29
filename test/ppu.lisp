@@ -74,9 +74,9 @@
            (write-ppu ppu 1 0)))
     (mask-helper 0 'clones.ppu::grayscale?)
     (mask-helper 1 'clones.ppu::show-background-left?)
-    (mask-helper 2 'clones.ppu::show-sprite-left?)
-    (mask-helper 3 'clones.ppu::show-background?)
-    (mask-helper 4 'clones.ppu::show-sprite?)))
+    (mask-helper 2 'clones.ppu::show-sprites-left?)
+    (mask-helper 3 'clones.ppu::render-background?)
+    (mask-helper 4 'clones.ppu::render-sprites?)))
 
 (deftest test-oam-data (ppu)
   (write-ppu ppu 4 42)

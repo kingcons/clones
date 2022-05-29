@@ -57,7 +57,11 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
    (on-nmi :initarg :on-nmi :type function :accessor renderer-on-nmi)
    (on-frame :initarg :on-frame :type function :accessor renderer-on-frame)
    (scanline :initform 0 :type (integer 0 261) :accessor renderer-scanline)
-   (framebuffer :initform (make-framebuffer) :type framebuffer :accessor renderer-framebuffer)))
+   (framebuffer :initform (make-framebuffer) :type framebuffer :accessor renderer-framebuffer)
+   (bg-bits :initform (make-array 256) :type octet-vector :accessor renderer-bg-bits
+            :documentation "An array of palette indexes for the background of the current scanline.")
+   (sprite-bits :initform (make-array 256) :type octet-vector :accessor renderer-sprite-bits
+                :documentation "An array of palette indexes for the sprites on the current scanline.")))
 
 (defun make-renderer (&key (ppu (make-ppu)) (on-nmi (constantly nil)) on-frame)
   (make-instance 'renderer :ppu ppu :on-nmi on-nmi :on-frame on-frame))
@@ -102,16 +106,64 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 
 (defun render-visible-scanline (renderer)
   "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
-  (let ((ppu (renderer-ppu renderer)))
+  (let ((ppu (renderer-ppu renderer))
+        (bg-bits (renderer-bg-bits renderer))
+        (sprite-bits (renderer-sprite-bits renderer)))
     (dotimes (tile 32)
       (render-tile renderer ppu)
       (coarse-scroll-horizontal! ppu))
+    (when (render-sprites? ppu)
+      (render-sprites renderer ppu))
+    (dotimes (pixel 256)
+      (symbol-macrolet ((bg-pixel (aref bg-bits pixel))
+                        (sprite-pixel (aref sprite-bits pixel)))
+        (let ((palette-index (pixel-priority bg-pixel sprite-pixel)))
+          (render-pixel renderer palette-index pixel))))
+    ;; TODO: Do we need to clear the bits between scanlines?
     (fine-scroll-vertical! ppu)))
 
+(defun pixel-priority (bg-pixel sprite-pixel)
+  ;; NOTE: We cheat on pixel priority by having the precomputed sprite pixels
+  ;; set to 0 if the background priority attribute is set and they are non-zero.
+  ;; This keeps us from having to track the priority of the sprites at each pixel.
+  (cond ((and (zerop bg-pixel)
+              (zerop sprite-pixel))
+         0)
+        ((and (zerop bg-pixel)
+              (plusp sprite-pixel))
+         sprite-pixel)
+        ((and (zerop sprite-pixel)
+              (plusp bg-pixel))
+         bg-pixel)
+        (t
+         sprite-pixel)))
+
+(defun render-sprites (renderer ppu)
+  (let ((visible-sprites (evaluate-sprites renderer ppu))
+        (sprite-bits (renderer-sprite-bits renderer)))
+    (dotimes (pixel 256)
+      ;; Pick first visible sprite at pixel and populate sprite-bits with its value
+      ;; If the sprite-pixel is non-zero and background priority is set, supply 0.
+      )))
+
+(defun evaluate-sprites (renderer ppu)
+  (let ((scanline (renderer-scanline renderer))
+        (visible-sprites (make-array 8 :initial-element nil))
+        (current-sprite 0))
+    (dotimes (sprite-index 64)
+      (let ((candidate-y (aref (clones.ppu::ppu-oam ppu) (* sprite-index 4))))
+        (when (< candidate-y scanline (+ candidate-y 7))
+          (if (= current-sprite 8)
+              (set-sprite-overflow! ppu 1)
+              (setf (aref visible-sprites current-sprite) (make-sprite ppu sprite-index)
+                    current-sprite (1+ current-sprite))))))
+    visible-sprites))
+
 (defun render-tile (renderer ppu)
-  ;; Rough code for rendering an individual tile below
-  (let ((nametable-byte (fetch-nt-byte ppu))
-        (attribute-byte (fetch-at-byte ppu)))
+  (let* ((nametable-byte (fetch-nt-byte ppu))
+         (attribute-byte (fetch-at-byte ppu))
+         (bg-bits (renderer-bg-bits renderer))
+         (coarse-x-offset (* 8 (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))))
     (multiple-value-bind (pattern-low pattern-high) (fetch-pattern-bytes ppu nametable-byte)
       (let ((palette-high-bits (ecase (quad-position ppu)
                                  (:top-left (ldb (byte 2 0) attribute-byte))
@@ -122,15 +174,15 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
           (let* ((palette-low-bits (dpb (ldb (byte 1 (- 7 pixel-index)) pattern-high)
                                         (byte 1 1)
                                         (ldb (byte 1 (- 7 pixel-index)) pattern-low)))
-                 (palette-index (dpb palette-high-bits (byte 2 2) palette-low-bits))
-                 (color-index (read-palette ppu palette-index)))
-            (render-pixel renderer color-index pixel-index)))))))
+                 (palette-index (dpb palette-high-bits (byte 2 2) palette-low-bits)))
+            (setf (aref bg-bits (+ coarse-x-offset pixel-index)) palette-index)))))))
 
-(defun render-pixel (renderer color-index pixel-index)
+(defun render-pixel (renderer palette-index pixel-index)
   (with-accessors ((ppu renderer-ppu)
                    (scanline renderer-scanline)
                    (framebuffer renderer-framebuffer)) renderer
-    (let* ((coarse-x (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))
+    (let* ((color-index (read-palette ppu palette-index))
+           (coarse-x (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))
            (offset (* (+ (* scanline 256)
                          (* coarse-x 8)
                          pixel-index)
@@ -142,4 +194,20 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 
 (defun prerender-scanline (renderer)
   (let ((ppu (renderer-ppu renderer)))
-    (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))))
+    (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
+    (set-sprite-overflow! ppu 0)))
+
+;;; extract to sprites.lisp later
+
+(defclass sprite ()
+  ((sprite-x :initarg :sprite-x :type octet :reader sprite-x)
+   (sprite-y :initarg :sprite-y :type octet :reader sprite-y)
+   (pattern-index :initarg :pattern-index :type octet :reader sprite-index)
+   (attributes :initarg :attributes :type octet :reader sprite-attributes)))
+
+(defun make-sprite (ppu sprite-index)
+  (let ((bytes (subseq (clones.ppu::ppu-oam ppu) sprite-index)))
+    (make-instance 'sprite :sprite-x (aref bytes 3)
+                           :sprite-y (aref bytes 0)
+                           :pattern-index (aref bytes 1)
+                           :attributes (aref bytes 2))))

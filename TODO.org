@@ -26,7 +26,7 @@
 ***** Opcodes are the most "struct-like" thing of the bunch. Dumb read only record only used for metadata.
 ***** Fine with not updating them provided I can find a way to better describe the data structure in MGL-PAX.
 **** DONE Update PPU
-*** Implement CPU
+*** DONE Implement CPU
 **** DONE Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
 **** DONE Add a CPU structure with correct default values and slots
 **** DONE Add a nestest harness in clones.test.cpu
@@ -60,35 +60,25 @@
 **** DONE Remove errors like ADDRESSING-MODE-NOT-IMPLEMENTED, ACCESS-PATTERN-NOT-IMPLEMENTED, OPCODE-NOT-IMPLEMENTED.
 **** DONE Consider adding fetch-indirect and/or cleaning up page wrapping weirdness with indirect addressing.
 **** DONE Add a test case for relative addressing that would strain the LDA PPUSTATUS; BPL &FB trick.
-**** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
-**** TODO Handling of the :unused status bit is wonky in PHP.
+**** DONE Handling of the :unused status bit is wonky in PHP.
 ***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
-**** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
-*** Implement PPU
+*** DONE Implement PPU
 **** DONE Scaffold PPU module
 **** DONE Add support for NMI
-**** TODO Add support for DMA
 **** DONE Support combining tile bytes in the pattern table
-**** TODO Get PPU Registers working
+**** DONE Get PPU Registers working
 ***** DONE Find docs + Write tests
 ***** DONE Finish bulk of PPU register behavior (ppu read buffer)
-***** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
-***** TODO If a value larger than 0x3FFF is written to PPUADDR, we should mirror down
-***** TODO Be consistent. Is it NAMETABLE or NAME-TABLE?
 **** DONE Add PPU Timing tests
 **** DONE Add fetching code for Nametable byte, Attribute byte, Pattern bytes
 **** DONE Compute palette indices from fetched bytes
 **** DONE Uncover why NMI is not happening on every frame
-**** TODO Support fetching two tiles at a time to support fine x scrolling
-***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
-*** Implement Rendering algorithm
+*** DONE Implement Rendering algorithm
 **** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
 **** DONE Add a sync method (or similar) that operates on renderer
 **** DONE Add a framebuffer to the renderer
 **** DONE Add a way to change cartridge loaded after initializing nintendo
-**** TODO Add a toplevel STEP-FRAME driver in clones.lisp
-**** TODO What do we test?
-**** TODO Add an option to render to an SDL/OpenGL window
+**** DONE Add a toplevel STEP-FRAME driver in clones.lisp
 *** Implement Nametable rendering
 **** TODO Add a RENDER-NAMETABLE method that takes an address
 ***** Loop for 32x30 tiles calling render-tile
@@ -96,11 +86,50 @@
 ***** Use indexes to place pixels for current tile+scanline into framebuffer
 **** DONE Add a way to draw framebuffer to a file (maybe with zpng)
 ***** This exists in clones/test as clones.test.renderer::test-frame
-*** WAIT Explore Raylib
-**** TODO Create bindings for raygui so I can use simple widgets and windowing tools
-**** TODO Wire up a disassembler and CPU single stepping
-*** Implement SDL2 debugger
-**** TODO See how much of a pain it is to have a single stepping debugger UI in raw SDL2
+*** Implement Sprite rendering
+*** Implement Input handling
+*** Scrolling and other improvements
+**** TODO Add support for DMA
+**** TODO Support fetching two tiles at a time to support fine x scrolling
+***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
+
+*** Add support for more mappers
+**** TODO Support CNROM (contra)
+**** TODO Support MMC1 (mega man 2, zelda, etc)
+**** TODO Support MMC3 (super mario bros 3)
+*** General Refactoring and Cleanup
+**** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
+**** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
+**** TODO Consider reifying scroll directly rather than relying on PPU internals
+#+BEGIN_SRC lisp
+;;; Do I want to follow the with-scroll approach or have a scroll-info object?
+(defmacro with-scroll ((ppu) &body body)
+  `(symbol-macrolet ((coarse-x (ldb (byte 5 0) (ppu-address ,ppu)))
+                     (coarse-y (ldb (byte 5 5) (ppu-address ,ppu)))
+                     (nt-index (ldb (byte 2 10) (ppu-address ,ppu)))
+                     (fine-y (ldb (byte 3 12) (ppu-address ,ppu))))
+     ,@body))
+
+(defclass scroll-info ()
+  ((coarse-x :initarg :coarse-x :accessor coarse-x)
+   (coarse-y :initarg :coarse-y :accessor coarse-y)
+   (nt-index :initarg :nt-index :accessor nt-index)
+   (fine-y :initarg :fine-y :accessor fine-y)))
+
+(defun make-scroll-info (ppu)
+  (let ((address (ppu-address ppu)))
+    (make-instance 'scroll-info
+                   :coarse-x (ldb (byte 5 0) address)
+                   :coarse-y (ldb (byte 5 5) address)
+                   :nt-index (ldb (byte 2 10) address)
+                   :fine-y (ldb (byte 3 12) address))))
+
+(defun scroll-info->address (scroll-info)
+  (~>> (coarse-x scroll-info)
+       (dpb (coarse-y scroll-info) (byte 5 5))
+       (dpb (nt-index scroll-info) (byte 2 10))
+       (dpb (fine-y scroll-info) (byte 3 12))))
+#+END_SRC
 *** Docs and Tests
 **** DONE Update doc generation to link to code on sourcehut
 **** TODO Get Klaus functional tests built for NES and wire up in test
@@ -109,6 +138,14 @@
 **** TODO Add narrative docs for Mappers
 **** TODO Add narrative docs for Memory
 
+**** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
+**** TODO Add a test that we mirror down PPUADDR writes above 0x3FFF
+
+*** WAIT Explore Raylib
+**** TODO Create bindings for raygui so I can use simple widgets and windowing tools
+**** TODO Wire up a disassembler and CPU single stepping
+*** Implement SDL2 debugger
+**** TODO See how much of a pain it is to have a single stepping debugger UI in raw SDL2
 
 * External dependencies
 ** DONE Add support for sourcehut URIs to mgl-pax?
