@@ -89,12 +89,12 @@
 **** TODO Add support for DMA
 **** TODO Support fetching two tiles at a time to support fine x scrolling
 ***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
-
 *** Add support for more mappers
 **** TODO Support CNROM (contra)
 **** TODO Support MMC1 (mega man 2, zelda, etc)
 **** TODO Support MMC3 (super mario bros 3)
 *** General Refactoring and Cleanup
+**** TODO Switch to ITERATE and abandon LOOP? Most of my LOOPs in clones are trivial though. 🤔
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
 **** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
 **** TODO Consider reifying scroll directly rather than relying on PPU internals
@@ -136,7 +136,14 @@
 **** TODO Add narrative docs for Memory
 **** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
 **** TODO Add a test that we mirror down PPUADDR writes above 0x3FFF
-
+*** Keep it CLOSsy
+**** TODO Explore using EQL specialized methods for opcodes. Maybe the GF is `execute-instruction`?
+***** Some of this is motivated by reading bits of Common Lisp Recipes and Keene.
+***** The performance of CLOS dispatch is non-zero but pretty trivial.
+***** CLOS dispatch gives me more precise typing and added control (before,after,around,combinations)
+***** At the very least, there's room to explore here.
+**** TODO Explore using EQL specialized methods for operands. Specialize on mode and pattern?
+**** TODO Explore adding DESCRIBE-OBJECT / PRINT-OBJECT methods for opcodes. Useful in disassembly?
 *** WAIT Explore Raylib
 **** TODO Create bindings for raygui so I can use simple widgets and windowing tools
 **** TODO Wire up a disassembler and CPU single stepping
