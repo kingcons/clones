@@ -97,6 +97,13 @@
 **** TODO Switch to ITERATE and abandon LOOP? Most of my LOOPs in clones are trivial though. 🤔
 **** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
 **** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
+**** TODO Consider removing the reliance on renderer from render-sprites (and even render-visible-scanline)
+***** This assertion holds fine except for an nmi-test that may be a little wonky.
+#+BEGIN_SRC lisp
+    (let ((ppu-y-index (+ (* (ldb (byte 5 5) (clones.ppu::ppu-address ppu)) 8)
+                          (ldb (byte 3 12) (clones.ppu::ppu-address ppu)))))
+      (assert (= scanline ppu-y-index)))
+#+END_SRC
 **** TODO Consider reifying scroll directly rather than relying on PPU internals
 #+BEGIN_SRC lisp
 ;;; Do I want to follow the with-scroll approach or have a scroll-info object?

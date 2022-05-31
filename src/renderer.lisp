@@ -139,9 +139,10 @@ Scroll information is not taken into account."
                    (sprite-bits renderer-sprite-bits)) renderer
     (flet ((writer-callback (scanline-x-index value)
              (setf (aref bg-bits scanline-x-index) value)))
-      (dotimes (tile 32)
-        (render-tile ppu #'writer-callback)
-        (coarse-scroll-horizontal! ppu)))
+      (when (render-background? ppu)
+        (dotimes (tile 32)
+          (render-tile ppu #'writer-callback)
+          (coarse-scroll-horizontal! ppu))))
     (when (render-sprites? ppu)
       (render-sprites renderer ppu))
     (dotimes (pixel-index 256)
