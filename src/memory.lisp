@@ -18,16 +18,26 @@
   (fetch function)
   (store function)
   (fetch-word function)
-  (fetch-indirect function))
+  (fetch-indirect function)
+  (get-ppu (reader memory))
+  (get-cart (reader memory))
+  (swap-cart function))
 
 (defclass memory ()
   ((ram :initarg :ram :type octet-vector)
-   (ppu :initarg :ppu :type ppu)
-   (cart :initarg :cart :type mapper)))
+   (ppu :initarg :ppu :type ppu :reader get-ppu)
+   (cart :initarg :cart :type mapper :reader get-cart)))
 
 (defun make-memory (&key (ram (make-octet-vector #x800))
                       (ppu (make-ppu)) (cart (load-rom)))
   (make-instance 'memory :ram ram :ppu ppu :cart cart))
+
+(defun swap-cart (memory relative-path)
+  (let* ((path (asdf:system-relative-pathname :clones relative-path))
+         (rom (clones.mappers:load-rom path)))
+    (with-slots (ppu cart) memory
+      (setf (slot-value ppu 'clones.ppu::pattern-table) rom
+            cart rom))))
 
 (defun fetch (memory address)
   (with-slots (ram ppu cart) memory

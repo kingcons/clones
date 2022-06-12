@@ -11,6 +11,7 @@
   (mapper class)
   (load-rom function)
   (unimplemented-mapper condition)
+  (mapper-pathname generic-function)
   (get-prg generic-function)
   (set-prg generic-function)
   (get-chr generic-function)

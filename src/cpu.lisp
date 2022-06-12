@@ -21,8 +21,11 @@
   (cpu-cycles (accessor cpu))
   (single-step function)
   (reset function)
+  (cpu-ppu function)
+  (cpu-cart function)
   (now function)
-  (nmi function))
+  (nmi function)
+  (change-game function))
 
 (define-condition illegal-opcode (error)
   ((opcode :initarg :opcode :reader error-opcode))
@@ -54,6 +57,18 @@
 
 (defun make-cpu (&key (memory (make-memory)))
   (make-instance 'cpu :memory memory))
+
+(defun change-game (cpu relative-path)
+  (swap-cart (cpu-memory cpu) relative-path)
+  (reset cpu))
+
+(defun cpu-ppu (cpu)
+  "Retrieve the PPU object connected to the CPU instance."
+  (get-ppu (cpu-memory cpu)))
+
+(defun cpu-cart (cpu)
+  "Retrieve the cartridge object being run by the CPU instance."
+  (pathname-name (clones.mappers:mapper-pathname (get-cart (cpu-memory cpu)))))
 
 (defun now (cpu &key (stream t))
   "Disassemble the current instruction pointed to by the CPU's program counter.

@@ -7,19 +7,78 @@
 
 (in-package :clones)
 
-(defun change-game (cpu relative-path)
-  (let* ((path (asdf:system-relative-pathname :clones relative-path))
-         (rom (clones.mappers:load-rom path))
-         (memory (clones.cpu:cpu-memory cpu))
-         (ppu (slot-value memory 'clones.memory::ppu)))
-    (setf (slot-value memory 'clones.memory::cart) rom
-          (slot-value ppu 'clones.ppu::pattern-table) rom)))
+(defclass app ()
+  ((cpu :initarg :cpu :type cpu :reader app-cpu)
+   (paused :initform nil :type boolean :accessor app-paused)
+   (on-frame :initarg :on-frame :type function :accessor app-on-frame)
+   (renderer :initform nil :type (or null renderer) :accessor app-renderer))
+  (:default-initargs
+   :cpu (make-cpu)
+   :on-frame (constantly nil)))
 
-(defun main (cpu renderer &optional rom)
-  (when rom
-    (change-game cpu rom))
-  (clones.cpu:reset cpu)
-  (loop for count = (single-step cpu)
-        do (progn
-             ;; (now cpu)
-             (sync renderer cpu))))
+(defmethod initialize-instance :after ((app app) &key)
+  (unless (app-renderer app)
+    (with-slots (cpu on-frame) app
+      (setf (app-renderer app)
+            (make-renderer :ppu (cpu-ppu cpu)
+                           :on-nmi (lambda () (nmi cpu))
+                           :on-frame on-frame)))))
+
+(defgeneric run (app)
+  (:documentation "Run the supplied APP.")
+  (:method ((app app))
+    (reset (app-cpu app))
+    (sdl2:with-init (:everything)
+      (sdl2:with-window (window :flags '(:shown :opengl))
+        (sdl2:with-gl-context (gl-context window)
+          (sdl2:with-event-loop (:method :poll)
+            (:keydown (:keysym keysym)
+              (handle-input app keysym))
+            (:idle ()
+              (handle-idle app))
+            (:quit () t)))))))
+
+(defgeneric handle-input (app keysym)
+  (:documentation "Take the appropriate action for KEYSYM in APP.")
+  (:method ((app app) keysym)
+    (let ((scancode (sdl2:scancode-value keysym)))
+      (case (sdl2:scancode-symbol scancode)
+        (:scancode-b (open-debugger app))
+        (:scancode-h (print-help app))
+        (:scancode-n (print-now app))
+        (:scancode-p (toggle-pause app))
+        (:scancode-escape (sdl2:push-event :quit))))))
+
+(defun open-debugger (app)
+  ;; TODO: Still can't access the app locals in this stack frame.
+  (with-slots (cpu renderer) app
+    (break)))
+
+(defun print-help (app)
+  (format t "
+===========
+CLONES HELP
+===========
+b: Trigger a break, opening the debugger.
+h: Print this help message.
+n: Print disassembly of the current instruction.
+p: Pause or unpause the emulation.
+ESC: Quit the app.
+~%~%~%"))
+
+(defun print-now (app)
+  (with-slots (cpu) app
+    (now cpu)))
+
+(defun toggle-pause (app)
+  (with-slots (cpu paused) app
+    (format t "~%~:[Pausing ~;Unpausing ~] ~A~%~%"
+            paused (cpu-cart cpu))
+    (setf paused (not paused))))
+
+(defgeneric handle-idle (app)
+  (:documentation "Step the NES forward or perform other idle work.")
+  (:method ((app app))
+    (with-slots (cpu renderer paused) app
+      (unless paused
+        (single-step cpu)))))
