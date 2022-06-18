@@ -10,19 +10,17 @@
 (defclass app ()
   ((cpu :initarg :cpu :type cpu :reader app-cpu)
    (paused :initform nil :type boolean :accessor app-paused)
-   (on-frame :initarg :on-frame :type function :accessor app-on-frame)
    (renderer :initform nil :type (or null renderer) :accessor app-renderer))
   (:default-initargs
-   :cpu (make-cpu)
-   :on-frame (constantly nil)))
+   :cpu (make-cpu)))
 
-(defmethod initialize-instance :after ((app app) &key)
+(defmethod initialize-instance :after ((app app) &key on-frame)
   (unless (app-renderer app)
-    (with-slots (cpu on-frame) app
+    (with-slots (cpu) app
       (setf (app-renderer app)
             (make-renderer :ppu (cpu-ppu cpu)
                            :on-nmi (lambda () (nmi cpu))
-                           :on-frame on-frame)))))
+                           :on-frame (or on-frame (constantly nil)))))))
 
 (defgeneric run (app)
   (:documentation "Run the supplied APP.")
@@ -81,4 +79,5 @@ ESC: Quit the app.
   (:method ((app app))
     (with-slots (cpu renderer paused) app
       (unless paused
-        (single-step cpu)))))
+        (single-step cpu)
+        (sync renderer cpu)))))
