@@ -1,6 +1,8 @@
 (mgl-pax:define-package :clones.disassembler
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.opcodes :clones.memory))
+  (:use :clones.opcodes)
+  (:import-from :clones.memory
+                #:fetch))
 
 (in-package :clones.disassembler)
 

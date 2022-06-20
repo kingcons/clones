@@ -1,10 +1,12 @@
 (mgl-pax:define-package :clones.cpu
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.opcodes :clones.memory :clones.util)
+  (:use :clones.opcodes :clones.memory)
   (:import-from :clones.disassembler
                 #:disassemble-instruction)
-  (:import-from :serapeum
-                #:octet))
+  (:import-from :clones.util
+                #:define-printer
+                #:wrap-byte
+                #:wrap-word))
 
 (in-package :clones.cpu)
 
@@ -12,17 +14,9 @@
   (cpu class)
   (make-cpu function)
   (cpu-memory (accessor cpu))
-  (cpu-accum (accessor cpu))
-  (cpu-x (accessor cpu))
-  (cpu-y (accessor cpu))
-  (cpu-status (accessor cpu))
-  (cpu-stack (accessor cpu))
-  (cpu-pc (accessor cpu))
   (cpu-cycles (accessor cpu))
   (single-step function)
   (reset function)
-  (cpu-ppu function)
-  (cpu-cart function)
   (now function)
   (nmi function)
   (change-game function))
@@ -61,14 +55,6 @@
 (defun change-game (cpu relative-path)
   (swap-cart (cpu-memory cpu) relative-path)
   (reset cpu))
-
-(defun cpu-ppu (cpu)
-  "Retrieve the PPU object connected to the CPU instance."
-  (get-ppu (cpu-memory cpu)))
-
-(defun cpu-cart (cpu)
-  "Retrieve the cartridge object being run by the CPU instance."
-  (pathname-name (clones.mappers:mapper-pathname (get-cart (cpu-memory cpu)))))
 
 (defun now (cpu &key (stream t))
   "Disassemble the current instruction pointed to by the CPU's program counter.

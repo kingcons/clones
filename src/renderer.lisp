@@ -1,6 +1,9 @@
 (mgl-pax:define-package :clones.renderer
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.cpu :clones.ppu)
+  (:use :clones.ppu)
+  (:import-from :clones.cpu
+                #:cpu
+                #:cpu-cycles)
   (:import-from :serapeum
                 #:octet
                 #:octet-vector

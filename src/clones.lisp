@@ -1,19 +1,15 @@
 (mgl-pax:define-package :clones
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.cpu :clones.renderer)
+  (:use :clones.cpu :clones.memory)
+  (:import-from :clones.input
+                #:update-button)
+  (:import-from :clones.renderer
+                #:make-renderer
+                #:sync)
   (:import-from :static-vectors
                 #:static-vector-pointer)
   (:import-from :serapeum
-                #:~>>)
-  (:import-from :clones.renderer
-                #:*framebuffer*)
-  (:import-from :clones.memory
-                #:get-controller)
-  (:import-from :clones.input
-                #:update-button)
-  (:import-from :clones.ppu
-                #:ppu
-                #:make-ppu))
+                #:~>>))
 
 (in-package :clones)
 
@@ -28,7 +24,7 @@
   (unless (app-renderer app)
     (with-slots (cpu) app
       (setf (app-renderer app)
-            (make-renderer :ppu (cpu-ppu cpu)
+            (make-renderer :ppu (~>> cpu cpu-memory memory-ppu)
                            :on-nmi (lambda () (nmi cpu))
                            :on-frame (or on-frame (constantly nil)))))))
 
@@ -41,10 +37,11 @@
       (when *debug*
         (format t "Frame time: ~A~%" (floor frame-time 1000)))
       (setf last-frame-at now))
-    (sdl2:render-clear sdl-renderer)
-    (sdl2:update-texture texture (cffi:null-pointer) (static-vector-pointer *framebuffer*) (* 256 3))
-    (sdl2:render-copy sdl-renderer texture)
-    (sdl2:render-present sdl-renderer)))
+    (let ((framebuffer (static-vector-pointer clones.renderer:*framebuffer*)))
+      (sdl2:render-clear sdl-renderer)
+      (sdl2:update-texture texture (cffi:null-pointer) framebuffer (* 256 3))
+      (sdl2:render-copy sdl-renderer texture)
+      (sdl2:render-present sdl-renderer))))
 
 (defgeneric run (app)
   (:documentation "Run the supplied APP.")
@@ -70,7 +67,7 @@
   (:documentation "Take the appropriate action for KEYSYM in APP.")
   (:method ((app app) keysym)
     (let ((scancode (sdl2:scancode-value keysym))
-          (controller (~>> app app-cpu cpu-memory get-controller)))
+          (controller (~>> app app-cpu cpu-memory memory-controller)))
       (case (sdl2:scancode-symbol scancode)
         (:scancode-b (open-debugger app))
         (:scancode-h (print-help app))
@@ -92,7 +89,7 @@
   (:documentation "Perform any special handling for releasing KEYSYM in APP.")
   (:method ((app app) keysym)
     (let ((scancode (sdl2:scancode-value keysym))
-          (controller (~>> app app-cpu cpu-memory get-controller)))
+          (controller (~>> app app-cpu cpu-memory memory-controller)))
       (case (sdl2:scancode-symbol scancode)
         (:scancode-w (update-button controller 'up 0))
         (:scancode-s (update-button controller 'down 0))
@@ -150,8 +147,9 @@ Enter: Start
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app
-    (format t "~%~:[Pausing ~;Unpausing ~] ~A~%~%" paused (cpu-cart cpu))
-    (setf paused (not paused))))
+    (let ((cartridge (~>> cpu cpu-memory memory-cart clones.mappers:mapper-pathname pathname-name)))
+      (format t "~%~:[Pausing ~;Unpausing ~] ~A~%~%" paused cartridge)
+      (setf paused (not paused)))))
 
 (defgeneric handle-idle (app)
   (:documentation "Step the NES forward or perform other idle work.")

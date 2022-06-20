@@ -1,9 +1,18 @@
 (defpackage :clones.test.cpu
   (:use :cl :clones.cpu :try)
-  (:export #:test-cpu)
+  ;; Pull in some private symbols for inspecting state
+  (:import-from :clones.cpu
+                #:cpu-accum
+                #:cpu-x
+                #:cpu-y
+                #:cpu-status
+                #:cpu-stack
+                #:cpu-pc
+                #:cpu-cycles)
   (:import-from :serapeum
                 #:~>>
-                #:op))
+                #:op)
+  (:export #:test-cpu))
 
 (in-package :clones.test.cpu)
 

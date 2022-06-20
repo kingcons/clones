@@ -1,16 +1,17 @@
 (mgl-pax:define-package :clones.ppu
   (:use :cl :alexandria :mgl-pax)
-  (:use :clones.util)
-  (:import-from :serapeum
-                #:~>>
-                #:octet
-                #:octet-vector
-                #:make-octet-vector)
+  (:import-from :clones.util
+                #:wrap-byte)
   (:import-from :clones.mappers
                 #:mapper
                 #:load-rom
                 #:get-chr
-                #:set-chr))
+                #:set-chr)
+  (:import-from :serapeum
+                #:~>>
+                #:octet
+                #:octet-vector
+                #:make-octet-vector))
 
 (in-package :clones.ppu)
 
