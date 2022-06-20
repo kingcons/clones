@@ -73,8 +73,8 @@ Work has just begun so nothing is playable yet. Hang in there.
 * PPU Registers: ✅
 * PPU Timing: ✅
 * Rendering - Backgrounds: ✅
-* Rendering - Sprites: ❌
-* Input Handling: ⌛
+* Rendering - Sprites: ⌛
+* Input Handling: ✅
 * MMC1 Mapper: ❌
 * Audio Support: ❌")
 
