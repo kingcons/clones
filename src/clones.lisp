@@ -1,6 +1,10 @@
 (mgl-pax:define-package :clones
   (:use :cl :alexandria :mgl-pax)
   (:use :clones.cpu :clones.renderer)
+  (:import-from :static-vectors
+                #:static-vector-pointer)
+  (:import-from :clones.renderer
+                #:*framebuffer*)
   (:import-from :clones.ppu
                 #:ppu
                 #:make-ppu))
@@ -22,19 +26,37 @@
                            :on-nmi (lambda () (nmi cpu))
                            :on-frame (or on-frame (constantly nil)))))))
 
+(defparameter *debug* nil)
+
+(defun make-on-frame (sdl-renderer texture last-frame-at)
+  (lambda (ppu-renderer)
+    (let* ((now (get-internal-real-time))
+           (frame-time (- now last-frame-at)))
+      (when *debug*
+        (format t "Frame time: ~A~%" (floor frame-time 1000)))
+      (setf last-frame-at now))
+    (sdl2:render-clear sdl-renderer)
+    (sdl2:update-texture texture (cffi:null-pointer) (static-vector-pointer *framebuffer*) (* 256 3))
+    (sdl2:render-copy sdl-renderer texture)
+    (sdl2:render-present sdl-renderer)))
+
 (defgeneric run (app)
   (:documentation "Run the supplied APP.")
   (:method ((app app))
     (reset (app-cpu app))
     (sdl2:with-init (:everything)
       (sdl2:with-window (window :flags '(:shown :opengl))
-        (sdl2:with-gl-context (gl-context window)
-          (sdl2:with-event-loop (:method :poll)
-            (:keydown (:keysym keysym)
-              (handle-input app keysym))
-            (:idle ()
-              (handle-idle app))
-            (:quit () t)))))))
+        (sdl2:with-renderer (sdl-renderer window)
+          (let ((texture (sdl2:create-texture sdl-renderer :rgb24 :streaming 256 240))
+                (last-frame-at (get-internal-real-time)))
+            (setf (clones.renderer::renderer-on-frame (app-renderer app))
+                  (make-on-frame sdl-renderer texture last-frame-at))
+            (sdl2:with-event-loop (:method :poll)
+              (:keydown (:keysym keysym)
+                (handle-input app keysym))
+              (:idle ()
+                (handle-idle app))
+              (:quit () t))))))))
 
 (defgeneric handle-input (app keysym)
   (:documentation "Take the appropriate action for KEYSYM in APP.")
@@ -70,8 +92,7 @@ ESC: Quit the app.
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app
-    (format t "~%~:[Pausing ~;Unpausing ~] ~A~%~%"
-            paused (cpu-cart cpu))
+    (format t "~%~:[Pausing ~;Unpausing ~] ~A~%~%" paused (cpu-cart cpu))
     (setf paused (not paused))))
 
 (defgeneric handle-idle (app)

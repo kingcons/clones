@@ -48,7 +48,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 (defun make-framebuffer ()
   (let ((screen-width 256)
         (screen-height 240))
-    (make-array (* screen-width screen-height 3) :element-type 'octet)))
+    (static-vectors:make-static-vector (* screen-width screen-height 3))))
 
 (deftype framebuffer ()
   '(simple-array octet (184320)))

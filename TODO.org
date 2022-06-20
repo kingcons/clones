@@ -134,6 +134,7 @@
        (dpb (nt-index scroll-info) (byte 2 10))
        (dpb (fine-y scroll-info) (byte 3 12))))
 #+END_SRC
+**** TODO Is it possible to have the PPU notify APP that a frame is ready, rather than use ON-FRAME?
 *** Docs and Tests
 **** DONE Update doc generation to link to code on sourcehut
 **** TODO Get Klaus functional tests built for NES and wire up in test
