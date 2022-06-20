@@ -3,6 +3,7 @@
   (:use :clones.cpu :clones.ppu)
   (:import-from :serapeum
                 #:octet
+                #:octet-vector
                 #:callf)
   (:import-from :alexandria
                 #:define-constant)
@@ -73,7 +74,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   (make-instance 'renderer :ppu ppu :on-nmi on-nmi :on-frame on-frame))
 
 (defgeneric sync (renderer cpu)
-  (:documentation "Synchronize the renderer to the current state of the CPU."))
+  (:documentation "Synchronize the renderer to the CPU and return the next scanline."))
 
 (defmethod sync ((renderer renderer) (cpu cpu))
   (with-accessors ((scanline renderer-scanline)) renderer
@@ -82,33 +83,63 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
         (render-scanline renderer)
         (incf scanline)
         (callf #'mod scanline 262)
-        (callf #'mod cycles 114)))))
+        (callf #'mod cycles 114)
+        scanline))))
 
 (defgeneric render-scanline (renderer)
   (:documentation "Render a scanline using RENDERER if rendering is enabled in PPUMASK."))
 
 (defmethod render-scanline ((renderer renderer))
-  (with-accessors ((scanline renderer-scanline)
-                   (ppu renderer-ppu)) renderer
-    (let ((enabled? (rendering-enabled? ppu)))
-      (cond ((< scanline 240)
-             (when enabled?
-               (render-visible-scanline renderer)))
-            ((= scanline 241)
-             (set-vblank! ppu 1)
-             (new-frame! renderer ppu))
-            ((= scanline 261)
-             (set-vblank! ppu 0)
-             (when enabled?
-               (prerender-scanline renderer)))))))
+  (with-accessors ((scanline renderer-scanline)) renderer
+    (cond ((< scanline 240)
+           (render-visible-scanline renderer))
+          ((= scanline 240)
+           (post-render-scanline renderer))
+          ((= scanline 241)
+           (vblank-scanline renderer))
+          ((= scanline 261)
+           (pre-render-scanline renderer)))))
 
-(defun new-frame! (renderer ppu)
-  (with-accessors ((on-frame renderer-on-frame)
-                   (on-nmi renderer-on-nmi)) renderer
+(defun render-visible-scanline (renderer)
+  "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
+  (with-accessors ((ppu renderer-ppu)
+                   (scanline renderer-scanline)
+                   (bg-bits renderer-bg-bits)
+                   (sprite-bits renderer-sprite-bits)) renderer
+    (unless (rendering-enabled? ppu)
+      (return-from render-visible-scanline nil))
+    (flet ((writer-callback (scanline-x-index value)
+             (setf (aref bg-bits scanline-x-index) value)))
+      (when (render-background? ppu)
+        (dotimes (tile 32)
+          (render-tile ppu #'writer-callback)
+          (coarse-scroll-horizontal! ppu))))
+    (when (render-sprites? ppu)
+      (render-sprites renderer ppu))
+    (dotimes (pixel-index 256)
+      (symbol-macrolet ((bg-pixel (aref bg-bits pixel-index))
+                        (sprite-pixel (aref sprite-bits pixel-index)))
+        (let ((palette-index (pixel-priority bg-pixel sprite-pixel)))
+          (render-pixel ppu scanline pixel-index palette-index))))
+    ;; TODO: Do we need to clear the bits between scanlines?
+    (fine-scroll-vertical! ppu)))
+
+(defun post-render-scanline (renderer)
+  (with-accessors ((on-frame renderer-on-frame)) renderer
+    (funcall on-frame renderer)))
+
+(defun vblank-scanline (renderer)
+  (with-accessors ((ppu renderer-ppu)) renderer
+    (set-vblank! ppu 1)
     (when (vblank-nmi? ppu)
-      (funcall on-nmi))
-    (when on-frame
-      (funcall on-frame renderer))))
+      (funcall (renderer-on-nmi renderer)))))
+
+(defun pre-render-scanline (renderer)
+  (with-accessors ((ppu renderer-ppu)) renderer
+    (set-vblank! ppu 0)
+    (when (rendering-enabled? ppu)
+      (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
+      (set-sprite-overflow! ppu 0))))
 
 (defun render-nametable (ppu nt-index)
   "Render the nametable of the PPU selected by NT-INDEX.
@@ -130,28 +161,6 @@ Scroll information is not taken into account."
       (fine-scroll-vertical! ppu))
     (setf (clones.ppu::ppu-address ppu) return-address)
     *debug-framebuffer*))
-
-(defun render-visible-scanline (renderer)
-  "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
-  (with-accessors ((ppu renderer-ppu)
-                   (scanline renderer-scanline)
-                   (bg-bits renderer-bg-bits)
-                   (sprite-bits renderer-sprite-bits)) renderer
-    (flet ((writer-callback (scanline-x-index value)
-             (setf (aref bg-bits scanline-x-index) value)))
-      (when (render-background? ppu)
-        (dotimes (tile 32)
-          (render-tile ppu #'writer-callback)
-          (coarse-scroll-horizontal! ppu))))
-    (when (render-sprites? ppu)
-      (render-sprites renderer ppu))
-    (dotimes (pixel-index 256)
-      (symbol-macrolet ((bg-pixel (aref bg-bits pixel-index))
-                        (sprite-pixel (aref sprite-bits pixel-index)))
-        (let ((palette-index (pixel-priority bg-pixel sprite-pixel)))
-          (render-pixel ppu scanline pixel-index palette-index))))
-    ;; TODO: Do we need to clear the bits between scanlines?
-    (fine-scroll-vertical! ppu)))
 
 (defun pixel-priority (bg-pixel sprite-pixel)
   ;; NOTE: We cheat on pixel priority by having the precomputed sprite pixels
@@ -216,11 +225,6 @@ Scroll information is not taken into account."
     (dotimes (i 3)
       (setf (aref *framebuffer* (+ offset i))
             (aref rgb-value i)))))
-
-(defun prerender-scanline (renderer)
-  (let ((ppu (renderer-ppu renderer)))
-    (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
-    (set-sprite-overflow! ppu 0)))
 
 ;;; extract to sprites.lisp later
 

@@ -75,6 +75,8 @@
         (:scancode-b (open-debugger app))
         (:scancode-h (print-help app))
         (:scancode-n (print-now app))
+        (:scancode-i (step-instruction app))
+        (:scancode-f (step-frame app))
         (:scancode-p (toggle-pause app))
         (:scancode-w (update-button controller 'up 1))
         (:scancode-s (update-button controller 'down 1))
@@ -106,16 +108,40 @@
   (with-slots (cpu renderer) app
     (break)))
 
+(defun step-instruction (app)
+  (with-slots (cpu) app
+    (single-step cpu)
+    (now cpu)))
+
+(defun step-frame (app)
+  (with-slots (cpu renderer) app
+    (loop with vblank-scanline = 241
+          for cycles = (single-step cpu)
+          for result = (sync renderer cpu)
+          until (eql result vblank-scanline))))
+
 (defun print-help (app)
   (format t "
 ===========
 CLONES HELP
 ===========
+# App controls
+ESC: Quit the app.
 b: Trigger a break, opening the debugger.
 h: Print this help message.
 n: Print disassembly of the current instruction.
+i: Step over the next CPU instruction.
+f: Step forward one frame (until the next vblank).
 p: Pause or unpause the emulation.
-ESC: Quit the app.
+# Game controls
+w: Up
+s: Down
+a: Left
+d: Right
+j: A
+k: B
+Space: Select
+Enter: Start
 ~%~%~%"))
 
 (defun print-now (app)
