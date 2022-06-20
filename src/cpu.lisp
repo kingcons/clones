@@ -137,12 +137,9 @@
   (with-accessors ((pc cpu-pc)
                    (memory cpu-memory)) cpu
     (let* ((opcode (find-opcode (fetch memory pc)))
-           (handler (opcode-name opcode))
+           (instruction (opcode-name opcode))
            (operand (get-operand cpu opcode)))
-      (when (eql handler :illegal)
-        (error 'illegal-opcode :opcode opcode))
-      (funcall handler cpu operand)
-      ;; Update the program counter and cycle count
+      (execute cpu instruction operand)
       (unless (eql (opcode-access-pattern opcode) :jump)
         (incf pc (opcode-size opcode)))
       (incf (cpu-cycles cpu) (opcode-time opcode)))))
@@ -225,7 +222,12 @@
 (defun reset (cpu)
   (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFC)))
 
-(defun :adc (cpu operand)
+(defgeneric execute (cpu instruction operand)
+  (:documentation "Execute the given INSTRUCTION with its OPERAND on the CPU.")
+  (:method ((cpu cpu) instruction operand)
+    (error 'illegal-opcode :opcode (find-opcode (fetch (cpu-memory cpu) (cpu-pc cpu))))))
+
+(defmethod execute ((cpu cpu) (instruction (eql :adc)) operand)
   (with-accessors ((accum cpu-accum)) cpu
     (let* ((carry-bit (ldb (byte 1 0) (cpu-status cpu)))
            (result (+ accum operand carry-bit))
@@ -235,192 +237,192 @@
       (set-flag-zn cpu wrapped)
       (setf accum wrapped))))
 
-(defun :and (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :and)) operand)
   (with-accessors ((accum cpu-accum)) cpu
     (let ((result (logand accum operand)))
       (setf accum result)
       (set-flag-zn cpu result))))
 
-(defun :asl (cpu accessor)
+(defmethod execute ((cpu cpu) (instruction (eql :asl)) accessor)
   (let* ((operand (funcall accessor))
          (result (wrap-byte (ash operand 1))))
     (set-flag cpu :carry (ldb (byte 1 7) operand))
     (set-flag-zn cpu result)
     (funcall accessor result)))
 
-(defun :bcc (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bcc)) operand)
   (branch-if cpu (not (status? :carry)) operand))
 
-(defun :bcs (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bcs)) operand)
   (branch-if cpu (status? :carry) operand))
 
-(defun :beq (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :beq)) operand)
   (branch-if cpu (status? :zero) operand))
 
-(defun :bit (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bit)) operand)
   (let ((result (logand (cpu-accum cpu) operand)))
     (set-flag cpu :zero (if (zerop result) 1 0))
     (set-flag cpu :overflow (if (logbitp 6 operand) 1 0))
     (set-flag cpu :sign (if (logbitp 7 operand) 1 0))))
 
-(defun :bmi (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bmi)) operand)
   (branch-if cpu (status? :sign) operand))
 
-(defun :bne (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bne)) operand)
   (branch-if cpu (not (status? :zero)) operand))
 
-(defun :bpl (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bpl)) operand)
   (branch-if cpu (not (status? :sign)) operand))
 
-(defun :brk (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :brk)) operand)
   (stack-push-word cpu (1+ (cpu-pc cpu)))
   (set-flag cpu :break 1)
   (stack-push cpu (cpu-status cpu))
   (set-flag cpu :interrupt 1)
   (setf (cpu-pc cpu) (fetch-word (cpu-memory cpu) #xFFFE)))
 
-(defun :bvc (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bvc)) operand)
   (branch-if cpu (not (status? :overflow)) operand))
 
-(defun :bvs (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :bvs)) operand)
   (branch-if cpu (status? :overflow) operand))
 
-(defun :clc (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :clc)) operand)
   (declare (ignore operand))
   (set-flag cpu :carry 0))
 
-(defun :cld (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :cld)) operand)
   (declare (ignore operand))
   (set-flag cpu :decimal 0))
 
-(defun :cli (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :cli)) operand)
   (declare (ignore operand))
   (set-flag cpu :interrupt 0))
 
-(defun :clv (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :clv)) operand)
   (declare (ignore operand))
   (set-flag cpu :overflow 0))
 
-(defun :cmp (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :cmp)) operand)
   (with-accessors ((accum cpu-accum)) cpu
     (let ((result (- accum operand)))
       (set-flag-zn cpu result)
       (set-flag cpu :carry (if (>= accum operand) 1 0)))))
 
-(defun :cpx (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :cpx)) operand)
   (with-accessors ((x cpu-x)) cpu
     (let ((result (- x operand)))
       (set-flag-zn cpu result)
       (set-flag cpu :carry (if (>= x operand) 1 0)))))
 
-(defun :cpy (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :cpy)) operand)
   (with-accessors ((y cpu-y)) cpu
     (let ((result (- y operand)))
       (set-flag-zn cpu result)
       (set-flag cpu :carry (if (>= y operand) 1 0)))))
 
-(defun :dec (cpu address)
+(defmethod execute ((cpu cpu) (instruction (eql :dec)) operand)
   (with-accessors ((memory cpu-memory)) cpu
-    (let ((result (wrap-byte (1- (fetch memory address)))))
+    (let ((result (wrap-byte (1- (fetch memory operand)))))
       (set-flag-zn cpu result)
-      (store memory address result))))
+      (store memory operand result))))
 
-(defun :dex (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :dex)) operand)
   (declare (ignore operand))
   (with-accessors ((x cpu-x)) cpu
     (let ((result (logand (1- x) #xFF)))
       (setf x result)
       (set-flag-zn cpu result))))
 
-(defun :dey (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :dey)) operand)
   (declare (ignore operand))
   (with-accessors ((y cpu-y)) cpu
     (let ((result (logand (1- y) #xFF)))
       (setf y result)
       (set-flag-zn cpu result))))
 
-(defun :eor (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :eor)) operand)
   (with-accessors ((accum cpu-accum)) cpu
     (let ((result (logxor accum operand)))
       (set-flag-zn cpu result)
       (setf accum result))))
 
-(defun :inc (cpu address)
+(defmethod execute ((cpu cpu) (instruction (eql :inc)) operand)
   (with-accessors ((memory cpu-memory)) cpu
-    (let ((result (wrap-byte (1+ (fetch memory address)))))
+    (let ((result (wrap-byte (1+ (fetch memory operand)))))
       (set-flag-zn cpu result)
-      (store memory address result))))
+      (store memory operand result))))
 
-(defun :inx (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :inx)) operand)
   (declare (ignore operand))
   (with-accessors ((x cpu-x)) cpu
     (let ((result (logand (1+ x) #xFF)))
       (setf x result)
       (set-flag-zn cpu result))))
 
-(defun :iny (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :iny)) operand)
   (declare (ignore operand))
   (with-accessors ((y cpu-y)) cpu
     (let ((result (logand (1+ y) #xFF)))
       (setf y result)
       (set-flag-zn cpu result))))
 
-(defun :jmp (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :jmp)) operand)
   (setf (cpu-pc cpu) operand))
 
-(defun :jsr (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :jsr)) operand)
   (let ((return-address (+ (cpu-pc cpu) 2)))
     (stack-push-word cpu return-address)
     (setf (cpu-pc cpu) operand)))
 
-(defun :lda (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :lda)) operand)
   (setf (cpu-accum cpu) operand)
   (set-flag-zn cpu operand))
 
-(defun :ldx (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :ldx)) operand)
   (setf (cpu-x cpu) operand)
   (set-flag-zn cpu operand))
 
-(defun :ldy (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :ldy)) operand)
   (setf (cpu-y cpu) operand)
   (set-flag-zn cpu operand))
 
-(defun :lsr (cpu accessor)
+(defmethod execute ((cpu cpu) (instruction (eql :lsr)) accessor)
   (let* ((operand (funcall accessor))
          (result (ash operand -1)))
     (set-flag cpu :carry (ldb (byte 1 0) operand))
     (set-flag-zn cpu result)
     (funcall accessor result)))
 
-(defun :nop (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :nop)) operand)
   (declare (ignore cpu operand)))
 
-(defun :ora (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :ora)) operand)
   (with-accessors ((accum cpu-accum)) cpu
     (let ((result (logior accum operand)))
       (setf accum result)
       (set-flag-zn cpu result))))
 
-(defun :pha (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :pha)) operand)
   (declare (ignore operand))
   (stack-push cpu (cpu-accum cpu)))
 
-(defun :php (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :php)) operand)
   (declare (ignore operand))
   (stack-push cpu (dpb 1 (byte 1 4) (cpu-status cpu))))
 
-(defun :pla (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :pla)) operand)
   (declare (ignore operand))
   (let ((result (setf (cpu-accum cpu) (stack-pop cpu))))
     (set-flag-zn cpu result)))
 
-(defun :plp (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :plp)) operand)
   (declare (ignore operand))
   (setf (cpu-status cpu) (stack-pop cpu))
   (set-flag cpu :break 0)
   (set-flag cpu :unused 1))
 
-(defun :rol (cpu accessor)
+(defmethod execute ((cpu cpu) (instruction (eql :rol)) accessor)
   (let* ((operand (funcall accessor))
          (carry-bit (ldb (byte 1 0) (cpu-status cpu)))
          (rotate-with-carry (dpb carry-bit (byte 1 0) (ash operand 1)))
@@ -429,7 +431,7 @@
     (set-flag-zn cpu result)
     (funcall accessor result)))
 
-(defun :ror (cpu accessor)
+(defmethod execute ((cpu cpu) (instruction (eql :ror)) accessor)
   (let* ((operand (funcall accessor))
          (carry-bit (ldb (byte 1 0) (cpu-status cpu)))
          (result (dpb carry-bit (byte 1 7) (ash operand -1))))
@@ -437,19 +439,19 @@
     (set-flag-zn cpu result)
     (funcall accessor result)))
 
-(defun :rti (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :rti)) operand)
   (declare (ignore operand))
   (let ((new-status (dpb 1 (byte 1 5) (stack-pop cpu)))
         (return-address (1- (stack-pop-word cpu))))
     (setf (cpu-status cpu) new-status
           (cpu-pc cpu) return-address)))
 
-(defun :rts (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :rts)) operand)
   (declare (ignore operand))
   (let ((return-address (stack-pop-word cpu)))
     (setf (cpu-pc cpu) return-address)))
 
-(defun :sbc (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :sbc)) operand)
   (with-accessors ((accum cpu-accum)) cpu
     (let* ((carry-bit (if (status? :carry) 0 1))
            (result (- accum operand carry-bit))
@@ -461,55 +463,55 @@
       (set-flag-zn cpu wrapped)
       (setf accum wrapped))))
 
-(defun :sec (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :sec)) operand)
   (declare (ignore operand))
   (set-flag cpu :carry 1))
 
-(defun :sed (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :sed)) operand)
   (declare (ignore operand))
   (set-flag cpu :decimal 1))
 
-(defun :sei (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :sei)) operand)
   (declare (ignore operand))
   (set-flag cpu :interrupt 1))
 
-(defun :sta (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :sta)) operand)
   (with-accessors ((memory cpu-memory)) cpu
     (store memory operand (cpu-accum cpu))))
 
-(defun :stx (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :stx)) operand)
   (with-accessors ((memory cpu-memory)) cpu
     (store memory operand (cpu-x cpu))))
 
-(defun :sty (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :sty)) operand)
   (with-accessors ((memory cpu-memory)) cpu
     (store memory operand (cpu-y cpu))))
 
-(defun :tax (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :tax)) operand)
   (declare (ignore operand))
   (let ((result (setf (cpu-x cpu) (cpu-accum cpu))))
     (set-flag-zn cpu result)))
 
-(defun :tay (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :tay)) operand)
   (declare (ignore operand))
   (let ((result (setf (cpu-y cpu) (cpu-accum cpu))))
     (set-flag-zn cpu result)))
 
-(defun :tsx (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :tsx)) operand)
   (declare (ignore operand))
   (let ((result (setf (cpu-x cpu) (cpu-stack cpu))))
     (set-flag-zn cpu result)))
 
-(defun :txa (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :txa)) operand)
   (declare (ignore operand))
   (let ((result (setf (cpu-accum cpu) (cpu-x cpu))))
     (set-flag-zn cpu result)))
 
-(defun :txs (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :txs)) operand)
   (declare (ignore operand))
   (setf (cpu-stack cpu) (cpu-x cpu)))
 
-(defun :tya (cpu operand)
+(defmethod execute ((cpu cpu) (instruction (eql :tya)) operand)
   (declare (ignore operand))
   (let ((result (setf (cpu-accum cpu) (cpu-y cpu))))
     (set-flag-zn cpu result)))
