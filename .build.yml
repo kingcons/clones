@@ -4,6 +4,7 @@ environment:
   site: clones.kingcons.io
 packages:
   - sbcl
+  - sdl2-dev
 sources:
   - https://git.sr.ht/~kingcons/clones
 tasks:
