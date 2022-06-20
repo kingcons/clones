@@ -13,7 +13,8 @@
   (clones.disassembler:@disassembler section)
   (clones.cpu:@cpu section)
   (clones.ppu:@ppu section)
-  (clones.renderer:@renderer section))
+  (clones.renderer:@renderer section)
+  (clones.input:@input section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones
@@ -71,9 +72,9 @@ Work has just begun so nothing is playable yet. Hang in there.
 * CPU Opcodes: ✅
 * PPU Registers: ✅
 * PPU Timing: ✅
-* Rendering - Backgrounds: ⌛
+* Rendering - Backgrounds: ✅
 * Rendering - Sprites: ❌
-* Input Handling: ❌
+* Input Handling: ⌛
 * MMC1 Mapper: ❌
 * Audio Support: ❌")
 

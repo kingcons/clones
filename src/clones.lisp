@@ -3,8 +3,14 @@
   (:use :clones.cpu :clones.renderer)
   (:import-from :static-vectors
                 #:static-vector-pointer)
+  (:import-from :serapeum
+                #:~>>)
   (:import-from :clones.renderer
                 #:*framebuffer*)
+  (:import-from :clones.memory
+                #:get-controller)
+  (:import-from :clones.input
+                #:update-button)
   (:import-from :clones.ppu
                 #:ppu
                 #:make-ppu))
@@ -53,21 +59,47 @@
                   (make-on-frame sdl-renderer texture last-frame-at))
             (sdl2:with-event-loop (:method :poll)
               (:keydown (:keysym keysym)
-                (handle-input app keysym))
+                (handle-keydown app keysym))
+              (:keyup (:keysym keysym)
+                (handle-keyup app keysym))
               (:idle ()
                 (handle-idle app))
               (:quit () t))))))))
 
-(defgeneric handle-input (app keysym)
+(defgeneric handle-keydown (app keysym)
   (:documentation "Take the appropriate action for KEYSYM in APP.")
   (:method ((app app) keysym)
-    (let ((scancode (sdl2:scancode-value keysym)))
+    (let ((scancode (sdl2:scancode-value keysym))
+          (controller (~>> app app-cpu cpu-memory get-controller)))
       (case (sdl2:scancode-symbol scancode)
         (:scancode-b (open-debugger app))
         (:scancode-h (print-help app))
         (:scancode-n (print-now app))
         (:scancode-p (toggle-pause app))
+        (:scancode-w (update-button controller 'up 1))
+        (:scancode-s (update-button controller 'down 1))
+        (:scancode-a (update-button controller 'left 1))
+        (:scancode-d (update-button controller 'right 1))
+        (:scancode-j (update-button controller 'a 1))
+        (:scancode-k (update-button controller 'b 1))
+        (:scancode-return (update-button controller 'start 1))
+        (:scancode-space (update-button controller 'select 1))
         (:scancode-escape (sdl2:push-event :quit))))))
+
+(defgeneric handle-keyup (app keysym)
+  (:documentation "Perform any special handling for releasing KEYSYM in APP.")
+  (:method ((app app) keysym)
+    (let ((scancode (sdl2:scancode-value keysym))
+          (controller (~>> app app-cpu cpu-memory get-controller)))
+      (case (sdl2:scancode-symbol scancode)
+        (:scancode-w (update-button controller 'up 0))
+        (:scancode-s (update-button controller 'down 0))
+        (:scancode-a (update-button controller 'left 0))
+        (:scancode-d (update-button controller 'right 0))
+        (:scancode-j (update-button controller 'a 0))
+        (:scancode-k (update-button controller 'b 0))
+        (:scancode-return (update-button controller 'start 0))
+        (:scancode-space (update-button controller 'select 0))))))
 
 (defun open-debugger (app)
   ;; TODO: Still can't access the app locals in this stack frame.

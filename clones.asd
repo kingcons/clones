@@ -18,6 +18,7 @@
                  (:file "rom")
                  (:file "mappers")
                  (:file "ppu")
+                 (:file "input")
                  (:file "memory")
                  (:file "opcodes")
                  (:file "disassembler")
