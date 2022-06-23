@@ -152,7 +152,5 @@ Enter: Start
 (defgeneric handle-idle (app)
   (:documentation "Step the NES forward or perform other idle work.")
   (:method ((app app))
-    (with-slots (cpu renderer paused) app
-      (unless paused
-        (single-step cpu)
-        (sync renderer cpu)))))
+    (unless (app-paused app)
+      (step-frame app))))
