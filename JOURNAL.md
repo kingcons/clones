@@ -112,7 +112,7 @@ Tests would also be nice to have in the renderer though I haven't encountered
 many difficult bugs _yet_. Once I finish background rendering, I may put some
 tests in before getting too occupied with sprite rendering or other changes.
 
-My testing strategy for background rendering as a whole has been to rely on
+My development strategy for background rendering as a whole has been to rely on
 Xach's zpng and dump the framebuffer to a PNG file for inspection. This is fine
 as an integration level test, but we could definitely do better where unit tests
 are concerned. An initial improvement would be unit tests that after nametables
@@ -129,3 +129,38 @@ going pretty well. I would love to think through how to test the individual
 pieces of RENDER-TILE with greater confidence though. Iterating in smaller
 chunks with higher confidence is always good and while I'm pretty confident in
 the fetching code, the remainder of the palette computation feels more dubious.
+
+## 06/23 - Ready for Sprites
+
+Well, it's been five weeks. There was a lull in Clones activity due to real life
+but I've been back with a vengeance the last week or two. Before the lull, I got
+background rendering working and despite [some][bug1] [tough][bug2] [bugs][bug3]
+it was a mostly smooth process. The toughest bugs came from writing code to
+fetch graphics data based on correct descriptions in NESdev but before I had
+the supporting mirroring or scrolling code written. If I do this again, I either
+need to get mirroring and scrolling working first or remember to fetch naively.
+The sorts of visual artifacts you can get from incorrect graphics code are wild
+and, at least for me, it took a fair amount of digging before I realized where I
+had gone wrong.
+
+[bug1]: https://git.sr.ht/~kingcons/clones/commit/687603b8e3a15a7a21cf4ff99f624c46ced6eec9
+[bug2]: https://git.sr.ht/~kingcons/clones/commit/89b9e90a64476146f6c6a823e2279cd6c488c061
+[bug3]: https://git.sr.ht/~kingcons/clones/commit/5611b0b5787773a6d9d7d752756c38a9e2f553f8
+
+Once the kinks were ironed out, testing backgrounds with `zpng` and `diff`
+worked well. There is some awkwardness because to have a reasonable test case
+you need some useful nametable and pattern table data to work from. I dumped
+JSON of the Donkey Kong title screen for that. Then life happened for a while.
+
+After not thinking about graphics, sprite rendering seemed unpleasant. Since I
+wasn't feeling that I started on an SDL app instead. At first, I just worried
+about an input loop and some commands for disassembly and stepping the CPU. The
+satisfaction from getting that working propelled me forward to wire up a proper
+on-frame callback to hand the framebuffer off to SDL. Before you knew it, we had
+graphics. Since then, I've added NES input handling and a nice refactoring so
+the CPU instructions use EQL specialized methods.
+
+I'm feeling good about things and hopeful that this burst of energy will carry
+me through muscling through the thorny bits of sprite rendering this weekend. If
+I can get that done and make some tweaks for fine scrolling, I'll be well on my
+way to playing Mega Man 2 using my own code. 😎
