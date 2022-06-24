@@ -32,10 +32,11 @@
 
 (defun make-on-frame (sdl-renderer texture last-frame-at)
   (lambda (ppu-renderer)
+    (declare (ignore ppu-renderer))
     (let* ((now (get-internal-real-time))
-           (frame-time (- now last-frame-at)))
+           (frame-time (floor (- now last-frame-at) 1000)))
       (when *debug*
-        (format t "Frame time: ~A~%" (floor frame-time 1000)))
+        (format t "Frame time: ~A~%" frame-time))
       (setf last-frame-at now))
     (let ((framebuffer (static-vector-pointer clones.renderer:*framebuffer*)))
       (sdl2:render-clear sdl-renderer)
