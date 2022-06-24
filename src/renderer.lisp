@@ -238,7 +238,7 @@ Scroll information is not taken into account."
    (attributes :initarg :attributes :type octet :reader sprite-attributes)))
 
 (defun make-sprite (ppu sprite-index)
-  (let ((bytes (subseq (clones.ppu::ppu-oam ppu) sprite-index)))
+  (let ((bytes (subseq (clones.ppu::ppu-oam ppu) sprite-index (+ sprite-index 4))))
     (make-instance 'sprite :sprite-x (aref bytes 3)
                            :sprite-y (aref bytes 0)
                            :pattern-index (aref bytes 1)
