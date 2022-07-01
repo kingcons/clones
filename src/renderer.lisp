@@ -60,9 +60,6 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 (defvar *framebuffer* (make-framebuffer)
   "The primary framebuffer used by the emulator for drawing the NES output.")
 
-(defvar *debug-framebuffer* (make-framebuffer)
-  "A framebuffer for use by debugging tools, not tied to the main renderer.")
-
 (defclass renderer ()
   ((ppu :initarg :ppu :type ppu :accessor renderer-ppu)
    (on-nmi :initarg :on-nmi :type function :accessor renderer-on-nmi)
@@ -148,7 +145,8 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   "Render the nametable of the PPU selected by NT-INDEX.
 Scroll information is not taken into account."
   (let ((return-address (clones.ppu::ppu-address ppu))
-        (nt-address (* #x400 nt-index)))
+        (nt-address (* #x400 nt-index))
+        (*framebuffer* (make-framebuffer)))
     ;; TODO: The base address for a nametable should be offset by #x2000 right?
     ;; If viewing the nametable bytes yes, but the PPUADDR is set to the pattern
     ;; bytes to draw, not the nametable address. Setting low bits in PPUCTRL may
@@ -156,14 +154,13 @@ Scroll information is not taken into account."
     (setf (clones.ppu::ppu-address ppu) nt-address)
     (dotimes (scanline 240)
       (flet ((writer-callback (scanline-x-index value)
-               (let ((*framebuffer* *debug-framebuffer*))
-                 (render-pixel ppu scanline scanline-x-index value))))
+               (render-pixel ppu scanline scanline-x-index value)))
         (dotimes (tile 32)
           (render-tile ppu #'writer-callback)
           (coarse-scroll-horizontal! ppu)))
       (fine-scroll-vertical! ppu))
     (setf (clones.ppu::ppu-address ppu) return-address)
-    *debug-framebuffer*))
+    *framebuffer*))
 
 (defun pixel-priority (bg-pixel sprite-pixel)
   ;; NOTE: We cheat on pixel priority by having the precomputed sprite pixels
