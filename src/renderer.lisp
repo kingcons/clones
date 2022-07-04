@@ -66,10 +66,8 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
    (on-nmi :initarg :on-nmi :type function :accessor renderer-on-nmi)
    (on-frame :initarg :on-frame :type function :accessor renderer-on-frame)
    (scanline :initform 0 :type (integer 0 261) :accessor renderer-scanline)
-   (bg-bits :initform (make-octet-vector 256) :type octet-vector :accessor renderer-bg-bits
-            :documentation "An array of palette indexes for the background of the current scanline.")
-   (sprite-bits :initform (make-octet-vector 256) :type octet-vector :accessor renderer-sprite-bits
-                :documentation "An array of palette indexes for the sprites on the current scanline.")))
+   (scanline-buffer :initform (make-octet-vector 256) :type octet-vector :accessor renderer-scanline-buffer
+                    :documentation "A vector of palette indexes for the current scanline.")))
 
 (defun make-renderer (&key (ppu (make-ppu)) (on-nmi (constantly nil)) on-frame)
   (make-instance 'renderer :ppu ppu :on-nmi on-nmi :on-frame on-frame))
@@ -105,22 +103,18 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
   (with-accessors ((ppu renderer-ppu)
                    (scanline renderer-scanline)
-                   (bg-bits renderer-bg-bits)
-                   (sprite-bits renderer-sprite-bits)) renderer
+                   (scanline-buffer renderer-scanline-buffer)) renderer
     (unless (rendering-enabled? ppu)
       (return-from render-visible-scanline nil))
     (when (render-background? ppu)
       (dotimes (tile 32)
-        (render-tile ppu bg-bits)
+        (render-tile ppu scanline-buffer)
         (coarse-scroll-horizontal! ppu)))
     (when (render-sprites? ppu)
       (render-sprites renderer ppu))
     (dotimes (pixel-index 256)
-      (symbol-macrolet ((bg-pixel (aref bg-bits pixel-index))
-                        (sprite-pixel (aref sprite-bits pixel-index)))
-        (let ((palette-index (pixel-priority bg-pixel sprite-pixel)))
-          (render-pixel ppu scanline pixel-index palette-index))))
-    ;; TODO: Do we need to clear the bits between scanlines?
+      (let ((palette-index (aref scanline-buffer pixel-index)))
+        (render-pixel ppu scanline pixel-index palette-index)))
     (fine-scroll-vertical! ppu)))
 
 (defun post-render-scanline (renderer)
@@ -179,8 +173,7 @@ Scroll information is not taken into account."
          sprite-pixel)))
 
 (defun render-sprites (renderer ppu)
-  (let ((visible-sprites (evaluate-sprites renderer ppu))
-        (sprite-bits (renderer-sprite-bits renderer)))
+  (let ((visible-sprites (evaluate-sprites renderer ppu)))
     (dotimes (pixel 256)
       ;; Pick first visible sprite at pixel and populate sprite-bits with its value
       ;; If the sprite-pixel is non-zero and background priority is set, supply 0.
