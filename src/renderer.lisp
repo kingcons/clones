@@ -7,6 +7,7 @@
   (:import-from :serapeum
                 #:octet
                 #:octet-vector
+                #:make-octet-vector
                 #:callf)
   (:import-from :alexandria
                 #:define-constant)
@@ -65,9 +66,9 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
    (on-nmi :initarg :on-nmi :type function :accessor renderer-on-nmi)
    (on-frame :initarg :on-frame :type function :accessor renderer-on-frame)
    (scanline :initform 0 :type (integer 0 261) :accessor renderer-scanline)
-   (bg-bits :initform (make-array 256) :type octet-vector :accessor renderer-bg-bits
+   (bg-bits :initform (make-octet-vector 256) :type octet-vector :accessor renderer-bg-bits
             :documentation "An array of palette indexes for the background of the current scanline.")
-   (sprite-bits :initform (make-array 256) :type octet-vector :accessor renderer-sprite-bits
+   (sprite-bits :initform (make-octet-vector 256) :type octet-vector :accessor renderer-sprite-bits
                 :documentation "An array of palette indexes for the sprites on the current scanline.")))
 
 (defun make-renderer (&key (ppu (make-ppu)) (on-nmi (constantly nil)) on-frame)
@@ -108,12 +109,10 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
                    (sprite-bits renderer-sprite-bits)) renderer
     (unless (rendering-enabled? ppu)
       (return-from render-visible-scanline nil))
-    (flet ((writer-callback (scanline-x-index value)
-             (setf (aref bg-bits scanline-x-index) value)))
-      (when (render-background? ppu)
-        (dotimes (tile 32)
-          (render-tile ppu #'writer-callback)
-          (coarse-scroll-horizontal! ppu))))
+    (when (render-background? ppu)
+      (dotimes (tile 32)
+        (render-tile ppu bg-bits)
+        (coarse-scroll-horizontal! ppu)))
     (when (render-sprites? ppu)
       (render-sprites renderer ppu))
     (dotimes (pixel-index 256)
@@ -144,20 +143,21 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
 (defun render-nametable (ppu nt-index)
   "Render the nametable of the PPU selected by NT-INDEX.
 Scroll information is not taken into account."
-  (let ((return-address (clones.ppu::ppu-address ppu))
-        (nt-address (* #x400 nt-index))
-        (*framebuffer* (make-framebuffer)))
+  (let ((*framebuffer* (make-framebuffer))
+        (scanline-buffer (make-octet-vector 256))
+        (return-address (clones.ppu::ppu-address ppu))
+        (nt-address (* #x400 nt-index)))
     ;; TODO: The base address for a nametable should be offset by #x2000 right?
     ;; If viewing the nametable bytes yes, but the PPUADDR is set to the pattern
     ;; bytes to draw, not the nametable address. Setting low bits in PPUCTRL may
     ;; be the right approach here. Need to test with other ROMs/nametables.
     (setf (clones.ppu::ppu-address ppu) nt-address)
     (dotimes (scanline 240)
-      (flet ((writer-callback (scanline-x-index value)
-               (render-pixel ppu scanline scanline-x-index value)))
-        (dotimes (tile 32)
-          (render-tile ppu #'writer-callback)
-          (coarse-scroll-horizontal! ppu)))
+      (dotimes (tile 32)
+        (render-tile ppu scanline-buffer)
+        (coarse-scroll-horizontal! ppu))
+      (dotimes (pixel 256)
+        (render-pixel ppu scanline pixel (aref scanline-buffer pixel)))
       (fine-scroll-vertical! ppu))
     (setf (clones.ppu::ppu-address ppu) return-address)
     *framebuffer*))
@@ -199,7 +199,7 @@ Scroll information is not taken into account."
                     current-sprite (1+ current-sprite))))))
     visible-sprites))
 
-(defun render-tile (ppu writer-callback)
+(defun render-tile (ppu buffer)
   (let* ((nametable-byte (fetch-nt-byte ppu))
          (attribute-byte (fetch-at-byte ppu))
          (coarse-x-offset (* 8 (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))))
@@ -214,7 +214,7 @@ Scroll information is not taken into account."
                                         (byte 1 1)
                                         (ldb (byte 1 (- 7 pixel-index)) pattern-low)))
                  (palette-index (dpb palette-high-bits (byte 2 2) palette-low-bits)))
-            (funcall writer-callback (+ coarse-x-offset pixel-index) palette-index)))))))
+            (setf (aref buffer (+ coarse-x-offset pixel-index)) palette-index)))))))
 
 (defun render-pixel (ppu scanline pixel-index palette-index)
   (let* ((color-index (read-palette ppu palette-index))
