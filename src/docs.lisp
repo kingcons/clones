@@ -14,7 +14,8 @@
   (clones.cpu:@cpu section)
   (clones.ppu:@ppu section)
   (clones.renderer:@renderer section)
-  (clones.input:@input section))
+  (clones.input:@input section)
+  (clones.debug:@debug section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones

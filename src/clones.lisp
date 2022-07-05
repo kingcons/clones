@@ -17,7 +17,9 @@
 (defclass app ()
   ((cpu :initarg :cpu :type cpu :reader app-cpu)
    (paused :initform nil :type boolean :accessor app-paused)
-   (renderer :initform nil :type (or null renderer) :accessor app-renderer))
+   (renderer :initform nil :type (or null renderer) :accessor app-renderer)
+   (sdl-texture :initform nil :accessor app-sdl-texture)
+   (sdl-renderer :initform nil :accessor app-sdl-renderer))
   (:default-initargs
    :cpu (make-cpu)))
 
@@ -31,18 +33,25 @@
 
 (defparameter *debug* nil)
 
-(defun make-on-frame (sdl-renderer texture last-frame-at)
+(defun make-on-frame (app last-frame-at)
   (lambda (ppu-renderer)
     (declare (ignore ppu-renderer))
-    (let* ((now (get-internal-real-time))
-           (frame-time (floor (- now last-frame-at) 1000)))
-      (when *debug*
-        (format t "Frame time: ~A~%" frame-time))
-      (setf last-frame-at now))
-    (let ((framebuffer (static-vector-pointer clones.renderer:*framebuffer*)))
+    (symbol-macrolet ((now (get-internal-real-time)))
+      (let ((frame-time (floor (- now last-frame-at) 1000)))
+        (when (< frame-time 16)
+          (sdl2:delay (- 16 frame-time)))
+        (when *debug*
+          (format t "Frame time: ~A~%" (floor (- now last-frame-at) 1000)))
+        (present-frame app clones.renderer:*framebuffer*)
+        (setf last-frame-at now)))))
+
+(defun present-frame (app framebuffer)
+  (with-accessors ((sdl-texture app-sdl-texture)
+                   (sdl-renderer app-sdl-renderer)) app
+    (let ((buffer-pointer (static-vectors:static-vector-pointer framebuffer)))
       (sdl2:render-clear sdl-renderer)
-      (sdl2:update-texture texture (cffi:null-pointer) framebuffer (* 256 3))
-      (sdl2:render-copy sdl-renderer texture)
+      (sdl2:update-texture sdl-texture (cffi:null-pointer) buffer-pointer (* 256 3))
+      (sdl2:render-copy sdl-renderer sdl-texture)
       (sdl2:render-present sdl-renderer))))
 
 (defgeneric run (app)
@@ -54,8 +63,10 @@
         (sdl2:with-renderer (sdl-renderer window)
           (let ((texture (sdl2:create-texture sdl-renderer :rgb24 :streaming 256 240))
                 (last-frame-at (get-internal-real-time)))
+            (setf (app-sdl-renderer app) sdl-renderer
+                  (app-sdl-texture app) texture)
             (setf (clones.renderer::renderer-on-frame (app-renderer app))
-                  (make-on-frame sdl-renderer texture last-frame-at))
+                  (make-on-frame app last-frame-at))
             (sdl2:with-event-loop (:method :poll)
               (:keydown (:keysym keysym)
                 (handle-keydown app keysym))
@@ -70,12 +81,12 @@
   (:method ((app app) keysym)
     (let ((controller (~>> app app-cpu cpu-memory memory-controller)))
       (case (sdl2:scancode keysym)
-        (:scancode-b (open-debugger app))
         (:scancode-h (print-help app))
         (:scancode-n (print-now app))
         (:scancode-i (step-instruction app))
         (:scancode-f (step-frame app))
         (:scancode-p (toggle-pause app))
+        (:scancode-g (clones.debug:dump-graphics app))
         (:scancode-w (update-button controller 'up 1))
         (:scancode-s (update-button controller 'down 1))
         (:scancode-a (update-button controller 'left 1))
@@ -100,11 +111,6 @@
         (:scancode-return (update-button controller 'start 0))
         (:scancode-space (update-button controller 'select 0))))))
 
-(defun open-debugger (app)
-  ;; TODO: Still can't access the app locals in this stack frame.
-  (with-slots (cpu renderer) app
-    (break)))
-
 (defun step-instruction (app)
   (with-slots (cpu) app
     (single-step cpu)
@@ -118,6 +124,7 @@
           until (eql result vblank-scanline))))
 
 (defun print-help (app)
+  (declare (ignore app))
   (format t "
 ===========
 CLONES HELP

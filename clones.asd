@@ -24,6 +24,7 @@
                  (:file "disassembler")
                  (:file "cpu")
                  (:file "renderer")
+                 (:file "debug")
                  (:file "clones")
                  (:file "docs"))))
   :in-order-to ((test-op (test-op clones/test))))
