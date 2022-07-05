@@ -4,6 +4,7 @@
   (:import-from :clones.input
                 #:update-button)
   (:import-from :clones.renderer
+                #:renderer
                 #:make-renderer
                 #:sync)
   (:import-from :static-vectors

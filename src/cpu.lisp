@@ -6,7 +6,9 @@
   (:import-from :clones.util
                 #:define-printer
                 #:wrap-byte
-                #:wrap-word))
+                #:wrap-word)
+  (:import-from :serapeum
+                #:octet))
 
 (in-package :clones.cpu)
 
