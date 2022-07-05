@@ -127,7 +127,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
             (render-sprite ppu scanline-buffer (aref sprites sprite))))))
     (dotimes (pixel-index 256)
       (let ((palette-index (aref scanline-buffer pixel-index)))
-        (render-pixel ppu scanline pixel-index palette-index)))
+        (render-pixel *framebuffer* ppu scanline pixel-index palette-index)))
     (fine-scroll-vertical! ppu)))
 
 (defun post-render-scanline (renderer)
@@ -164,7 +164,7 @@ Scroll information is not taken into account."
         (render-tile ppu scanline-buffer (fetch-nt-byte ppu))
         (coarse-scroll-horizontal! ppu))
       (dotimes (pixel 256)
-        (render-pixel ppu scanline pixel (aref scanline-buffer pixel)))
+        (render-pixel *framebuffer* ppu scanline pixel (aref scanline-buffer pixel)))
       (fine-scroll-vertical! ppu))
     (setf (clones.ppu::ppu-address ppu) return-address)
     *framebuffer*))
@@ -194,7 +194,7 @@ for pixel priority means RENDER-SPRITE may leave the buffer unmodified when the
 palette index for the sprite has the background attribute set. TODO: As a 
 future improvement, we should handle overlapping sprites correctly."
   ;; See: https://www.nesdev.org/wiki/PPU_sprite_priority
-  (multiple-value-bind (pattern-low pattern-high) (fetch-pattern-bytes ppu sprite)
+  (multiple-value-bind (pattern-low pattern-high) (fetch-scanline-bytes ppu sprite)
     (let ((high-bits (palette-high-bits ppu sprite))
           (x-offset (clones.ppu::sprite-x sprite)))
       (dotimes (tile-index 8)
@@ -207,7 +207,7 @@ future improvement, we should handle overlapping sprites correctly."
           (setf (aref buffer buffer-index) (pixel-priority background-value palette-index)))))))
 
 (defun render-tile (ppu buffer pattern-index)
-  (multiple-value-bind (pattern-low pattern-high) (fetch-pattern-bytes ppu pattern-index)
+  (multiple-value-bind (pattern-low pattern-high) (fetch-scanline-bytes ppu pattern-index)
     (let ((high-bits (palette-high-bits ppu pattern-index))
           (x-offset (* 8 (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))))
       (dotimes (tile-index 8)
@@ -216,10 +216,10 @@ future improvement, we should handle overlapping sprites correctly."
                (buffer-index (min (+ x-offset tile-index) 255)))
           (setf (aref buffer buffer-index) palette-index))))))
 
-(defun render-pixel (ppu scanline pixel-index palette-index)
+(defun render-pixel (framebuffer ppu y-index x-index palette-index)
   (let* ((color-index (read-palette ppu palette-index))
-         (offset (* (+ (* scanline 256) pixel-index) 3))
+         (offset (* (+ (* y-index 256) x-index) 3))
          (rgb-value (aref +palette+ color-index)))
     (dotimes (i 3)
-      (setf (aref *framebuffer* (+ offset i))
+      (setf (aref framebuffer (+ offset i))
             (aref rgb-value i)))))

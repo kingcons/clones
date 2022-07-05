@@ -1,6 +1,7 @@
 (mgl-pax:define-package :clones.ppu
   (:use :cl :alexandria :mgl-pax)
   (:import-from :clones.util
+                #:define-printer
                 #:wrap-byte)
   (:import-from :clones.mappers
                 #:mapper
@@ -38,7 +39,8 @@
   ;; Graphics Fetching
   (fetch-nt-byte function)
   (fetch-at-byte function)
-  (fetch-pattern-bytes function)
+  (fetch-scanline-bytes function)
+  (fetch-tile-bytes function)
   (palette-low-bits function)
   (palette-high-bits function)
   ;; Scrolling
@@ -234,6 +236,10 @@
    (pattern-index :initarg :pattern-index :type octet :reader sprite-index)
    (attributes :initarg :attributes :type octet :reader sprite-attributes)))
 
+(define-printer sprite (sprite-x sprite-y pattern-index attributes)
+                "X: ~2,'0X Y: ~2,'0X Index: ~2,'0X Attributes: ~8,'0B"
+                sprite-x sprite-y pattern-index attributes)
+
 (defun make-sprite (ppu sprite-bytes)
   (make-instance 'sprite :sprite-x (aref sprite-bytes 3)
                          :sprite-y (aref sprite-bytes 0)
@@ -299,32 +305,42 @@
        (byte 1 1)
        (ldb (byte 1 (- 7 index)) low-byte)))
 
-(defgeneric fetch-pattern-bytes (ppu tile-descriptor)
-  (:documentation "Fetch the 16 bytes of the pattern corresponding to TILE-DESCRIPTOR."))
+(defgeneric find-pattern-index (ppu tile-descriptor)
+  (:documentation "Find the index in the pattern table corresponding to TILE-DESCRIPTOR.
+Return two values, the index including an offset for the current scanline and the base index."))
 
-(defmethod fetch-pattern-bytes ((ppu ppu) (tile-descriptor fixnum))
+(defmethod find-pattern-index ((ppu ppu) (tile-descriptor fixnum))
   ;; See: https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing
   (let* ((address (ppu-address ppu))
-         (fine-y-bits (ldb (byte 3 12) address))
+         (y-offset (ldb (byte 3 12) address))
          (bg-table (ldb (byte 1 4) (ppu-ctrl ppu)))
-         (pt-index
-           (~>> fine-y-bits
-                (dpb 0 (byte 1 3))
-                (dpb tile-descriptor (byte 8 4))
-                (dpb bg-table (byte 1 12)))))
-    (values
-     (clones.mappers:get-chr (ppu-pattern-table ppu) pt-index)
-     (clones.mappers:get-chr (ppu-pattern-table ppu) (+ pt-index 8)))))
+         (pattern-base (~>> 0
+                            (dpb tile-descriptor (byte 8 4))
+                            (dpb bg-table (byte 1 12)))))
+    (values (+ pattern-base y-offset) pattern-base)))
 
-(defmethod fetch-pattern-bytes ((ppu ppu) (tile-descriptor sprite))
-  ;; TODO: Account for vertically flipped sprites
+(defmethod find-pattern-index ((ppu ppu) (tile-descriptor sprite))
   (let* ((offset (sprite-address ppu))
          (scanline (current-scanline ppu))
          (y-offset (- scanline (sprite-y tile-descriptor)))
-         (pt-index (+ offset (* 16 (sprite-index tile-descriptor)) y-offset)))
+         (pattern-base (+ offset (* 16 (sprite-index tile-descriptor)))))
+    (values (+ pattern-base y-offset) pattern-base)))
+
+(defun fetch-tile-bytes (ppu tile-descriptor)
+  "Fetch all 16 bytes of the the pattern corresponding to TILE-DESCRIPTOR."
+  (let ((pattern-index (nth-value 1 (find-pattern-index ppu tile-descriptor)))
+        (pattern-table (ppu-pattern-table ppu)))
+    (loop for i from 0 to 16
+          collecting (clones.mappers:get-chr pattern-table (+ pattern-index i)))))
+
+(defun fetch-scanline-bytes (ppu tile-descriptor)
+  "Fetch the low and high bytes of the pattern matching TILE-DESCRIPTOR
+   that are appropriate for display on the current scanline of PPU."
+  (let ((pattern-table (ppu-pattern-table ppu))
+        (pattern-index (find-pattern-index ppu tile-descriptor)))
     (values
-     (clones.mappers:get-chr (ppu-pattern-table ppu) pt-index)
-     (clones.mappers:get-chr (ppu-pattern-table ppu) (+ pt-index 8)))))
+     (clones.mappers:get-chr pattern-table pattern-index)
+     (clones.mappers:get-chr pattern-table (+ pattern-index 8)))))
 
 (defun quad-position (ppu)
   (let* ((address (ppu-address ppu))
