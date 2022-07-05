@@ -27,13 +27,15 @@
   (memory-ppu (reader memory))
   (memory-cart (reader memory))
   (memory-controller (reader memory))
+  (memory-dma? (accessor memory))
   (swap-cart function))
 
 (defclass memory ()
   ((ram :initarg :ram :type octet-vector)
    (ppu :initarg :ppu :type ppu :reader memory-ppu)
    (cart :initarg :cart :type mapper :reader memory-cart)
-   (controller :initarg :controller :type controller :reader memory-controller)))
+   (controller :initarg :controller :type controller :reader memory-controller)
+   (dma? :initform nil :type boolean :accessor memory-dma?)))
 
 (defun make-memory (&key (ram (make-octet-vector #x800)) (ppu (make-ppu))
                       (controller (make-controller)) (cart (load-rom)))
@@ -45,6 +47,18 @@
     (with-slots (ppu cart) memory
       (setf (slot-value ppu 'clones.ppu::pattern-table) rom
             cart rom))))
+
+(defun copy-page-to-oam (memory page)
+  ;; See: https://wiki.nesdev.com/w/index.php/PPU_programmer_reference#OAM_DMA_.28.244014.29_.3E_write
+  ;; As mentioned in rawbones source code, DMA takes ~4.5 scanlines of time during which the CPU
+  ;; is suspended / able to do nothing and no work happens in the renderer between the vblank scanline
+  ;; and the pre-render scanline. I.e. It seems reasonable to just skip ahead 4 scanlines from the
+  ;; perspective of DMA and call the rest a rounding error.
+  (with-slots (ppu dma?) memory
+    (let ((offset (ash page 8)))
+      (dotimes (i 256)
+        (write-ppu ppu 4 (fetch memory (+ offset i)))))
+    (setf dma? t)))
 
 (defun fetch (memory address)
   (with-slots (ram ppu cart controller) memory
@@ -65,6 +79,8 @@
            (setf (aref ram (logand address #x7ff)) value))
           ((< address #x4000) ;; write to PPU
            (write-ppu ppu (logand address #x7) value))
+          ((= address #x4014)
+           (copy-page-to-oam memory value))
           ((= address #x4016)
            (reset-controller controller))
           ((< address #x8000) ;; write to peripherals (ppu, apu, input)

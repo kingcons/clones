@@ -83,10 +83,12 @@
 **** DONE Add a RENDER-NAMETABLE method
 **** DONE Add a way to draw framebuffer to a file (maybe with zpng)
 ***** This exists in clones/test as clones.test.renderer::test-frame
-*** Implement Sprite rendering
-*** Implement Input handling
+*** TODO Implement Sprite rendering
+**** DONE Add support for DMA
+**** TODO Handle horizontal flipping
+**** TODO Handle vertical flipping
+*** DONE Implement Input handling
 *** Scrolling and other improvements
-**** TODO Add support for DMA
 **** TODO Support fetching two tiles at a time to support fine x scrolling
 ***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
 *** Add support for more mappers

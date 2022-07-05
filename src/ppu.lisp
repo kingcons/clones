@@ -16,6 +16,7 @@
 (in-package :clones.ppu)
 
 (defsection @ppu (:title "Picture Processing Unit")
+  ;; PPU state
   (ppu class)
   (make-ppu function)
   (read-ppu function)
@@ -25,14 +26,22 @@
   (read-palette function)
   (get-mirroring function)
   (quad-position function)
-  (fetch-nt-byte function)
-  (fetch-at-byte function)
-  (fetch-pattern-bytes function)
   (render-sprites? function)
   (render-background? function)
   (rendering-enabled? function)
+  ;; Sprite handling
+  (sprite class)
+  (make-sprite function)
+  (evaluate-sprites function)
   (set-sprite-overflow! function)
   (set-sprite-zero-hit! function)
+  ;; Graphics Fetching
+  (fetch-nt-byte function)
+  (fetch-at-byte function)
+  (fetch-pattern-bytes function)
+  (palette-low-bits function)
+  (palette-high-bits function)
+  ;; Scrolling
   (fine-scroll-vertical! function)
   (coarse-scroll-horizontal! function))
 
@@ -120,12 +129,6 @@
   (define-bit-test show-sprites-left? 2)
   (define-bit-test render-background? 3)
   (define-bit-test render-sprites? 4))
-
-(macrolet ((define-status-bit (function-name index)
-             `(defun ,function-name (ppu value)
-                (setf (ldb (byte 1 ,index) (ppu-status ppu)) value))))
-  (define-status-bit set-sprite-overflow! 5)
-  (define-status-bit set-sprite-zero-hit! 6))
 
 (defun rendering-enabled? (ppu)
   (or (render-background? ppu)
@@ -217,13 +220,54 @@
         (- index 16)
         index)))
 
+(defun current-scanline (ppu)
+  (let* ((address (ppu-address ppu))
+         (coarse-y (ldb (byte 5 5) address))
+         (fine-y (ldb (byte 3 12) address)))
+    (+ (* coarse-y 8) fine-y)))
+
+;;; Sprites
+
+(defclass sprite ()
+  ((sprite-x :initarg :sprite-x :type octet :reader sprite-x)
+   (sprite-y :initarg :sprite-y :type octet :reader sprite-y)
+   (pattern-index :initarg :pattern-index :type octet :reader sprite-index)
+   (attributes :initarg :attributes :type octet :reader sprite-attributes)))
+
+(defun make-sprite (ppu sprite-bytes)
+  (make-instance 'sprite :sprite-x (aref sprite-bytes 3)
+                         :sprite-y (aref sprite-bytes 0)
+                         :pattern-index (aref sprite-bytes 1)
+                         :attributes (aref sprite-bytes 2)))
+
+(defun evaluate-sprites (ppu scanline)
+  (let ((visible-sprites (make-array 8 :initial-element nil))
+        (current-sprite 0))
+    (dotimes (sprite-index 64)
+      (let ((candidate-y (aref (ppu-oam ppu) (* sprite-index 4))))
+        (when (<= candidate-y scanline (+ candidate-y 7))
+          (if (= current-sprite 8)
+              (set-sprite-overflow! ppu 1)
+              (let ((sprite-bytes (subseq (ppu-oam ppu) sprite-index (+ sprite-index 4))))
+                (setf (aref visible-sprites current-sprite) (make-sprite ppu sprite-bytes)
+                      current-sprite (1+ current-sprite)))))))
+    visible-sprites))
+
+(macrolet ((define-status-bit (function-name index)
+             `(defun ,function-name (ppu value)
+                (setf (ldb (byte 1 ,index) (ppu-status ppu)) value))))
+  (define-status-bit set-sprite-overflow! 5)
+  (define-status-bit set-sprite-zero-hit! 6))
+
+;;; Graphics Fetching
+
 (defun fetch-nt-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
-  (aref (clones.ppu::ppu-name-table ppu) (nt-mirror ppu (clones.ppu::ppu-address ppu))))
+  (aref (ppu-name-table ppu) (nt-mirror ppu (ppu-address ppu))))
 
 (defun fetch-at-byte (ppu)
   "See: https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching"
-  (let* ((address (clones.ppu::ppu-address ppu))
+  (let* ((address (ppu-address ppu))
          (coarse-x-bits (ldb (byte 3 2) address))
          (coarse-y-bits (ldb (byte 3 7) address))
          (nt-select (ldb (byte 2 10) address))
@@ -233,30 +277,65 @@
                 (dpb coarse-y-bits (byte 3 3))
                 (dpb attribute-offset (byte 4 6))
                 (dpb nt-select (byte 2 10)))))
-    (aref (clones.ppu::ppu-name-table ppu) (nt-mirror ppu at-index))))
+    (aref (ppu-name-table ppu) (nt-mirror ppu at-index))))
 
-(defun fetch-pattern-bytes (ppu nt-byte)
-  "See: https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing"
-  (let* ((address (clones.ppu::ppu-address ppu))
+(defgeneric palette-high-bits (ppu tile-descriptor)
+  (:documentation "Determine the 2 high bits of the palette index for TILE-DESCRIPTOR."))
+
+(defmethod palette-high-bits ((ppu ppu) (tile-descriptor fixnum))
+  (let ((attributes (fetch-at-byte ppu)))
+    (ecase (quad-position ppu)
+      (:top-left (ldb (byte 2 0) attributes))
+      (:top-right (ldb (byte 2 2) attributes))
+      (:bottom-left (ldb (byte 2 4) attributes))
+      (:bottom-right (ldb (byte 2 6) attributes)))))
+
+(defmethod palette-high-bits ((ppu ppu) (tile-descriptor sprite))
+  (let ((attributes (sprite-attributes tile-descriptor)))
+    (ldb (byte 2 0) attributes)))
+
+(defun palette-low-bits (low-byte high-byte index)
+  (dpb (ldb (byte 1 (- 7 index)) high-byte)
+       (byte 1 1)
+       (ldb (byte 1 (- 7 index)) low-byte)))
+
+(defgeneric fetch-pattern-bytes (ppu tile-descriptor)
+  (:documentation "Fetch the 16 bytes of the pattern corresponding to TILE-DESCRIPTOR."))
+
+(defmethod fetch-pattern-bytes ((ppu ppu) (tile-descriptor fixnum))
+  ;; See: https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing
+  (let* ((address (ppu-address ppu))
          (fine-y-bits (ldb (byte 3 12) address))
-         (bg-table (ldb (byte 1 4) (clones.ppu::ppu-ctrl ppu)))
+         (bg-table (ldb (byte 1 4) (ppu-ctrl ppu)))
          (pt-index
            (~>> fine-y-bits
                 (dpb 0 (byte 1 3))
-                (dpb nt-byte (byte 8 4))
+                (dpb tile-descriptor (byte 8 4))
                 (dpb bg-table (byte 1 12)))))
     (values
-     (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) pt-index)
-     (clones.mappers:get-chr (clones.ppu::ppu-pattern-table ppu) (+ pt-index 8)))))
+     (clones.mappers:get-chr (ppu-pattern-table ppu) pt-index)
+     (clones.mappers:get-chr (ppu-pattern-table ppu) (+ pt-index 8)))))
+
+(defmethod fetch-pattern-bytes ((ppu ppu) (tile-descriptor sprite))
+  ;; TODO: Account for vertically flipped sprites
+  (let* ((offset (sprite-address ppu))
+         (scanline (current-scanline ppu))
+         (y-offset (- scanline (sprite-y tile-descriptor)))
+         (pt-index (+ offset (* 16 (sprite-index tile-descriptor)) y-offset)))
+    (values
+     (clones.mappers:get-chr (ppu-pattern-table ppu) pt-index)
+     (clones.mappers:get-chr (ppu-pattern-table ppu) (+ pt-index 8)))))
 
 (defun quad-position (ppu)
-  (let* ((address (clones.ppu::ppu-address ppu))
+  (let* ((address (ppu-address ppu))
          (on-right (logbitp 1 address))
          (on-bottom (logbitp 6 address)))
     (cond ((and on-right on-bottom)  :bottom-right)
           (on-bottom                 :bottom-left)
           (on-right                  :top-right)
           (t                         :top-left))))
+
+;;; Scrolling
 
 (defun coarse-scroll-horizontal! (ppu)
   "A scroll operation that conceptually occurs at the end of each 8-pixel tile."
