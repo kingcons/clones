@@ -31,7 +31,7 @@
       (dotimes (y-pos 30)
         (dotimes (x-pos 32)
           (let ((pattern-index (clones.ppu:fetch-nt-byte ppu))
-                (tile-index (+ (* y-pos 8) x-pos)))
+                (tile-index (+ (* y-pos 32) x-pos)))
             (funcall callback pattern-index tile-index)
             (clones.ppu::coarse-scroll-horizontal! ppu)))
         (dotimes (scanline 8)
@@ -56,15 +56,15 @@
                (incf y-index)))
         (for-tile-scanlines tile-bytes #'draw-tile-line)))))
 
-(defun coordinates-for (index &key (margin 0) (tile-width 8) (screen-width 256))
+(defun coordinates-for (index &key margin (tile-width 8) (screen-width 256))
   (flet ((layout-fn (index)
            (floor (* index (+ tile-width (* margin 2)))
                   screen-width)))
     (multiple-value-bind (y-pos x-pos) (layout-fn index)
       (list x-pos (* y-pos (+ tile-width margin)) margin))))
 
-(defun dump-graphics (framebuffer ppu &key iterator (margin 4))
+(defun dump-graphics (framebuffer ppu &key iterator (margin 0))
   (funcall iterator ppu
-           (lambda (sprite index)
+           (lambda (tile index)
              (let ((coordinates (coordinates-for index :margin margin)))
-               (draw-tile-to ppu framebuffer coordinates sprite)))))
+               (draw-tile-to ppu framebuffer coordinates tile)))))

@@ -330,7 +330,7 @@ Return two values, the index including an offset for the current scanline and th
   "Fetch all 16 bytes of the the pattern corresponding to TILE-DESCRIPTOR."
   (let ((pattern-index (nth-value 1 (find-pattern-index ppu tile-descriptor)))
         (pattern-table (ppu-pattern-table ppu)))
-    (loop for i from 0 to 16
+    (loop for i below 16
           collecting (clones.mappers:get-chr pattern-table (+ pattern-index i)))))
 
 (defun fetch-scanline-bytes (ppu tile-descriptor)

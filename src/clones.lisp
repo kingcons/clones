@@ -84,12 +84,7 @@
                 (handle-keyup app keysym))
               (:idle ()
                 (handle-idle app))
-              (:quit ()
-                (shutdown app)))))))))
-
-(defun shutdown (app)
-  (static-vectors:free-static-vector (app-framebuffer app))
-  t)
+              (:quit () t))))))))
 
 (defgeneric handle-keydown (app keysym)
   (:documentation "Take the appropriate action for KEYSYM in APP.")
@@ -173,15 +168,15 @@ Enter: Start
   (let ((ppu (~>> app app-cpu cpu-memory memory-ppu))
         (framebuffer (app-framebuffer app)))
     (clones.debug:dump-graphics framebuffer ppu
-                                :iterator #'clones.debug:for-background
-                                :margin 0)
+                                :iterator #'clones.debug:for-background)
     (present-frame app)))
 
 (defun display-sprites (app)
   (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
          (framebuffer (app-framebuffer app)))
     (clones.debug:dump-graphics framebuffer ppu
-                                :iterator #'clones.debug:for-sprites)
+                                :iterator #'clones.debug:for-sprites
+                                :margin 4)
     (present-frame app)))
 
 (defun toggle-pause (app)
