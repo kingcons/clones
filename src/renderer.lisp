@@ -161,12 +161,13 @@ future improvement, we should handle overlapping sprites correctly."
   ;; See: https://www.nesdev.org/wiki/PPU_sprite_priority
   (multiple-value-bind (pattern-low pattern-high) (fetch-scanline-bytes ppu sprite)
     (let ((high-bits (palette-high-bits ppu sprite))
-          (x-offset (clones.ppu::sprite-x sprite)))
-      (dotimes (tile-index 8)
-        ;; TODO: Account for horizontal flipping
-        (let* ((low-bits (palette-low-bits pattern-low pattern-high tile-index))
+          (x-offset (clones.ppu::sprite-x sprite))
+          (flipped? (logbitp 6 (clones.ppu::sprite-attributes sprite))))
+      (dotimes (x-index 8)
+        (let* ((tile-index (if flipped? (- 7 x-index) x-index))
+               (low-bits (palette-low-bits pattern-low pattern-high tile-index))
                (palette-index (+ 16 (dpb high-bits (byte 2 2) low-bits)))
-               (buffer-index (min (+ x-offset tile-index) 255))
+               (buffer-index (min (+ x-offset x-index) 255))
                (background-value (aref buffer buffer-index)))
           ;; TODO: Account for pixel priority when updating the buffer
           (setf (aref buffer buffer-index) (pixel-priority background-value palette-index)))))))

@@ -321,8 +321,11 @@ Return two values, the index including an offset for the current scanline and th
 
 (defmethod find-pattern-index ((ppu ppu) (tile-descriptor sprite))
   (let* ((offset (sprite-address ppu))
+         (flipped? (logbitp 7 (sprite-attributes tile-descriptor)))
          (scanline (current-scanline ppu))
-         (y-offset (- scanline (sprite-y tile-descriptor)))
+         (y-offset (if flipped?
+                       (- 7 (- scanline (sprite-y tile-descriptor)))
+                       (- scanline (sprite-y tile-descriptor))))
          (pattern-base (+ offset (* 16 (sprite-index tile-descriptor)))))
     (values (+ pattern-base y-offset) pattern-base)))
 
