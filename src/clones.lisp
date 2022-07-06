@@ -86,7 +86,8 @@
         (:scancode-i (step-instruction app))
         (:scancode-f (step-frame app))
         (:scancode-p (toggle-pause app))
-        (:scancode-g (display-sprites app))
+        (:scancode-g (display-background app))
+        (:scancode-r (display-sprites app))
         (:scancode-w (update-button controller 'up 1))
         (:scancode-s (update-button controller 'down 1))
         (:scancode-a (update-button controller 'left 1))
@@ -131,12 +132,13 @@ CLONES HELP
 ===========
 # App controls
 ESC: Quit the app.
-b: Trigger a break, opening the debugger.
 h: Print this help message.
 n: Print disassembly of the current instruction.
 i: Step over the next CPU instruction.
 f: Step forward one frame (until the next vblank).
 p: Pause or unpause the emulation.
+g: Display background. (use while paused)
+r: Display sprites. (use while paused)
 # Game controls
 w: Up
 s: Down
@@ -152,9 +154,15 @@ Enter: Start
   (with-slots (cpu) app
     (now cpu)))
 
+(defun display-background (app)
+  (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+         (framebuffer (clones.debug:dump-graphics ppu #'clones.debug:for-background
+                                                  :margin 0)))
+    (present-frame app framebuffer)))
+
 (defun display-sprites (app)
-  (let ((ppu (~>> app app-cpu cpu-memory memory-ppu))
-        (framebuffer (clones.debug:dump-graphics ppu)))
+  (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+         (framebuffer (clones.debug:dump-graphics ppu #'clones.debug:for-sprites)))
     (present-frame app framebuffer)))
 
 (defun toggle-pause (app)

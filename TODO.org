@@ -139,6 +139,8 @@
 **** TODO Is it possible to have the PPU notify APP that a frame is ready, rather than use ON-FRAME?
 **** DONE Pass a buffer to RENDER-TILE to remove need for a writer-callback.
 **** DONE See if we can consolidate bg-bits and sprite-bits into a single SCANLINE-BUFFER.
+**** DONE Turn nametable viewing into a debug helper.
+**** TODO Figure out a pattern for killing the temp framebuffers from debug helpers.
 *** Docs and Tests
 **** DONE Update doc generation to link to code on sourcehut
 **** TODO Get Klaus functional tests built for NES and wire up in test
