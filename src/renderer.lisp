@@ -111,7 +111,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
       (let ((sprites (evaluate-sprites ppu scanline)))
         (dotimes (sprite 8)
           (when (aref sprites sprite)
-            (render-sprite ppu scanline-buffer (aref sprites sprite))))))
+            (render-tile ppu scanline-buffer (aref sprites sprite))))))
     (dotimes (pixel-index 256)
       (let ((palette-index (aref scanline-buffer pixel-index)))
         (render-pixel framebuffer ppu scanline pixel-index palette-index)))
@@ -128,7 +128,8 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
       (funcall (renderer-on-nmi renderer)))))
 
 (defun pre-render-scanline (renderer)
-  (with-accessors ((ppu renderer-ppu)) renderer
+  (with-accessors ((ppu renderer-ppu)
+                   (buffer scanline-buffer)) renderer
     (set-vblank! ppu 0)
     (when (rendering-enabled? ppu)
       (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
@@ -152,35 +153,25 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
         (t
          sprite-pixel)))
 
-(defun render-sprite (ppu buffer sprite)
-  "Given a SPRITE and a BUFFER for the current scanline, update the palette indexes
-in the buffer corresponding to the pixels for the given sprite. Note that accounting
-for pixel priority means RENDER-SPRITE may leave the buffer unmodified when the
-palette index for the sprite has the background attribute set. TODO: As a 
-future improvement, we should handle overlapping sprites correctly."
+(defun render-tile (ppu buffer tile)
+  ;; TODO: Likely doesn't handle overlapping sprites correctly. Needs investigation.
   ;; See: https://www.nesdev.org/wiki/PPU_sprite_priority
-  (multiple-value-bind (pattern-low pattern-high) (fetch-scanline-bytes ppu sprite)
-    (let ((high-bits (palette-high-bits ppu sprite))
-          (x-offset (clones.ppu::sprite-x sprite))
-          (flipped? (logbitp 6 (clones.ppu::sprite-attributes sprite))))
+  ;; TODO: Doesn't handle horizontally flipped sprites.
+  (multiple-value-bind (low-byte high-byte) (fetch-scanline-bytes ppu tile)
+    (let ((high-bits (palette-high-bits ppu tile))
+          (x-offset (compute-x-offset ppu tile)))
       (dotimes (x-index 8)
-        (let* ((tile-index (if flipped? (- 7 x-index) x-index))
-               (low-bits (palette-low-bits pattern-low pattern-high tile-index))
-               (palette-index (+ 16 (dpb high-bits (byte 2 2) low-bits)))
+        (let* ((low-bits (palette-low-bits low-byte high-byte x-index))
+               (palette-index
+                 (etypecase tile
+                   (sprite (+ 16 (dpb high-bits (byte 2 2) low-bits)))
+                   (fixnum (dpb high-bits (byte 2 2) low-bits))))
                (buffer-index (min (+ x-offset x-index) 255))
-               (background-value (aref buffer buffer-index)))
-          ;; TODO: Account for pixel priority when updating the buffer
-          (setf (aref buffer buffer-index) (pixel-priority background-value palette-index)))))))
-
-(defun render-tile (ppu buffer pattern-index)
-  (multiple-value-bind (pattern-low pattern-high) (fetch-scanline-bytes ppu pattern-index)
-    (let ((high-bits (palette-high-bits ppu pattern-index))
-          (x-offset (* 8 (ldb (byte 5 0) (clones.ppu::ppu-address ppu)))))
-      (dotimes (tile-index 8)
-        (let* ((low-bits (palette-low-bits pattern-low pattern-high tile-index))
-               (palette-index (dpb high-bits (byte 2 2) low-bits))
-               (buffer-index (min (+ x-offset tile-index) 255)))
-          (setf (aref buffer buffer-index) palette-index))))))
+               (previous-value (aref buffer buffer-index)))
+          (setf (aref buffer buffer-index)
+                (etypecase tile
+                  (sprite (pixel-priority previous-value palette-index))
+                  (fixnum palette-index))))))))
 
 (defun render-pixel (framebuffer ppu y-index x-index palette-index)
   (let* ((color-index (read-palette ppu palette-index))

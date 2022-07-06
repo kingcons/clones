@@ -86,10 +86,11 @@
 ***** And I later decided to kill the helper when I moved framebuffer into APP class
 *** TODO Implement Sprite rendering
 **** DONE Add support for DMA
-**** DONE Handle horizontal flipping
-***** This requires changes to RENDER-SPRITE
+**** TODO Handle horizontal flipping
+***** This requires changes to RENDER-TILE
 **** DONE Handle vertical flipping
 ***** This requires changes to FIND-PATTERN-INDEX
+**** TODO Support 8x16 sprites 😱
 *** DONE Implement Input handling
 *** Scrolling and other improvements
 **** TODO Support fetching two tiles at a time to support fine x scrolling

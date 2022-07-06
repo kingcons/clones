@@ -50,7 +50,9 @@
       (flet ((draw-tile-line (low-byte high-byte)
                (dotimes (tile-index 8)
                  (let* ((low-bits (clones.ppu:palette-low-bits low-byte high-byte tile-index))
-                        (palette-index (dpb high-bits (byte 2 2) low-bits))
+                        (palette-index (etypecase tile
+                                         (clones.ppu:sprite (+ 16 (dpb high-bits (byte 2 2) low-bits)))
+                                         (fixnum (dpb high-bits (byte 2 2) low-bits))))
                         (x-index (+ x-index tile-index margin)))
                    (clones.renderer::render-pixel framebuffer ppu y-index x-index palette-index)))
                (incf y-index)))

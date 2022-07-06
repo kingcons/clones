@@ -43,6 +43,7 @@
   (fetch-tile-bytes function)
   (palette-low-bits function)
   (palette-high-bits generic-function)
+  (compute-x-offset generic-function)
   ;; Scrolling
   (fine-scroll-vertical! function)
   (coarse-scroll-horizontal! function))
@@ -304,6 +305,15 @@
   (dpb (ldb (byte 1 (- 7 index)) high-byte)
        (byte 1 1)
        (ldb (byte 1 (- 7 index)) low-byte)))
+
+(defgeneric compute-x-offset (ppu tile-descriptor)
+  (:documentation "Compute the X offset for the tile currently being rendered by PPU."))
+
+(defmethod compute-x-offset ((ppu ppu) (tile-descriptor fixnum))
+  (* 8 (ldb (byte 5 0) (ppu-address ppu))))
+
+(defmethod compute-x-offset ((ppu ppu) (tile-descriptor sprite))
+  (sprite-x tile-descriptor))
 
 (defgeneric find-pattern-index (ppu tile-descriptor)
   (:documentation "Find the index in the pattern table corresponding to TILE-DESCRIPTOR.
