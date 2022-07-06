@@ -44,6 +44,28 @@
         (is (null (uiop:run-program "diff dk-background.png nametable.png")))))
     (uiop:delete-file-if-exists test-image-path)))
 
+(defun render-nametable (ppu nt-index)
+  "Render the nametable of the PPU selected by NT-INDEX.
+Scroll information is not taken into account."
+  (let ((*framebuffer* (clones.renderer::make-framebuffer))
+        (scanline-buffer (serapeum:make-octet-vector 256))
+        (return-address (clones.ppu::ppu-address ppu))
+        (nt-address (* #x400 nt-index)))
+    ;; TODO: The base address for a nametable should be offset by #x2000 right?
+    ;; If viewing the nametable bytes yes, but the PPUADDR is set to the pattern
+    ;; bytes to draw, not the nametable address. Setting low bits in PPUCTRL may
+    ;; be the right approach here. Need to test with other ROMs/nametables.
+    (setf (clones.ppu::ppu-address ppu) nt-address)
+    (dotimes (scanline 240)
+      (dotimes (tile 32)
+        (clones.renderer::render-tile ppu scanline-buffer (clones.ppu:fetch-nt-byte ppu))
+        (clones.ppu:coarse-scroll-horizontal! ppu))
+      (dotimes (pixel 256)
+        (clones.renderer::render-pixel ppu scanline pixel (aref scanline-buffer pixel)))
+      (clones.ppu:fine-scroll-vertical! ppu))
+    (setf (clones.ppu::ppu-address ppu) return-address)
+    *framebuffer*))
+
 (defun build-renderer (&key on-nmi)
   (let* ((cpu (clones.cpu:make-cpu))
          (ppu (slot-value (clones.cpu:cpu-memory cpu) 'clones.memory::ppu))

@@ -21,8 +21,7 @@
 (defsection @renderer (:title "The Rendering Logic")
   (renderer class)
   (make-renderer function)
-  (sync generic-function)
-  (render-nametable function))
+  (sync generic-function))
 
 (define-constant +scanlines-per-frame+ 262
   :documentation "The number of scanlines rendered by the PPU per frame.")
@@ -146,28 +145,6 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
     (when (rendering-enabled? ppu)
       (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
       (set-sprite-overflow! ppu 0))))
-
-(defun render-nametable (ppu nt-index)
-  "Render the nametable of the PPU selected by NT-INDEX.
-Scroll information is not taken into account."
-  (let ((*framebuffer* (make-framebuffer))
-        (scanline-buffer (make-octet-vector 256))
-        (return-address (clones.ppu::ppu-address ppu))
-        (nt-address (* #x400 nt-index)))
-    ;; TODO: The base address for a nametable should be offset by #x2000 right?
-    ;; If viewing the nametable bytes yes, but the PPUADDR is set to the pattern
-    ;; bytes to draw, not the nametable address. Setting low bits in PPUCTRL may
-    ;; be the right approach here. Need to test with other ROMs/nametables.
-    (setf (clones.ppu::ppu-address ppu) nt-address)
-    (dotimes (scanline 240)
-      (dotimes (tile 32)
-        (render-tile ppu scanline-buffer (fetch-nt-byte ppu))
-        (coarse-scroll-horizontal! ppu))
-      (dotimes (pixel 256)
-        (render-pixel *framebuffer* ppu scanline pixel (aref scanline-buffer pixel)))
-      (fine-scroll-vertical! ppu))
-    (setf (clones.ppu::ppu-address ppu) return-address)
-    *framebuffer*))
 
 (defun pixel-priority (bg-pixel sprite-pixel)
   ;; Pixel priority is based on the low-bits only!
