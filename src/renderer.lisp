@@ -13,8 +13,7 @@
                 #:make-octet-vector
                 #:callf)
   (:import-from :alexandria
-                #:define-constant)
-  (:export #:*framebuffer*))
+                #:define-constant))
 
 (in-package :clones.renderer)
 
@@ -52,17 +51,6 @@ decoded as RGB by the television set. We may later support a VGA palette format
 to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   :test #'equalp)
 
-(defun make-framebuffer ()
-  (let ((screen-width 256)
-        (screen-height 240))
-    (static-vectors:make-static-vector (* screen-width screen-height 3))))
-
-(deftype framebuffer ()
-  '(simple-array octet (184320)))
-
-(defvar *framebuffer* (make-framebuffer)
-  "The primary framebuffer used by the emulator for drawing the NES output.")
-
 (defclass renderer ()
   ((ppu :initarg :ppu :type ppu :accessor renderer-ppu)
    (on-nmi :initarg :on-nmi :type function :accessor renderer-on-nmi)
@@ -80,27 +68,27 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
     (incf (renderer-scanline renderer) 4)
     (setf (memory-dma? (cpu-memory cpu)) nil)))
 
-(defgeneric sync (renderer cpu)
+(defgeneric sync (renderer cpu framebuffer)
   (:documentation "Synchronize the renderer to the CPU and return the next scanline."))
 
-(defmethod sync ((renderer renderer) (cpu cpu))
+(defmethod sync ((renderer renderer) (cpu cpu) framebuffer)
   (maybe-handle-dma renderer cpu)
   (with-accessors ((scanline renderer-scanline)) renderer
     (with-accessors ((cycles cpu-cycles)) cpu
       (when (> cycles +cycles-per-scanline+)
-        (render-scanline renderer)
+        (render-scanline renderer framebuffer)
         (incf scanline)
         (callf #'mod scanline 262)
         (callf #'mod cycles 114)
         scanline))))
 
-(defgeneric render-scanline (renderer)
-  (:documentation "Render a scanline using RENDERER if rendering is enabled in PPUMASK."))
+(defgeneric render-scanline (renderer framebuffer)
+  (:documentation "Render a scanline into FRAMEBUFFER using RENDERER when rendering is enabled."))
 
-(defmethod render-scanline ((renderer renderer))
+(defmethod render-scanline ((renderer renderer) framebuffer)
   (with-accessors ((scanline renderer-scanline)) renderer
     (cond ((< scanline 240)
-           (render-visible-scanline renderer))
+           (render-visible-scanline renderer framebuffer))
           ((= scanline 240)
            (post-render-scanline renderer))
           ((= scanline 241)
@@ -108,7 +96,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
           ((= scanline 261)
            (pre-render-scanline renderer)))))
 
-(defun render-visible-scanline (renderer)
+(defun render-visible-scanline (renderer framebuffer)
   "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
   (with-accessors ((ppu renderer-ppu)
                    (scanline renderer-scanline)
@@ -126,7 +114,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
             (render-sprite ppu scanline-buffer (aref sprites sprite))))))
     (dotimes (pixel-index 256)
       (let ((palette-index (aref scanline-buffer pixel-index)))
-        (render-pixel *framebuffer* ppu scanline pixel-index palette-index)))
+        (render-pixel framebuffer ppu scanline pixel-index palette-index)))
     (fine-scroll-vertical! ppu)))
 
 (defun post-render-scanline (renderer)

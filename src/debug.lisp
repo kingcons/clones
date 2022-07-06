@@ -63,10 +63,8 @@
     (multiple-value-bind (y-pos x-pos) (layout-fn index)
       (list x-pos (* y-pos (+ tile-width margin)) margin))))
 
-(defun dump-graphics (ppu iterator &key (margin 4))
-  (let ((framebuffer (clones.renderer::make-framebuffer)))
-    (funcall iterator ppu
-             (lambda (sprite index)
-               (let ((coordinates (coordinates-for index :margin margin)))
-                 (draw-tile-to ppu framebuffer coordinates sprite))))
-    framebuffer))
+(defun dump-graphics (framebuffer ppu &key iterator (margin 4))
+  (funcall iterator ppu
+           (lambda (sprite index)
+             (let ((coordinates (coordinates-for index :margin margin)))
+               (draw-tile-to ppu framebuffer coordinates sprite)))))

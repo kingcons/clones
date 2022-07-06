@@ -11,17 +11,19 @@
 
 (deftest test-nmi-disabled ()
   (flet ((nmi-handler () (error 'nmi-fired)))
-    (destructuring-bind (cpu renderer) (build-renderer :on-nmi #'nmi-handler)
-      (signals-not (error)
-        (loop for cycles = (clones.cpu:single-step cpu)
-              for result = (sync renderer cpu)
-              until (eql result 261))))))
+    (let ((framebuffer (clones::make-framebuffer)))
+      (destructuring-bind (cpu renderer) (build-renderer :on-nmi #'nmi-handler)
+        (signals-not (error)
+          (loop for cycles = (clones.cpu:single-step cpu)
+                for result = (sync renderer cpu framebuffer)
+                until (eql result 261)))))))
 
 (deftest test-nmi-timing ()
   (destructuring-bind (cpu renderer) (build-renderer)
-    (catch 'nmi-fired
-      (loop for count = (clones.cpu:single-step cpu)
-            do (sync renderer cpu)))
+    (let ((framebuffer (clones::make-framebuffer)))
+      (catch 'nmi-fired
+        (loop for count = (clones.cpu:single-step cpu)
+              do (sync renderer cpu framebuffer))))
     (is (= (slot-value renderer 'clones.renderer::scanline) 241))))
 
 (deftest test-nametable-rendering ()
@@ -61,12 +63,6 @@
                  :width width
                  :height height
                  :image-data data))
-
-(defun test-frame (renderer)
-  (declare (ignore renderer))
-  (let* ((data (clones.util:scale-2x 512 480 *framebuffer*))
-         (image (make-image data :width 512 :height 480)))
-    (zpng:write-png image (asdf:system-relative-pathname :clones "test/debug.png"))))
 
 #+nil
 (try 'test-renderer)

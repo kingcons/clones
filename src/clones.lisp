@@ -14,10 +14,19 @@
 
 (in-package :clones)
 
+(deftype framebuffer ()
+  '(simple-array octet (184320)))
+
+(defun make-framebuffer ()
+  (let ((screen-width 256)
+        (screen-height 240))
+    (static-vectors:make-static-vector (* screen-width screen-height 3))))
+
 (defclass app ()
   ((cpu :initarg :cpu :type cpu :reader app-cpu)
    (paused :initform nil :type boolean :accessor app-paused)
    (renderer :initform nil :type (or null renderer) :accessor app-renderer)
+   (framebuffer :initform nil :type framebuffer :accessor app-framebuffer)
    (sdl-texture :initform nil :accessor app-sdl-texture)
    (sdl-renderer :initform nil :accessor app-sdl-renderer))
   (:default-initargs
@@ -25,11 +34,11 @@
 
 (defmethod initialize-instance :after ((app app) &key on-frame)
   (unless (app-renderer app)
-    (with-slots (cpu) app
-      (setf (app-renderer app)
-            (make-renderer :ppu (~>> cpu cpu-memory memory-ppu)
-                           :on-nmi (lambda () (nmi cpu))
-                           :on-frame (or on-frame (constantly nil)))))))
+    (with-slots (cpu renderer framebuffer) app
+      (setf renderer (make-renderer :ppu (~>> cpu cpu-memory memory-ppu)
+                                    :on-nmi (lambda () (nmi cpu))
+                                    :on-frame (or on-frame (constantly nil))))
+      (setf framebuffer (make-framebuffer)))))
 
 (defparameter *debug* nil)
 
@@ -42,11 +51,12 @@
           (sdl2:delay (- 16 frame-time)))
         (when *debug*
           (format t "Frame time: ~A~%" (floor (- now last-frame-at) 1000)))
-        (present-frame app clones.renderer:*framebuffer*)
+        (present-frame app)
         (setf last-frame-at now)))))
 
-(defun present-frame (app framebuffer)
-  (with-accessors ((sdl-texture app-sdl-texture)
+(defun present-frame (app)
+  (with-accessors ((framebuffer app-framebuffer)
+                   (sdl-texture app-sdl-texture)
                    (sdl-renderer app-sdl-renderer)) app
     (let ((buffer-pointer (static-vectors:static-vector-pointer framebuffer)))
       (sdl2:render-clear sdl-renderer)
@@ -74,7 +84,12 @@
                 (handle-keyup app keysym))
               (:idle ()
                 (handle-idle app))
-              (:quit () t))))))))
+              (:quit ()
+                (shutdown app)))))))))
+
+(defun shutdown (app)
+  (static-vectors:free-static-vector (app-framebuffer app))
+  t)
 
 (defgeneric handle-keydown (app keysym)
   (:documentation "Take the appropriate action for KEYSYM in APP.")
@@ -118,10 +133,10 @@
     (now cpu)))
 
 (defun step-frame (app)
-  (with-slots (cpu renderer) app
+  (with-slots (cpu renderer framebuffer) app
     (loop with vblank-scanline = 241
           for cycles = (single-step cpu)
-          for result = (sync renderer cpu)
+          for result = (sync renderer cpu framebuffer)
           until (eql result vblank-scanline))))
 
 (defun print-help (app)
@@ -155,15 +170,19 @@ Enter: Start
     (now cpu)))
 
 (defun display-background (app)
-  (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
-         (framebuffer (clones.debug:dump-graphics ppu #'clones.debug:for-background
-                                                  :margin 0)))
-    (present-frame app framebuffer)))
+  (let ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+        (framebuffer (app-framebuffer app)))
+    (clones.debug:dump-graphics framebuffer ppu
+                                :iterator #'clones.debug:for-background
+                                :margin 0)
+    (present-frame app)))
 
 (defun display-sprites (app)
   (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
-         (framebuffer (clones.debug:dump-graphics ppu #'clones.debug:for-sprites)))
-    (present-frame app framebuffer)))
+         (framebuffer (app-framebuffer app)))
+    (clones.debug:dump-graphics framebuffer ppu
+                                :iterator #'clones.debug:for-sprites)
+    (present-frame app)))
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app
