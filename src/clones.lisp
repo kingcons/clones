@@ -86,7 +86,7 @@
         (:scancode-i (step-instruction app))
         (:scancode-f (step-frame app))
         (:scancode-p (toggle-pause app))
-        (:scancode-g (clones.debug:dump-graphics app))
+        (:scancode-g (display-sprites app))
         (:scancode-w (update-button controller 'up 1))
         (:scancode-s (update-button controller 'down 1))
         (:scancode-a (update-button controller 'left 1))
@@ -151,6 +151,11 @@ Enter: Start
 (defun print-now (app)
   (with-slots (cpu) app
     (now cpu)))
+
+(defun display-sprites (app)
+  (let ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+        (framebuffer (clones.debug:dump-graphics ppu)))
+    (present-frame app framebuffer)))
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app

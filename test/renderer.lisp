@@ -47,7 +47,7 @@
 (defun render-nametable (ppu nt-index)
   "Render the nametable of the PPU selected by NT-INDEX.
 Scroll information is not taken into account."
-  (let ((*framebuffer* (clones.renderer::make-framebuffer))
+  (let ((framebuffer (clones.renderer::make-framebuffer))
         (scanline-buffer (serapeum:make-octet-vector 256))
         (return-address (clones.ppu::ppu-address ppu))
         (nt-address (* #x400 nt-index)))
@@ -61,10 +61,11 @@ Scroll information is not taken into account."
         (clones.renderer::render-tile ppu scanline-buffer (clones.ppu:fetch-nt-byte ppu))
         (clones.ppu:coarse-scroll-horizontal! ppu))
       (dotimes (pixel 256)
-        (clones.renderer::render-pixel ppu scanline pixel (aref scanline-buffer pixel)))
+        (let ((value (aref scanline-buffer pixel)))
+          (clones.renderer::render-pixel framebuffer ppu scanline pixel value)))
       (clones.ppu:fine-scroll-vertical! ppu))
     (setf (clones.ppu::ppu-address ppu) return-address)
-    *framebuffer*))
+    framebuffer))
 
 (defun build-renderer (&key on-nmi)
   (let* ((cpu (clones.cpu:make-cpu))

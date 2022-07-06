@@ -39,10 +39,9 @@
     (multiple-value-bind (y-pos x-pos) (layout-fn index)
       (list x-pos (* y-pos (+ tile-width margin)) margin))))
 
-(defun dump-graphics (app)
-  (let ((ppu (~>> app clones::app-cpu clones.cpu::cpu-memory clones.memory::memory-ppu))
-        (framebuffer (clones.renderer::make-framebuffer)))
+(defun dump-graphics (ppu)
+  (let ((framebuffer (clones.renderer::make-framebuffer)))
     (for-sprites ppu (lambda (sprite index)
                        (let ((coordinates (coordinates-for index)))
                          (draw-sprite-to ppu framebuffer coordinates sprite))))
-    (clones::present-frame app framebuffer)))
+    framebuffer))
