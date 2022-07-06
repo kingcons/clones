@@ -42,7 +42,7 @@
   (fetch-scanline-bytes function)
   (fetch-tile-bytes function)
   (palette-low-bits function)
-  (palette-high-bits function)
+  (palette-high-bits generic-function)
   ;; Scrolling
   (fine-scroll-vertical! function)
   (coarse-scroll-horizontal! function))
