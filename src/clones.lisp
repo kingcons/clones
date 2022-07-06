@@ -7,6 +7,8 @@
                 #:renderer
                 #:make-renderer
                 #:sync)
+  (:import-from :clones.util
+                #:clear-buffer)
   (:import-from :static-vectors
                 #:static-vector-pointer)
   (:import-from :serapeum
@@ -63,10 +65,6 @@
       (sdl2:update-texture sdl-texture (cffi:null-pointer) buffer-pointer (* 256 3))
       (sdl2:render-copy sdl-renderer sdl-texture)
       (sdl2:render-present sdl-renderer))))
-
-(defun clear-framebuffer (framebuffer)
-  (loop for i below (length framebuffer)
-        do (setf (aref framebuffer i) 0)))
 
 (defgeneric run (app)
   (:documentation "Run the supplied APP.")
@@ -171,7 +169,7 @@ Enter: Start
 (defun display-background (app)
   (let ((ppu (~>> app app-cpu cpu-memory memory-ppu))
         (framebuffer (app-framebuffer app)))
-    (clear-framebuffer framebuffer)
+    (clear-buffer framebuffer)
     (clones.debug:dump-graphics framebuffer ppu
                                 :iterator #'clones.debug:for-background)
     (present-frame app)))
@@ -179,7 +177,7 @@ Enter: Start
 (defun display-sprites (app)
   (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
          (framebuffer (app-framebuffer app)))
-    (clear-framebuffer framebuffer)
+    (clear-buffer framebuffer)
     (clones.debug:dump-graphics framebuffer ppu
                                 :iterator #'clones.debug:for-sprites
                                 :margin 4)

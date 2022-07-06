@@ -5,6 +5,7 @@
 
 (defsection @util (:title "Assorted Utilities")
   (define-printer macro)
+  (clear-buffer function)
   (wrap-byte function)
   (wrap-word function)
   (scale-2x function))
@@ -20,6 +21,10 @@ slot values need to be safely displayed but not read back in."
        (print-unreadable-object (,type stream :type t)
          (let ((*print-pretty* nil))
            (format stream ,format-string ,@args))))))
+
+(defun clear-buffer (buffer)
+  (loop for i below (length buffer)
+        do (setf (aref buffer i) 0)))
 
 (defun wrap-byte (value)
   (declare (fixnum value))
