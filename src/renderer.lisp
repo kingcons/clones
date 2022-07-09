@@ -25,7 +25,7 @@
 (define-constant +scanlines-per-frame+ 262
   :documentation "The number of scanlines rendered by the PPU per frame.")
 
-(define-constant +cycles-per-scanline+ (/ 341 3)
+(define-constant +cycles-per-scanline+ (round 341 3)
   :documentation "The number of PPU clock cycles in a single scanline.
   Note that 1 CPU cycle is equivalent to 3 PPU cycles.")
 
@@ -78,8 +78,8 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
       (when (> cycles +cycles-per-scanline+)
         (render-scanline renderer framebuffer)
         (incf scanline)
-        (callf #'mod scanline 262)
-        (callf #'mod cycles 114)
+        (callf #'mod scanline +scanlines-per-frame+)
+        (callf #'mod cycles +cycles-per-scanline+)
         scanline))))
 
 (defgeneric render-scanline (renderer framebuffer)
@@ -128,8 +128,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
       (funcall (renderer-on-nmi renderer)))))
 
 (defun pre-render-scanline (renderer)
-  (with-accessors ((ppu renderer-ppu)
-                   (buffer scanline-buffer)) renderer
+  (with-accessors ((ppu renderer-ppu)) renderer
     (set-vblank! ppu 0)
     (when (rendering-enabled? ppu)
       (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
