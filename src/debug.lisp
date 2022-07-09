@@ -46,10 +46,10 @@
 (defun draw-tile-to (ppu framebuffer coordinates tile)
   (destructuring-bind (x-index y-index margin) coordinates
     (let ((tile-bytes (clones.ppu:fetch-tile-bytes ppu tile))
-          (high-bits (clones.ppu:palette-high-bits ppu tile)))
+          (high-bits (clones.ppu::palette-high-bits ppu tile)))
       (flet ((draw-tile-line (low-byte high-byte)
                (dotimes (tile-index 8)
-                 (let* ((low-bits (clones.ppu:palette-low-bits low-byte high-byte tile-index))
+                 (let* ((low-bits (clones.ppu::palette-low-bits low-byte high-byte tile-index))
                         (palette-index (etypecase tile
                                          (clones.ppu:sprite (+ 16 (dpb high-bits (byte 2 2) low-bits)))
                                          (fixnum (dpb high-bits (byte 2 2) low-bits))))

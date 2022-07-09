@@ -41,8 +41,8 @@
   (fetch-at-byte function)
   (fetch-scanline-bytes function)
   (fetch-tile-bytes function)
-  (palette-low-bits function)
-  (palette-high-bits generic-function)
+  (flip-x? generic-function)
+  (flip-y? generic-function)
   (compute-x-offset generic-function)
   ;; Scrolling
   (fine-scroll-vertical! function)
@@ -302,6 +302,18 @@
   (let ((attributes (sprite-attributes tile-descriptor)))
     (ldb (byte 2 0) attributes)))
 
+(defgeneric flip-x? (tile-descriptor)
+  (:documentation "Check whether the X-axis of TILE-DESCRIPTOR should be flipped.")
+  (:method ((tile-descriptor fixnum)) nil)
+  (:method ((tile-descriptor sprite))
+    (logbitp 6 (sprite-attributes tile-descriptor))))
+
+(defgeneric flip-y? (tile-descriptor)
+  (:documentation "Check whether the Y-axis of TILE-DESCRIPTOR should be flipped.")
+  (:method ((tile-descriptor fixnum)) nil)
+  (:method ((tile-descriptor sprite))
+    (logbitp 7 (sprite-attributes tile-descriptor))))
+
 (defun palette-low-bits (low-byte high-byte index)
   (dpb (ldb (byte 1 (- 7 index)) high-byte)
        (byte 1 1)
@@ -332,9 +344,8 @@ Return two values, the index including an offset for the current scanline and th
 
 (defmethod find-pattern-index ((ppu ppu) (tile-descriptor sprite))
   (let* ((offset (sprite-address ppu))
-         (flipped? (logbitp 7 (sprite-attributes tile-descriptor)))
          (scanline (current-scanline ppu))
-         (y-offset (if flipped?
+         (y-offset (if (flip-y? tile-descriptor)
                        (- 7 (- scanline (sprite-y tile-descriptor)))
                        (- scanline (sprite-y tile-descriptor))))
          (pattern-base (+ offset (* 16 (sprite-index tile-descriptor)))))

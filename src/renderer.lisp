@@ -134,37 +134,36 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
       (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
       (set-sprite-overflow! ppu 0))))
 
-(defun pixel-priority (bg-pixel sprite-pixel)
-  ;; Pixel priority is based on the low-bits only!
-  ;;
+(defun pixel-priority (bg-index sp-index)
   ;; NOTE: We cheat on pixel priority by having the precomputed sprite pixels
   ;; set to 0 if the background priority attribute is set and they are non-zero.
-  ;; This keeps us from having to track the priority of the sprites at each pixel.
-  (cond ((and (zerop bg-pixel)
-              (zerop sprite-pixel))
-         0)
-        ((and (zerop bg-pixel)
-              (plusp sprite-pixel))
-         sprite-pixel)
-        ((and (zerop sprite-pixel)
-              (plusp bg-pixel))
-         bg-pixel)
-        (t
-         sprite-pixel)))
+  (let ((bg-bits (ldb (byte 2 0) bg-index))
+        (sp-bits (ldb (byte 2 0) sp-index))
+        (sprite-index (+ 16 sp-index)))
+    (cond ((and (zerop bg-bits)
+                (zerop sp-bits))
+           0)
+          ((and (zerop bg-bits)
+                (plusp sp-bits))
+           sprite-index)
+          ((and (zerop sp-bits)
+                (plusp bg-bits))
+           bg-index)
+          (t
+           sprite-index))))
 
 (defun render-tile (ppu buffer tile)
   ;; TODO: Likely doesn't handle overlapping sprites correctly. Needs investigation.
+  ;;  Specifically, we iterate through the sprites in order rather than "back to front".
   ;; See: https://www.nesdev.org/wiki/PPU_sprite_priority
-  ;; TODO: Doesn't handle horizontally flipped sprites.
   (multiple-value-bind (low-byte high-byte) (fetch-scanline-bytes ppu tile)
-    (let ((high-bits (palette-high-bits ppu tile))
-          (x-offset (compute-x-offset ppu tile)))
+    (let ((x-offset (compute-x-offset ppu tile))
+          (high-bits (palette-high-bits ppu tile))
+          (flipped? (flip-x? tile)))
       (dotimes (x-index 8)
-        (let* ((low-bits (palette-low-bits low-byte high-byte x-index))
-               (palette-index
-                 (etypecase tile
-                   (sprite (+ 16 (dpb high-bits (byte 2 2) low-bits)))
-                   (fixnum (dpb high-bits (byte 2 2) low-bits))))
+        (let* ((tile-index (if flipped? (- 7 x-index) x-index))
+               (low-bits (palette-low-bits low-byte high-byte tile-index))
+               (palette-index (dpb high-bits (byte 2 2) low-bits))
                (buffer-index (min (+ x-offset x-index) 255))
                (previous-value (aref buffer buffer-index)))
           (setf (aref buffer buffer-index)
@@ -179,3 +178,4 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
     (dotimes (i 3)
       (setf (aref framebuffer (+ offset i))
             (aref rgb-value i)))))
+
