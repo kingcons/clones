@@ -12,6 +12,7 @@
   (:import-from :static-vectors
                 #:static-vector-pointer)
   (:import-from :serapeum
+                #:octet
                 #:~>>))
 
 (in-package :clones)
@@ -28,7 +29,7 @@
   ((cpu :initarg :cpu :type cpu :reader app-cpu)
    (paused :initform nil :type boolean :accessor app-paused)
    (renderer :initform nil :type (or null renderer) :accessor app-renderer)
-   (framebuffer :initform nil :type framebuffer :accessor app-framebuffer)
+   (framebuffer :initform nil :type (or null framebuffer) :accessor app-framebuffer)
    (sdl-texture :initform nil :accessor app-sdl-texture)
    (sdl-renderer :initform nil :accessor app-sdl-renderer))
   (:default-initargs

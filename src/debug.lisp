@@ -19,7 +19,7 @@
 (defun for-sprites (ppu callback)
   (let ((oam (clones.ppu::ppu-oam ppu)))
     (dotimes (i 64)
-      (let ((sprite (clones.ppu:make-sprite ppu (subseq oam i (+ i 4)))))
+      (let ((sprite (clones.ppu:make-sprite ppu (* i 4))))
         (funcall callback sprite i)))))
 
 (defun for-background (ppu callback &key (name-table 0))

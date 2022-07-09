@@ -44,6 +44,8 @@
   (flip-x? generic-function)
   (flip-y? generic-function)
   (compute-x-offset generic-function)
+  (palette-low-bits function)
+  (palette-high-bits generic-function)
   ;; Scrolling
   (fine-scroll-vertical! function)
   (coarse-scroll-horizontal! function))
