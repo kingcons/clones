@@ -10,7 +10,7 @@
   (wrap-word function)
   (scale-2x function))
 
-(defmacro define-printer (type (&rest vars) format-string &rest args)
+(defmacro define-printer (type (&rest vars) format-string &body body)
   "Define printer is a helper macro for generating a PRINT-OBJECT
 method. DEFINE-PRINTER provides a shorthand for the common case where
 slot values need to be safely displayed but not read back in."
@@ -20,7 +20,7 @@ slot values need to be safely displayed but not read back in."
                                 (unbound-slot () :unbound))))
        (print-unreadable-object (,type stream :type t)
          (let ((*print-pretty* nil))
-           (format stream ,format-string ,@args))))))
+           (format stream ,format-string ,@(or body vars)))))))
 
 (defun clear-buffer (buffer)
   (loop for i below (length buffer)

@@ -238,8 +238,7 @@
    (attributes :initarg :attributes :type octet :reader sprite-attributes)))
 
 (define-printer sprite (sprite-x sprite-y pattern-index attributes)
-                "X: ~2,'0X Y: ~2,'0X Index: ~2,'0X Attributes: ~8,'0B"
-                sprite-x sprite-y pattern-index attributes)
+  "X: ~2,'0X Y: ~2,'0X Index: ~2,'0X Attributes: ~8,'0B")
 
 (defun make-sprite (ppu offset)
   (let ((bytes (subseq (ppu-oam ppu) offset (+ offset 4))))

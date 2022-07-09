@@ -48,8 +48,7 @@
            :accessor cpu-cycles)))
 
 (define-printer cpu (accum x y status stack pc cycles)
-                "Acc: ~2,'0X X: ~2,'0X Y: ~2,'0X Status: ~2,'0X Stack: ~2,'0X PC: ~4,'0X Cycles: ~D"
-                accum x y status stack pc cycles)
+  "Acc: ~2,'0X X: ~2,'0X Y: ~2,'0X Status: ~2,'0X Stack: ~2,'0X PC: ~4,'0X Cycles: ~D")
 
 (defun make-cpu (&key (memory (make-memory)))
   (make-instance 'cpu :memory memory))
