@@ -38,7 +38,6 @@
   (set-sprite-zero-hit! function)
   ;; Graphics Fetching
   (fetch-nt-byte function)
-  (fetch-at-byte function)
   (fetch-scanline-bytes function)
   (fetch-tile-bytes function)
   (flip-x? generic-function)

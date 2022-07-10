@@ -44,6 +44,7 @@
       (setf framebuffer (make-framebuffer)))))
 
 (defparameter *debug* nil)
+(defparameter *disassemble* nil)
 
 (defun make-on-frame (app last-frame-at)
   (lambda (ppu-renderer)
@@ -135,6 +136,7 @@
     (loop with vblank-scanline = 241
           for cycles = (single-step cpu)
           for result = (sync renderer cpu framebuffer)
+          when *disassemble* do (now cpu)
           until (eql result vblank-scanline))))
 
 (defun print-help (app)

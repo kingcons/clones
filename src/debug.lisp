@@ -33,9 +33,9 @@
           (let ((pattern-index (clones.ppu:fetch-nt-byte ppu))
                 (tile-index (+ (* y-pos 32) x-pos)))
             (funcall callback pattern-index tile-index)
-            (clones.ppu::coarse-scroll-horizontal! ppu)))
+            (clones.ppu:coarse-scroll-horizontal! ppu)))
         (dotimes (scanline 8)
-          (clones.ppu::fine-scroll-vertical! ppu))))))
+          (clones.ppu:fine-scroll-vertical! ppu))))))
 
 (defun for-tile-scanlines (bytes callback)
   (loop for index below (/ (length bytes) 2)
