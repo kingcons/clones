@@ -100,7 +100,8 @@
         (:scancode-i (step-instruction app))
         (:scancode-f (step-frame app))
         (:scancode-p (toggle-pause app))
-        (:scancode-g (display-background app))
+        (:scancode-l (toggle-disassembly app))
+        (:scancode-b (display-background app))
         (:scancode-r (display-sprites app))
         (:scancode-w (update-button controller 'up 1))
         (:scancode-s (update-button controller 'down 1))
@@ -152,7 +153,8 @@ n: Print disassembly of the current instruction.
 i: Step over the next CPU instruction.
 f: Step forward one frame (until the next vblank).
 p: Pause or unpause the emulation.
-g: Display background. (use while paused)
+l: Toggle disassembly.
+b: Display background. (use while paused)
 r: Display sprites. (use while paused)
 # Game controls
 w: Up
@@ -185,6 +187,9 @@ Enter: Start
                                 :iterator #'clones.debug:for-sprites
                                 :margin 4)
     (present-frame app)))
+
+(defun toggle-disassembly (app)
+  (setf *disassembly* (not *disassemble*)))
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app
