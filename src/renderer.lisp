@@ -115,7 +115,8 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
     (dotimes (pixel-index 256)
       (let ((palette-index (aref scanline-buffer pixel-index)))
         (render-pixel framebuffer ppu scanline pixel-index palette-index)))
-    (fine-scroll-vertical! ppu)))
+    (fine-scroll-vertical! ppu)
+    (sync-horizontal-scroll! ppu)))
 
 (defun post-render-scanline (renderer)
   (with-accessors ((on-frame renderer-on-frame)) renderer
@@ -131,7 +132,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   (with-accessors ((ppu renderer-ppu)) renderer
     (set-vblank! ppu 0)
     (when (rendering-enabled? ppu)
-      (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
+      (sync-vertical-scroll! ppu)
       (set-sprite-overflow! ppu 0)
       (set-sprite-zero-hit! ppu 0))))
 

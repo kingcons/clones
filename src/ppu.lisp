@@ -48,7 +48,9 @@
   (palette-high-bits generic-function)
   ;; Scrolling
   (fine-scroll-vertical! function)
-  (coarse-scroll-horizontal! function))
+  (coarse-scroll-horizontal! function)
+  (sync-vertical-scroll! function)
+  (sync-horizontal-scroll! function))
 
 (defclass ppu ()
   ((ctrl :initform 0 :type octet :accessor ppu-ctrl)
@@ -417,3 +419,15 @@ Return two values, the index including an offset for the current scanline and th
            (error 'not-yet-implemented))
           (t
            (incf coarse-y)))))
+
+(defun sync-horizontal-scroll! (ppu)
+  (with-accessors ((scroll ppu-scroll)
+                   (address ppu-address)) ppu
+    (setf address (deposit-field scroll (byte 5 0) address))
+    (setf address (deposit-field scroll (byte 1 10) address))))
+
+(defun sync-vertical-scroll! (ppu)
+  (with-accessors ((scroll ppu-scroll)
+                   (address ppu-address)) ppu
+    (setf address (deposit-field scroll (byte 5 5) address))
+    (setf address (deposit-field scroll (byte 4 11) address))))
