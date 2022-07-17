@@ -34,6 +34,7 @@
   (sprite class)
   (make-sprite function)
   (evaluate-sprites function)
+  (sprite-zero-hit? function)
   (set-sprite-overflow! function)
   (set-sprite-zero-hit! function)
   ;; Graphics Fetching
@@ -236,17 +237,25 @@
   ((sprite-x :initarg :sprite-x :type octet :reader sprite-x)
    (sprite-y :initarg :sprite-y :type octet :reader sprite-y)
    (pattern-index :initarg :pattern-index :type octet :reader sprite-index)
-   (attributes :initarg :attributes :type octet :reader sprite-attributes)))
+   (attributes :initarg :attributes :type octet :reader sprite-attributes)
+   (number :initarg :number :type octet :reader sprite-number)))
 
 (define-printer sprite (sprite-x sprite-y pattern-index attributes)
   "X: ~2,'0X Y: ~2,'0X Index: ~2,'0X Attributes: ~8,'0B")
 
-(defun make-sprite (ppu offset)
-  (let ((bytes (subseq (ppu-oam ppu) offset (+ offset 4))))
+(defun make-sprite (ppu number)
+  (let* ((offset (* number 4))
+         (bytes (subseq (ppu-oam ppu) offset (+ offset 4))))
     (make-instance 'sprite :sprite-x (aref bytes 3)
                            :sprite-y (aref bytes 0)
                            :pattern-index (aref bytes 1)
-                           :attributes (aref bytes 2))))
+                           :attributes (aref bytes 2)
+                           :number number)))
+
+(defgeneric behind? (sprite)
+  (:documentation "Should this SPRITE be renderer behind an overlapping background tile?")
+  (:method ((sprite sprite))
+    (logbitp 5 (sprite-attributes sprite))))
 
 (defun evaluate-sprites (ppu scanline)
   (let ((visible-sprites (make-array 8 :initial-element nil))
@@ -257,10 +266,14 @@
           (when (= current-sprite 8)
             (set-sprite-overflow! ppu 1)
             (return-from evaluate-sprites visible-sprites))
-          (let ((sprite (make-sprite ppu (* sprite 4))))
+          (let ((sprite (make-sprite ppu sprite)))
             (setf (aref visible-sprites current-sprite) sprite
                   current-sprite (1+ current-sprite))))))
     visible-sprites))
+
+
+(defun sprite-zero-hit? (ppu)
+  (logbitp 6 (ppu-status ppu)))
 
 (macrolet ((define-status-bit (function-name index)
              `(defun ,function-name (ppu value)

@@ -132,14 +132,18 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
     (set-vblank! ppu 0)
     (when (rendering-enabled? ppu)
       (setf (clones.ppu::ppu-address ppu) (clones.ppu::ppu-scroll ppu))
-      (set-sprite-overflow! ppu 0))))
+      (set-sprite-overflow! ppu 0)
+      (set-sprite-zero-hit! ppu 0))))
 
-(defun pixel-priority (bg-index sp-index)
-  ;; NOTE: We cheat on pixel priority by having the precomputed sprite pixels
-  ;; set to 0 if the background priority attribute is set and they are non-zero.
+(defun pixel-priority (bg-index sp-index sprite ppu)
   (let ((bg-bits (ldb (byte 2 0) bg-index))
         (sp-bits (ldb (byte 2 0) sp-index))
         (sprite-index (+ 16 sp-index)))
+    (when (and (zerop (clones.ppu::sprite-number sprite))
+               (not (sprite-zero-hit? ppu))
+               (plusp bg-bits)
+               (plusp sp-bits))
+      (set-sprite-zero-hit! ppu 1))
     (cond ((and (zerop bg-bits)
                 (zerop sp-bits))
            0)
@@ -148,6 +152,8 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
            sprite-index)
           ((and (zerop sp-bits)
                 (plusp bg-bits))
+           bg-index)
+          ((clones.ppu::behind? sprite)
            bg-index)
           (t
            sprite-index))))
@@ -168,7 +174,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
                (previous-value (aref buffer buffer-index)))
           (setf (aref buffer buffer-index)
                 (etypecase tile
-                  (sprite (pixel-priority previous-value palette-index))
+                  (sprite (pixel-priority previous-value palette-index tile ppu))
                   (fixnum palette-index))))))))
 
 (defun render-pixel (framebuffer ppu y-index x-index palette-index)
