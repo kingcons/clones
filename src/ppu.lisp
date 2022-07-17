@@ -216,6 +216,8 @@
 
 (defun nt-mirror (ppu address)
   (let ((result (ecase (get-mirroring ppu)
+                  (:lower (mod address #x400))
+                  (:upper (+ #x400 (mod address #x400)))
                   (:horizontal (mod address #x800))
                   (:vertical (dpb 0 (byte 1 10) address)))))
     (ldb (byte 12 0) result)))

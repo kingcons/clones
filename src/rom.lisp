@@ -53,6 +53,8 @@
          (chr-size (* #x2000 (getf metadata :chr-count)))
          (prg (make-octet-vector prg-size))
          (chr (make-octet-vector chr-size)))
+    (when (zerop chr-size)
+      (setf chr (make-octet-vector #x2000)))
     (read-sequence prg stream)
     (read-sequence chr stream)
     (list :prg prg :chr chr)))

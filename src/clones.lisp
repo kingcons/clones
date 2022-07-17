@@ -73,7 +73,7 @@
   (:method ((app app))
     (reset (app-cpu app))
     (sdl2:with-init (:everything)
-      (sdl2:with-window (window :flags '(:shown :opengl))
+      (sdl2:with-window (window :flags '(:shown :opengl) :w 768 :h 720)
         (sdl2:with-renderer (sdl-renderer window)
           (let ((texture (sdl2:create-texture sdl-renderer :rgb24 :streaming 256 240))
                 (last-frame-at (get-internal-real-time)))
