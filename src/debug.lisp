@@ -17,10 +17,9 @@
     (setf (clones.ppu::ppu-address ppu) origin)))
 
 (defun for-sprites (ppu callback)
-  (let ((oam (clones.ppu::ppu-oam ppu)))
-    (dotimes (i 64)
-      (let ((sprite (clones.ppu:make-sprite ppu (* i 4))))
-        (funcall callback sprite i)))))
+  (dotimes (i 64)
+    (let ((sprite (clones.ppu:make-sprite ppu i)))
+      (funcall callback sprite i))))
 
 (defun for-background (ppu callback &key (name-table 0))
   ;; TODO: How can we pass keyword arguments to FOR-BACKGROUND without propagating

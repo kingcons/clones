@@ -189,7 +189,7 @@ Enter: Start
     (present-frame app)))
 
 (defun toggle-disassembly (app)
-  (setf *disassembly* (not *disassemble*)))
+  (setf *disassemble* (not *disassemble*)))
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app
