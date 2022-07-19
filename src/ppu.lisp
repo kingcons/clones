@@ -418,7 +418,7 @@ Return two values, the index including an offset for the current scanline and th
            (setf coarse-y 0
                  nt-index (if (zerop nt-index) 1 0)))
           ((= coarse-y 31)
-           (error 'not-yet-implemented))
+           (setf coarse-y 0))
           (t
            (incf coarse-y)))))
 
