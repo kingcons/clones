@@ -132,6 +132,7 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   (with-accessors ((ppu renderer-ppu)) renderer
     (set-vblank! ppu 0)
     (when (rendering-enabled? ppu)
+      (sync-horizontal-scroll! ppu)
       (sync-vertical-scroll! ppu)
       (set-sprite-overflow! ppu 0)
       (set-sprite-zero-hit! ppu 0))))

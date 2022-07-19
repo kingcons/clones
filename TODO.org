@@ -94,11 +94,16 @@
 **** TODO Support 8x16 sprites 😱
 *** DONE Implement Input handling
 *** Scrolling and other improvements
+**** TODO Fix background scrolling.
+***** The current issue is that COMPUTE-X-OFFSET doesn't make sense for backgrounds. Sprites are absolutely positioned so they have a reasonable value here but the background value will always be based on the location of the tile that is being drawn, NOT where it should go on the viewport.
+***** One simple but gross solution here is to pass tile * 8 down from RENDER-VISIBLE-SCANLINE. That still won't do us many favors when we need to implement fine scrolling but it's better than nothing. I'm not 100% sure what the right thing to do is but at least we've located the problem.
+***** It may be worth following the approach recommended by [[https://bugzmanov.github.io/nes_ebook/chapter_8.html][bugzmanov]] and simply render both nametables with some shift amount for how much to move the tiles. That seems to make mirroring an even bigger headache than what I have today though. I'll think about this more over the next few days and see if I have any bright ideas.
 **** TODO Support fetching two tiles at a time to support fine x scrolling
 ***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
+**** TODO Support fine-scroll-vertical for values above 29. (Needed for MM2)
 *** Add support for more mappers
 **** TODO Support CNROM (contra)
-**** TODO Support MMC1 (mega man 2, zelda, etc)
+**** DONE Support MMC1 (mega man 2, zelda, etc)
 **** TODO Support MMC3 (super mario bros 3)
 *** General Refactoring and Cleanup
 **** TODO Switch to ITERATE and abandon LOOP? Most of my LOOPs in clones are trivial though. 🤔

@@ -72,11 +72,13 @@ Work has just begun so nothing is playable yet. Hang in there.
 * NROM Mapper: ✅
 * CPU Opcodes: ✅
 * PPU Registers: ✅
-* PPU Timing: ✅
+* Rendering - Timing: ✅
 * Rendering - Backgrounds: ✅
 * Rendering - Sprites: ⌛
+* Rendering - Scrolling: ⌛
 * Input Handling: ✅
-* MMC1 Mapper: ❌
+* MMC1 Mapper: ✅
+* MMC3 Mapper: ❌
 * Audio Support: ❌")
 
 (defun build-docs ()
