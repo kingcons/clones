@@ -87,7 +87,7 @@
               (:keyup (:keysym keysym)
                 (handle-keyup app keysym))
               (:mousebuttondown (:x x :y y)
-                (handle-mousedown app x y))
+                (handle-mousedown app (floor x 3) (floor y 3)))
               (:idle ()
                 (handle-idle app))
               (:quit () t))))))))
@@ -132,7 +132,21 @@
 (defgeneric handle-mousedown (app x y)
   (:documentation "Perform any special handling for a mouseclick at (X,Y).")
   (:method ((app app) (x fixnum) (y fixnum))
-    (format t "Mouse position (x,y): ~3d,~3d~%" (floor x 3) (floor y 3))))
+    (format t "~%Mouse position (x,y): ~3d,~3d~%" x y)
+    (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+           (nametable (clones.ppu::ppu-name-table ppu))
+           (nt-byte (aref nametable
+                          (+ (mod (clones.ppu::nametable-address ppu) #x2000)
+                             (* 32 (floor y 8))
+                             (floor x 8))))
+           (at-byte (aref nametable
+                          (+ (mod (clones.ppu::nametable-address ppu) #x2000)
+                             #x960
+                             (ash (floor y 4) 3)
+                             (floor x 4))))
+           (tile-bytes (clones.ppu:fetch-tile-bytes ppu nt-byte)))
+      (format t "NT Byte: ~2,'0X AT Byte: ~2,'0X~%" nt-byte at-byte)
+      (format t "Tile: ~{~2X~}~%" tile-bytes))))
 
 (defun step-instruction (app)
   (with-slots (cpu) app
