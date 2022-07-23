@@ -86,6 +86,8 @@
                 (handle-keydown app keysym))
               (:keyup (:keysym keysym)
                 (handle-keyup app keysym))
+              (:mousebuttondown (:x x :y y)
+                (handle-mousedown app x y))
               (:idle ()
                 (handle-idle app))
               (:quit () t))))))))
@@ -126,6 +128,11 @@
         (:scancode-k (update-button controller 'b 0))
         (:scancode-return (update-button controller 'start 0))
         (:scancode-space (update-button controller 'select 0))))))
+
+(defgeneric handle-mousedown (app x y)
+  (:documentation "Perform any special handling for a mouseclick at (X,Y).")
+  (:method ((app app) (x fixnum) (y fixnum))
+    (format t "Mouse position (x,y): ~3d,~3d~%" (floor x 3) (floor y 3))))
 
 (defun step-instruction (app)
   (with-slots (cpu) app
