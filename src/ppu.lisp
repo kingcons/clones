@@ -398,17 +398,17 @@ Return two values, the index including an offset for the current scanline and th
 
 (defun coarse-scroll-horizontal! (ppu)
   "A scroll operation that conceptually occurs at the end of each 8-pixel tile."
-  (symbol-macrolet ((nt-index (ldb (byte 1 11) (ppu-address ppu)))
+  (symbol-macrolet ((nt-index (ldb (byte 1 10) (ppu-address ppu)))
                     (coarse-x (ldb (byte 5 0) (ppu-address ppu))))
     (cond ((= coarse-x 31)
            (setf coarse-x 0
-                 nt-index (if (zerop nt-index) 1 0)))
+                 nt-index (logxor nt-index 1)))
           (t
            (incf coarse-x)))))
 
 (defun fine-scroll-vertical! (ppu)
   "A scroll operation that conceptually occurs at the end of each scanline."
-  (symbol-macrolet ((nt-index (ldb (byte 1 12) (ppu-address ppu)))
+  (symbol-macrolet ((nt-index (ldb (byte 1 11) (ppu-address ppu)))
                     (coarse-y (ldb (byte 5 5) (ppu-address ppu)))
                     (fine-y (ldb (byte 3 12) (ppu-address ppu))))
     (when (< fine-y 7)
@@ -416,7 +416,7 @@ Return two values, the index including an offset for the current scanline and th
     (setf fine-y 0)
     (cond ((= coarse-y 29)
            (setf coarse-y 0
-                 nt-index (if (zerop nt-index) 1 0)))
+                 nt-index (logxor nt-index 1)))
           ((= coarse-y 31)
            (setf coarse-y 0))
           (t

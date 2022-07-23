@@ -40,7 +40,9 @@
     (setf (slot-value ppu 'clones.ppu::palette) #(15 44 56 18 15 39 39 39 15 48 48 48 15
                                                   0 0 0 0 37 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
     (setf (ldb (byte 1 4) (clones.ppu::ppu-ctrl ppu)) 1)
-    (clones.debug:dump-graphics framebuffer ppu :iterator #'clones.debug:for-background)
+    (clones.debug:dump-graphics framebuffer ppu
+                                :iterator #'clones.debug:for-background
+                                :margin 0)
     (let ((image (make-image framebuffer)))
       (zpng:write-png image test-image-path))
     (let ((test-dir (asdf:system-relative-pathname :clones "test/")))
