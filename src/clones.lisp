@@ -17,13 +17,17 @@
 
 (in-package :clones)
 
+(defvar *width* 256)
+(defvar *height* 240)
+(defparameter *scale* 4)
+(defparameter *debug* nil)
+(defparameter *disassemble* nil)
+
 (deftype framebuffer ()
   '(simple-array octet (184320)))
 
 (defun make-framebuffer ()
-  (let ((screen-width 256)
-        (screen-height 240))
-    (static-vectors:make-static-vector (* screen-width screen-height 3))))
+  (static-vectors:make-static-vector (* *width* *height* 3)))
 
 (defclass app ()
   ((cpu :initarg :cpu :type cpu :reader app-cpu)
@@ -44,8 +48,6 @@
       (setf framebuffer (make-framebuffer)))))
 
 (defvar *app* (make-instance 'app))
-(defparameter *debug* nil)
-(defparameter *disassemble* nil)
 
 (defun make-on-frame (app last-frame-at)
   (lambda (ppu-renderer)
@@ -74,9 +76,9 @@
   (:method ((app app))
     (reset (app-cpu app))
     (sdl2:with-init (:everything)
-      (sdl2:with-window (window :flags '(:shown :opengl) :w 768 :h 720)
+      (sdl2:with-window (window :flags '(:shown :opengl) :w (* *width* *scale*) :h (* *height* *scale*))
         (sdl2:with-renderer (sdl-renderer window)
-          (let ((texture (sdl2:create-texture sdl-renderer :rgb24 :streaming 256 240))
+          (let ((texture (sdl2:create-texture sdl-renderer :rgb24 :streaming *width* *height*))
                 (last-frame-at (get-internal-real-time)))
             (setf (app-sdl-renderer app) sdl-renderer
                   (app-sdl-texture app) texture)
@@ -88,7 +90,7 @@
               (:keyup (:keysym keysym)
                 (handle-keyup app keysym))
               (:mousebuttondown (:x x :y y)
-                (handle-mousedown app (floor x 3) (floor y 3)))
+                (handle-mousedown app (floor x *scale*) (floor y *scale*)))
               (:idle ()
                 (handle-idle app))
               (:quit () t))))))))
