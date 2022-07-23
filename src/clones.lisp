@@ -43,6 +43,7 @@
                                     :on-frame (or on-frame (constantly nil))))
       (setf framebuffer (make-framebuffer)))))
 
+(defvar *app* (make-instance 'app))
 (defparameter *debug* nil)
 (defparameter *disassemble* nil)
 
@@ -197,7 +198,8 @@ Enter: Start
         (framebuffer (app-framebuffer app)))
     (clear-buffer framebuffer)
     (clones.debug:dump-graphics framebuffer ppu
-                                :iterator #'clones.debug:for-background)
+                                :iterator #'clones.debug:for-background
+                                :margin 0)
     (present-frame app)))
 
 (defun display-sprites (app)

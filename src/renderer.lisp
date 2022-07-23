@@ -100,20 +100,22 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
   "See: https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256"
   (with-accessors ((ppu renderer-ppu)
                    (scanline renderer-scanline)
-                   (scanline-buffer renderer-scanline-buffer)) renderer
+                   (buffer renderer-scanline-buffer)) renderer
     (unless (rendering-enabled? ppu)
       (return-from render-visible-scanline nil))
     (when (render-background? ppu)
       (dotimes (tile 32)
-        (render-tile ppu scanline-buffer (fetch-nt-byte ppu))
+        (let ((x-offset (* 8 tile)))
+          (render-tile-line ppu buffer (fetch-nt-byte ppu) x-offset scanline))
         (coarse-scroll-horizontal! ppu)))
     (when (render-sprites? ppu)
       (let ((sprites (evaluate-sprites ppu scanline)))
-        (dotimes (sprite 8)
-          (when (aref sprites sprite)
-            (render-tile ppu scanline-buffer (aref sprites sprite))))))
+        (dotimes (sprite-index 8)
+          (when-let ((sprite (aref sprites sprite-index)))
+            (let ((x-offset (compute-x-offset ppu sprite)))
+              (render-tile-line ppu buffer sprite x-offset scanline))))))
     (dotimes (pixel-index 256)
-      (let ((palette-index (aref scanline-buffer pixel-index)))
+      (let ((palette-index (aref buffer pixel-index)))
         (render-pixel framebuffer ppu scanline pixel-index palette-index)))
     (fine-scroll-vertical! ppu)
     (sync-horizontal-scroll! ppu)))
@@ -160,19 +162,19 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
           (t
            sprite-index))))
 
-(defun render-tile (ppu buffer tile)
+(defun render-tile-line (ppu buffer tile x y)
   ;; TODO: Likely doesn't handle overlapping sprites correctly. Needs investigation.
   ;;  Specifically, we iterate through the sprites in order rather than "back to front".
   ;; See: https://www.nesdev.org/wiki/PPU_sprite_priority
+  (declare (ignore y))
   (multiple-value-bind (low-byte high-byte) (fetch-scanline-bytes ppu tile)
-    (let ((x-offset (compute-x-offset ppu tile))
-          (high-bits (palette-high-bits ppu tile))
+    (let ((high-bits (palette-high-bits ppu tile))
           (flipped? (flip-x? tile)))
       (dotimes (x-index 8)
         (let* ((tile-index (if flipped? (- 7 x-index) x-index))
                (low-bits (palette-low-bits low-byte high-byte tile-index))
                (palette-index (dpb high-bits (byte 2 2) low-bits))
-               (buffer-index (min (+ x-offset x-index) 255))
+               (buffer-index (min (+ x x-index) 255))
                (previous-value (aref buffer buffer-index)))
           (setf (aref buffer buffer-index)
                 (etypecase tile
