@@ -1,0 +1,345 @@
+Comprehensive NES Mapper Document v0.80 by \Firebug\ (emulation@biosys.net)
+Best viewed under DOS EDIT
+Information provided by FanWen, Y0SHi, D, and Jim Geffre
+Free for non-commercial use
+This document is dedicated to Vertigo 2099, the greatest ROM releasing
+group on the net, of which I am a proud member. And Jim Geffre, the author
+of PCNES and GBE. Thanks for all the help.
+
+****************************************************************************
+Why did I write this? There just isn't any other good and widely available
+documentation on the "extended" mappers (16 and above). FanWen's documents
+(on which the extended mapper section is largely based) are an excellent
+source of information, but I discovered several errors in them, and more
+importantly, they are quite hard to obtain. Goroh's documents, released
+more recently, are easier to get and fairly accurate, but the Japanese and
+broken English text can make reading through them an ordeal.
+I also wanted to combine the several documents I had on MMC1 into one
+comprehensive source. Any mapper information not given here is appreciated.
+I cannot guarantee that all this information is 100% accurate. What I can
+guarantee is that I have put in the maximum possible amount of effort to
+get this document as accurate as possible. If you notice a mistake,
+please tell me about it, and I'll give you credit for the fix.
+I hope it doesn't take me a year to update it again...
+****************************************************************************
+
+ +---------+
+ ¦ History ¦
+ +---------+
+
+0.80            Numerous small mistakes have been fixed. A comment was added
+                regarding mapper #21 and the ambiguities in the .NES format.
+                Mapper numbers are listed for the exotic mappers, although
+                these may change with the standardization of the format.
+                Many new mapper descriptions added.
+0.70            First public release
+0.68            Sunsoft mapper 4 (AfterBurner ][) added
+0.67            Combined mapper #21 with the other VRC4 type
+0.65            Added sections on Sunsoft FME-7 and VRC4 type B mappers
+0.61            Corrected serious errors in mapper #21 section
+                Added some preliminary MMC5 information
+0.60            Initial release
+
+****************************************************************************
+
+ +----------------+
+ ¦ Mapper 1: MMC1 ¦
+ +----------------+
+
+ +--------------------------------------------------------------------+
+ ¦ This mapper is used on numerous U.S. and Japanese games, including ¦
+ ¦ Legend of Zelda, Metroid, Rad Racer, MegaMan 2, and many others.   ¦
+ +--------------------------------------------------------------------+
+
+ +---------------+ +--------------------------------------------------------+
+ ¦ $8000 - $9FFF +-¦ RxxCFHPM                                               ¦
+ ¦ (Register 0)  ¦ ¦ ¦  ¦¦¦¦¦                                               ¦
+ +---------------+ ¦ ¦  ¦¦¦¦+--- Mirroring Flag                             ¦
+                   ¦ ¦  ¦¦¦¦      0 = Horizontal                            ¦
+                   ¦ ¦  ¦¦¦¦      1 = Vertical                              ¦
+                   ¦ ¦  ¦¦¦¦                                                ¦
+                   ¦ ¦  ¦¦¦+---- One-Screen Mirroring                       ¦
+                   ¦ ¦  ¦¦¦       0 = All pages mirrored from PPU $2000     ¦
+                   ¦ ¦  ¦¦¦       1 = Regular mirroring                     ¦
+                   ¦ ¦  ¦¦¦                                                 ¦
+                   ¦ ¦  ¦¦+----- PRG Switching Area                         ¦
+                   ¦ ¦  ¦¦        0 = Swap ROM bank at $C000                ¦
+                   ¦ ¦  ¦¦        1 = Swap ROM bank at $8000                ¦
+                   ¦ ¦  ¦¦                                                  ¦
+                   ¦ ¦  ¦+------ PRG Switching Size                         ¦
+                   ¦ ¦  ¦         0 = Swap 32K of ROM at $8000              ¦
+                   ¦ ¦  ¦         1 = Swap 16K of ROM based on bit 2        ¦
+                   ¦ ¦  ¦                                                   ¦
+                   ¦ ¦  +------- <Carts with VROM>                          ¦
+                   ¦ ¦           VROM Switching Size                        ¦
+                   ¦ ¦            0 = Swap 8K of VROM at PPU $0000          ¦
+                   ¦ ¦            1 = Swap 4K of VROM at PPU $0000 and $1000¦
+                   ¦ ¦           <1024K carts>                              ¦
+                   ¦ ¦            0 = Ignore 256K selection register 0      ¦
+                   ¦ ¦            1 = Acknowledge 256K selection register 1 ¦
+                   ¦ ¦                                                      ¦
+                   ¦ +---------- Reset Port                                 ¦
+                   ¦              0 = Do nothing                            ¦
+                   ¦              1 = Reset register 0                      ¦
+                   +--------------------------------------------------------+
+
+ +---------------+ +--------------------------------------------------------+
+ ¦ $A000 - $BFFF +-¦ RxxPCCCC                                               ¦
+ ¦ (Register 1)  ¦ ¦ ¦  ¦¦  ¦                                               ¦
+ +---------------+ ¦ ¦  ¦+------- Select VROM bank at $0000                 ¦
+                   ¦ ¦  ¦         If bit 4 of register 0 is off, then switch¦
+                   ¦ ¦  ¦         a full 8K bank. Otherwise, switch 4K only.¦
+                   ¦ ¦  ¦                                                   ¦
+                   ¦ ¦  +-------- 256K ROM Selection Register 0             ¦
+                   ¦ ¦            <512K carts>                              ¦
+                   ¦ ¦            0 = Swap banks from first 256K of PRG     ¦
+                   ¦ ¦            1 = Swap banks from second 256K of PRG    ¦
+                   ¦ ¦            <1024K carts with bit 4 of register 0 off>¦
+                   ¦ ¦            0 = Swap banks from first 256K of PRG     ¦
+                   ¦ ¦            1 = Swap banks from third 256K of PRG     ¦
+                   ¦ ¦            <1024K carts with bit 4 of register 0 on> ¦
+                   ¦ ¦            Low bit of 256K PRG bank selection        ¦
+                   ¦ ¦                                                      ¦
+                   ¦ +----------- Reset Port                                ¦
+                   ¦              0 = Do nothing                            ¦
+                   ¦              1 = Reset register 1                      ¦
+                   +--------------------------------------------------------+
+
+ +---------------+ +--------------------------------------------------------+
+ ¦ $C000 - $DFFF +-¦ RxxPCCCC                                               ¦
+ ¦ (Register 2)  ¦ ¦ ¦  ¦¦  ¦                                               ¦
+ +---------------+ ¦ ¦  ¦+----- Select VROM bank at $1000                   ¦
+                   ¦ ¦  ¦        If bit 4 of register 0 is on, then switch  ¦
+                   ¦ ¦  ¦        a 4K bank at $1000. Otherwise ignore it.   ¦
+                   ¦ ¦  ¦                                                   ¦
+                   ¦ ¦  +------ 256K ROM Selection Register 1               ¦
+                   ¦ ¦           <1024K carts with bit 4 of register 0 off> ¦
+                   ¦ ¦            Store but ignore this bit (base 256K      ¦
+                   ¦ ¦            selection on 256K selection register 0)   ¦
+                   ¦ ¦           <1024K carts with bit 4 of register 0 on>  ¦
+                   ¦ ¦            High bit of 256K PRG bank selection       ¦
+                   ¦ ¦                                                      ¦
+                   ¦ +--------- Reset Port                                  ¦
+                   ¦             0 = Do nothing                             ¦
+                   ¦             1 = Reset register 2                       ¦
+                   +--------------------------------------------------------+
+
+ +---------------+ +--------------------------------------------------------+
+ ¦ $E000 - $FFFF +-¦ RxxxCCCC                                               ¦
+ ¦ (Register 3)  ¦ ¦ ¦   ¦  ¦                                               ¦
+ +---------------+ ¦ ¦   +------ Select ROM bank                            ¦
+                   ¦ ¦           Size is determined by bit 3 of register 0  ¦
+                   ¦ ¦           If it's a 32K bank, it will be swapped at  ¦
+                   ¦ ¦           $8000. (NOTE: In this case, the value      ¦
+                   ¦ ¦           written should be shifted right 1 bit to   ¦
+                   ¦ ¦           get the actual value.) If it's a 16K bank, ¦
+                   ¦ ¦           it will be selected at $8000 or $C000 based¦
+                   ¦ ¦           on the value in bit 2 of register 0.       ¦
+                   ¦ ¦           Don't forget to also account for the 256K  ¦
+                   ¦ ¦           block swapping if the PRG size is 512K or  ¦
+                   ¦ ¦           more.                                      ¦
+                   ¦ ¦                                                      ¦
+                   ¦ +---------- Reset Port                                 ¦
+                   ¦             0 = Do nothing                             ¦
+                   ¦             1 = Reset register 3                       ¦ 
+                  +--------------------------------------------------------+
+
+ Notes: - When the cart is first started, the first 16K ROM bank in the cart
+           is loaded into $8000, and the LAST 16K bank into $C000. Normally,
+           the first 16K bank is swapped via register 3 and the last bank
+           remains "hard-wired". However, bit 2 of register 0 can change
+           this. If it's clear, then the first 16K bank is "hard-wired" to
+           bank zero, and the last bank is swapped via register 3. Bit 3
+           of register 0 will override either of these states, and allow
+           the whole 32K to be swapped.
+        - MMC1 ports are only one bit. Therefore, a value will be written
+           into these registers one bit at a time. Values aren't used until
+           the entire 5-bit array is filled. This buffering can be reset
+           by writing bit 7 of the register. Note that MMC1 only has one
+           5-bit array for this data, not a separate one for each register.
+
+****************************************************************************
+
+ +-----------------+
+ ¦ Mapper 2: UNROM ¦
+ +-----------------+
+
+ +--------------------------------------------------------------------+
+ ¦ This mapper is used on many older U.S. and Japanese games, such as ¦
+ ¦ Castlevania, MegaMan, Ghosts & Goblins, and Amagon.                ¦
+ +--------------------------------------------------------------------+
+
+ +---------------+         +------------------------------------------+
+ ¦ $8000 - $FFFF +---------¦ PPPPPPPP                                 ¦
+ +---------------+         ¦ +------+                                 ¦
+                           ¦    ¦                                     ¦
+                           ¦    ¦                                     ¦
+                           ¦    +------- Select 16K ROM bank at $8000 ¦
+                           +------------------------------------------+
+
+ Notes: - When the cart is first started, the first 16K ROM bank in the cart
+           is loaded into $8000, and the LAST 16K ROM bank is loaded into
+           $C000. This last 16K bank is permanently "hard-wired" to $C000,
+           and it cannot be swapped.
+        - This mapper has no provisions for VROM; therefore, all carts
+           using it have 8K of VRAM at PPU $0000.
+        - Most carts with this mapper are 128K. A few, mostly Japanese
+           carts, such as Final Fantasy 2 and Dragon Quest 3, are 256K.
+        - Overall, this is one of the easiest mappers to implement in
+           a NES emulator.
+
+****************************************************************************
+
+ +-----------------+
+ ¦ Mapper 3: CNROM ¦
+ +-----------------+
+
+ +--------------------------------------------------------------------+
+ ¦ This mapper is used on many older U.S. and Japanese games, such as ¦
+ ¦ Solomon's Key, Gradius, and Hudson's Adventure Island.             ¦
+ +--------------------------------------------------------------------+
+
+ +---------------+   +----------------------------------------------+
+ ¦ $8000 - $FFFF +---¦ CCCCCCCC                                     ¦
+ +---------------+   ¦ +------+                                     ¦
+                     ¦    ¦                                         ¦
+                     ¦    ¦                                         ¦
+                     ¦    +------- Select 8K VROM bank at PPU $0000 ¦
+                     +----------------------------------------------+
+
+ Notes: - The ROM size is either 16K or 32K and is not switchable. It is
+           loaded in the same manner as a NROM game; in other words,
+           it's loaded at $8000 if it's a 32K ROM size, and at $C000 if
+           it's a 16K ROM size. (This is because a 6502 CPU requires
+           several vectors to be at $FFFA - $FFFF, and therefore ROM needs
+           to be there at all times.)
+        - The first 8K VROM bank is swapped into PPU $0000 when the cart
+           is reset.
+        - This is probably the simplest memory mapper and can easily be
+           incorporated into a NES emulator.
+
+****************************************************************************
+
+ +----------------+
+ ¦ Mapper 4: MMC3 ¦
+ +----------------+
+
+ +--------------------------------------------------------------------+
+ ¦ A great majority of newer NES games (early 90's) use this mapper,  ¦
+ ¦ both U.S. and Japanese. Among the better-known MMC3 titles are     ¦
+ ¦ Super Mario Bros. 2 and 3, MegaMan 3, 4, 5, and 6, and Crystalis.  ¦
+ +--------------------------------------------------------------------+
+
+ +-------+   +------------------------------------------------------+
+ ¦ $8000 +---¦ CPxxxNNN                                             ¦
+ +-------+   ¦ ¦¦   +-+                                             ¦
+             ¦ ¦¦    +--- Command Number                            ¦
+             ¦ ¦¦          0 - Select 2 1K VROM pages at PPU $0000  ¦
+             ¦ ¦¦          1 - Select 2 1K VROM pages at PPU $0800  ¦
+             ¦ ¦¦          2 - Select 1K VROM page at PPU $1000     ¦
+             ¦ ¦¦          3 - Select 1K VROM page at PPU $1400     ¦
+             ¦ ¦¦          4 - Select 1K VROM page at PPU $1800     ¦
+             ¦ ¦¦          5 - Select 1K VROM page at PPU $1C00     ¦
+             ¦ ¦¦          6 - Select first switchable ROM page     ¦
+             ¦ ¦¦          7 - Select second switchable ROM page    ¦
+             ¦ ¦¦                                                   ¦
+             ¦ ¦+-------- PRG Address Select                        ¦
+             ¦ ¦           0 - Enable swapping for $8000 and $A000  ¦
+             ¦ ¦           1 - Enable swapping for $A000 and $C000  ¦
+             ¦ ¦                                                    ¦
+             ¦ +--------- CHR Address Select                        ¦
+             ¦             0 - Use normal address for commands 0-5  ¦
+             ¦             1 - XOR command 0-5 address with $1000   ¦
+             +------------------------------------------------------+
+
+ +-------+   +----------------------------------------------+
+ ¦ $8001 +---¦ PPPPPPPP                                     ¦
+ +-------+   ¦ +------+                                     ¦
+             ¦    ¦                                         ¦
+             ¦    ¦                                         ¦
+             ¦    +------- Page Number for Command          ¦
+             ¦              Activates the command number    ¦
+             ¦              written to bits 0-2 of $8000    ¦
+             +----------------------------------------------+
+
+ +-------+   +----------------------------------------------+
+ ¦ $A000 +---¦ xxxxxxxM                                     ¦
+ +-------+   ¦        ¦                                     ¦
+             ¦        ¦                                     ¦
+             ¦        ¦                                     ¦
+             ¦        +--- Mirroring Select                 ¦
+             ¦              0 - Horizontal mirroring        ¦
+             ¦              1 - Vertical mirroring          ¦
+             ¦ NOTE: I don't have any confidence in the     ¦
+             ¦       accuracy of this information.          ¦
+             +----------------------------------------------+
+
+ +-------+   +----------------------------------------------+
+ ¦ $A001 +---¦ Sxxxxxxx                                     ¦
+ +-------+   ¦ ¦                                            ¦
+             ¦ ¦                                            ¦
+             ¦ ¦                                            ¦
+             ¦ +---------- SaveRAM Toggle                   ¦
+             ¦              0 - Disable $6000-$7FFF         ¦
+             ¦              1 - Enable $6000-$7FFF          ¦
+             +----------------------------------------------+
+
+ +-------+   +----------------------------------------------+
+ ¦ $C000 +---¦ IIIIIIII                                     ¦
+ +-------+   ¦ +------+                                     ¦
+             ¦    ¦                                         ¦
+             ¦    ¦                                         ¦
+             ¦    +------- IRQ Counter Register             ¦
+             ¦              The IRQ countdown value is      ¦
+             ¦              stored here.                    ¦
+             +----------------------------------------------+
+
+ +-------+   +----------------------------------------------+
+ ¦ $C001 +---¦ IIIIIIII                                     ¦
+ +-------+   ¦ +------+                                     ¦
+             ¦    ¦                                         ¦
+             ¦    ¦                                         ¦
+             ¦    +------- IRQ Latch Register               ¦
+             ¦              A temporary value is stored     ¦
+             ¦              here.                           ¦
+             +----------------------------------------------+
+
+ +-------+   +----------------------------------------------+
+ ¦ $E000 +---¦ xxxxxxxx                                     ¦
+ +-------+   ¦ +------+                                     ¦
+             ¦    ¦                                         ¦
+             ¦    ¦                                         ¦
+             ¦    +------- IRQ Control Register 0           ¦
+             ¦              Any value written here will     ¦
+             ¦              disable IRQ's and copy the      ¦
+             ¦              latch register to the actual    ¦
+             ¦              IRQ counter register.           ¦
+             +----------------------------------------------+
+
+ +-------+   +----------------------------------------------+
+ ¦ $E001 +---¦ xxxxxxxx                                     ¦
+ +-------+   ¦ +------+                                     ¦
+             ¦    ¦                                         ¦
+             ¦    ¦                                         ¦
+             ¦    +------- IRQ Control Register 1           ¦
+             ¦              Any value written here will     ¦
+             ¦              enable IRQ's.                   ¦
+             +----------------------------------------------+
+
+ Notes: - Two of the 8K ROM banks in the PRG area are switchable.
+           The other two are "hard-wired" to the last two banks in
+           the cart. The default setting is switchable banks at
+           $8000 and $A000, with banks 0 and 1 being swapped in
+           at reset. Through bit 6 of $8000, the hard-wiring can
+           be made to affect $8000 and $E000 instead of $C000 and
+           $E000. The switchable banks, whatever their addresses,
+           can be swapped through commands 6 and 7.
+        - A cart will first write the command and base select number
+           to $8000, then the value to be used to $8001.
+        - On carts with VROM, the first 8K of VROM is swapped into
+           PPU $0000 on reset. On carts without VROM, as always, there
+           is 8K of VRAM at PPU $0000.
+
+****************************************************************************
+
+(C) 1997, 1998 Firebug - Cannot be used for commercial gain

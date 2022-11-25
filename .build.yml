@@ -1,0 +1,33 @@
+image: alpine/latest
+oauth: pages.sr.ht/PAGES:RW
+environment:
+  site: clones.kingcons.io
+packages:
+  - sbcl
+  - sdl2-dev
+sources:
+  - https://git.sr.ht/~kingcons/clones
+tasks:
+  - install-quicklisp: |
+      curl -O https://beta.quicklisp.org/quicklisp.lisp
+      sbcl --non-interactive \
+           --eval "(load \"~/quicklisp.lisp\")" \
+           --eval "(quicklisp-quickstart:install)"
+      mkdir -p ~/quicklisp/local-projects/
+  - test: |
+      ln -sf ~/clones ~/quicklisp/local-projects/clones
+      sbcl --non-interactive \
+           --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
+           --eval "(ql:quickload '(clones clones/test))" \
+           --eval "(unless (try:passedp (try:try 'clones.test:test-all)) (uiop:quit 1))"
+  - build-site: |
+      cd clones
+      echo 'Building site'
+      sbcl --non-interactive \
+           --eval "(load (merge-pathnames \"quicklisp/setup.lisp\" (user-homedir-pathname)))" \
+           --eval "(ql:quickload '(clones mgl-pax/document))" \
+           --eval "(clones.docs::build-site)"
+      mv ~/clones/site/clones.html ~/clones/site/index.html
+      tar -C site -cvz . > site.tar.gz
+      acurl -f https://pages.sr.ht/publish/$site -Fcontent=@site.tar.gz
+      rm site.tar.gz

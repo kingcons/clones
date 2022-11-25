@@ -1,70 +1,48 @@
-(in-package :cl-user)
-
-(defpackage :clones.util
-  (:use :cl)
-  (:export #:*standard-optimize-settings*
-           #:enable-sharpf-read-macro
-           #:asset-path
-           #:ub8
-           #:ub16
-           #:byte-vector
-           #:make-byte-vector
-           #:wrap-byte
-           #:wrap-word
-           #:flip-bit
-           #:page-crossed-p))
+(mgl-pax:define-package :clones.util
+  (:use :cl :mgl-pax))
 
 (in-package :clones.util)
 
-(defvar *standard-optimize-settings*
-  '(optimize speed (debug 1) (space 0) (compilation-speed 0))
-  "Optimize settings to use in opcode definitions (where safety 0 won't do).")
+(defsection @util (:title "Assorted Utilities")
+  (define-printer macro)
+  (clear-buffer function)
+  (wrap-byte function)
+  (wrap-word function)
+  (scale-2x function))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun enable-sharpf-read-macro ()
-    "Add a read macro #f to easily declare optimization settings even in defmacro.
-   From Let Over Lambda, this is especially useful for an emulator such as clones."
-    (set-dispatch-macro-character #\# #\f
-                                  (lambda (stream sub-char numarg)
-                                    (declare (ignore stream sub-char))
-                                    (setf numarg (or numarg 3))
-                                    (unless (<= numarg 3)
-                                      (error "Invalid value for optimize declaration: ~a" numarg))
-                                    `(declare (optimize (speed ,numarg)
-                                                        (safety ,(- 3 numarg)))))))
+(defmacro define-printer (type (&rest vars) format-string &body body)
+  "Define printer is a helper macro for generating a PRINT-OBJECT
+method. DEFINE-PRINTER provides a shorthand for the common case where
+slot values need to be safely displayed but not read back in."
+  `(defmethod print-object ((,type ,type) stream)
+     (let ,(loop for v in vars
+                 collect `(,v (handler-case (slot-value ,type ',v)
+                                (unbound-slot () :unbound))))
+       (print-unreadable-object (,type stream :type t)
+         (let ((*print-pretty* nil))
+           (format stream ,format-string ,@(or body vars)))))))
 
-  (enable-sharpf-read-macro))
+(defun clear-buffer (buffer)
+  (loop for i below (length buffer)
+        do (setf (aref buffer i) 0)))
 
-(defun asset-path (namestring)
-  "Compute the relative path of a static asset in the clones project."
-  (asdf:system-relative-pathname :clones namestring))
+(defun wrap-byte (value)
+  (declare (fixnum value))
+  (ldb (byte 8 0) value))
 
-(deftype ub8 () '(unsigned-byte 8))
-(deftype ub16 () '(unsigned-byte 16))
-(deftype byte-vector (&optional (length '*))
-  `(simple-array ub8 ,length))
+(defun wrap-word (value)
+  (declare (fixnum value))
+  (ldb (byte 16 0) value))
 
-(defun make-byte-vector (size)
-  "Make a byte vector of length SIZE."
-  (make-array size :element-type 'ub8))
-
-(declaim (inline wrap-byte))
-(defun wrap-byte (number)
-  "Constrain a number to (integer 0 255)."
-  #f
-  (logand number #xff))
-
-(declaim (inline wrap-word))
-(defun wrap-word (number)
-  "Constrain a number to (integer 0 65535)."
-  #f
-  (logand number #xffff))
-
-(defmacro flip-bit (position value)
-  `(logxor ,(expt 2 position) ,value))
-
-(declaim (inline page-crossed-p))
-(declaim (ftype (function (ub16 ub16) boolean) page-crossed-p))
-(defun page-crossed-p (start final)
-  (/= (logand start #xff00)
-      (logand final #xff00)))
+(defun scale-2x (width height image-data)
+  (let ((output (make-array (* width height 3) :element-type 'serapeum:octet)))
+    (dotimes (h height)
+      (dotimes (w width)
+        (let ((offset (+ (* (floor width 2)
+                            (floor h 2))
+                         (floor w 2)))
+              (scaled (+ (* width h) w)))
+          (dotimes (pixel 3)
+            (setf (aref output (+ (* scaled 3) pixel))
+                  (aref image-data (+ (* offset 3) pixel)))))))
+    output))

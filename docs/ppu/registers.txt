@@ -1,0 +1,445 @@
+ 
+PPU registers
+
+From NESdev Wiki
+ 
+Jump to navigationJump to search 
+
+The PPU exposes eight memory-mapped registers to the CPU. These nominally sit at $2000 through $2007 in the CPU's address
+space, but because they're incompletely decoded, they're mirrored in every 8 bytes from $2008 through $3FFF, so a write to
+$3456 is the same as a write to $2006. 
+
+Immediately after powerup, the PPU isn't necessarily in a usable state. The program needs to do a few things to get it going; see
+PPU power up state and Init code. 
+
+Contents
+
+* 1 Summary
+* 2 Ports 
+
+ * 2.1 Controller ($2000) > write 
+
+ * 2.1.1 Master/slave mode and the EXT pins
+ * 2.1.2 Bit 0 race condition
+
+ * 2.2 Mask ($2001) > write 
+
+ * 2.2.1 Render Control
+ * 2.2.2 Color Control
+
+ * 2.3 Status ($2002) < read 
+
+ * 2.3.1 Notes
+
+ * 2.4 OAM address ($2003) > write 
+
+ * 2.4.1 Values during rendering
+ * 2.4.2 OAMADDR precautions
+
+ * 2.5 OAM data ($2004) <> read/write
+ * 2.6 Scroll ($2005) >> write x2
+ * 2.7 Address ($2006) >> write x2 
+
+ * 2.7.1 note
+ * 2.7.2 Bus conflict
+
+ * 2.8 Data ($2007) <> read/write 
+
+ * 2.8.1 The PPUDATA read buffer (post-fetch)
+ * 2.8.2 Read conflict with DPCM samples
+
+ * 2.9 OAM DMA ($4014) > write
+
+* 3 References
+
+Summary
+
+ Common Name   Address   Bits   Notes   
+ PPUCTRL   $2000   VPHB SINN  NMI enable (V), PPU master/slave (P), sprite height (H), background tile select (B),  
+       sprite tile select (S), increment mode (I), nametable select (NN)   
+ PPUMASK   $2001   BGRs bMmG  color emphasis (BGR), sprite enable (s), background enable (b), sprite left column  
+       enable (M), background left column enable (m), greyscale (G)   
+ PPUSTATUS   $2002   VSO- ----  vblank (V), sprite 0 hit (S), sprite overflow (O); read resets write pair for  
+       $2005/$2006   
+ OAMADDR   $2003   aaaa aaaa  OAM read/write address   
+ OAMDATA   $2004   dddd dddd  OAM data read/write   
+ PPUSCROLL   $2005   xxxx xxxx  fine scroll position (two writes: X scroll, Y scroll)   
+ PPUADDR   $2006   aaaa aaaa  PPU read/write address (two writes: most significant byte, least significant byte)   
+ PPUDATA   $2007   dddd dddd  PPU data read/write   
+ OAMDMA   $4014   aaaa aaaa  OAM DMA high address   
+
+Ports
+
+The PPU has an internal data bus that it uses for communication with the CPU. This bus, called _io_db in Visual 2C02 and
+PPUGenLatch in FCEUX,[1] behaves as an 8-bit dynamic latch due to capacitance of very long traces that run to various parts of
+the PPU. Writing any value to any PPU port, even to the nominally read-only PPUSTATUS, will fill this latch. Reading any readable
+port (PPUSTATUS, OAMDATA, or PPUDATA) also fills the latch with the bits read. Reading a nominally "write-only" register returns
+the latch's current value, as do the unused bits of PPUSTATUS. This value begins to decay after a frame or so, faster once the PPU
+has warmed up, and it is likely that values with alternating bit patterns (such as $55 or $AA) will decay faster.[2]
+
+ Controller ($2000) > write
+
+* Common name: PPUCTRL
+* Description: PPU control register
+* Access: write
+
+Various flags controlling PPU operation 
+
+7  bit  0
+---- ----
+VPHB SINN
+|||| ||||
+|||| ||++- Base nametable address
+|||| ||    (0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
+|||| |+--- VRAM address increment per CPU read/write of PPUDATA
+|||| |     (0: add 1, going across; 1: add 32, going down)
+|||| +---- Sprite pattern table address for 8x8 sprites
+||||       (0: $0000; 1: $1000; ignored in 8x16 mode)
+|||+------ Background pattern table address (0: $0000; 1: $1000)
+||+------- Sprite size (0: 8x8 pixels; 1: 8x16 pixels)
+|+-------- PPU master/slave select
+|          (0: read backdrop from EXT pins; 1: output color on EXT pins)
++--------- Generate an NMI at the start of the
+           vertical blanking interval (0: off; 1: on)
+
+Equivalently, bits 1 and 0 are the most significant bit of the scrolling coordinates (see Nametables and PPUSCROLL): 
+
+7  bit  0
+---- ----
+.... ..YX
+       ||
+       |+- 1: Add 256 to the X scroll position
+       +-- 1: Add 240 to the Y scroll position
+
+Another way of seeing the explanation above is that when you reach the end of a nametable, you must switch to the next one,
+hence, changing the nametable address. 
+
+After power/reset, writes to this register are ignored for about 30,000 cycles. 
+
+If the PPU is currently in vertical blank, and the PPUSTATUS ($2002) vblank flag is still set (1), changing the NMI flag in bit 7 of
+$2000 from 0 to 1 will immediately generate an NMI. This can result in graphical errors (most likely a misplaced scroll) if the NMI
+routine is executed too late in the blanking period to finish on time. To avoid this problem it is prudent to read $2002 immediately
+before writing $2000 to clear the vblank flag. 
+
+For more explanation of sprite size, see: Sprite size 
+
+ Master/slave mode and the EXT pins
+
+When bit 6 of PPUCTRL is clear (the usual case), the PPU gets the palette index for the background color from the EXT pins. The
+stock NES grounds these pins, making palette index 0 the background color as expected. A secondary picture generator
+connected to the EXT pins would be able to replace the background with a different image using colors from the background
+palette, which could be used e.g. to implement parallax scrolling. 
+
+Setting bit 6 causes the PPU to output the lower four bits of the palette memory index on the EXT pins for each pixel (in addition
+to normal image drawing) - since only four bits are output, background and sprite pixels can't normally be distinguished this way.
+As the EXT pins are grounded on an unmodified NES, setting bit 6 is discouraged as it could potentially damage the chip
+whenever it outputs a non-zero pixel value (due to it effectively shorting Vcc and GND together). Looking at the relevant circuitry
+in Visual 2C02, it appears that the background palette hack would not be functional for output from the EXT pins; they would
+always output index 0 for the background color. 
+
+Bit 0 race condition
+
+Be very careful when writing to this register outside vertical blanking if you are using vertical mirroring (horizontal arrangement)
+or 4-screen VRAM. For specific CPU-PPU alignments, a write that starts on dot 257 will cause only the next scanline to be
+erroneously drawn from the left nametable. This can cause a visible glitch, and it can also interfere with sprite 0 hit for that
+scanline (by being drawn with the wrong background). 
+
+The glitch has no effect in horizontal or one-screen mirroring. Only writes that start on dot 257 and continue through dot 258 can
+cause this glitch: any other horizontal timing is safe. The glitch specifically writes the value of open bus to the register, which will
+almost always be the upper byte of the address. Writing to this register or the mirror of this register at $2100 according to the
+desired nametable appears to be a functional workaround. 
+
+This produces an occasionally visible glitch in Super Mario Bros. when the program writes to PPUCTRL at the end of game
+logic. It appears to be turning NMI off during game logic and then turning NMI back on once the game logic has finished in order
+to prevent the NMI handler from being called again before the game logic finishes. Another workaround is to use a software flag
+to prevent NMI reentry, instead of using the PPU's NMI enable. 
+
+ Mask ($2001) > write
+
+* Common name: PPUMASK
+* Description: PPU mask register
+* Access: write
+
+This register controls the rendering of sprites and backgrounds, as well as colour effects. 
+
+7  bit  0
+---- ----
+BGRs bMmG
+|||| ||||
+|||| |||+- Greyscale (0: normal color, 1: produce a greyscale display)
+|||| ||+-- 1: Show background in leftmost 8 pixels of screen, 0: Hide
+|||| |+--- 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
+|||| +---- 1: Show background
+|||+------ 1: Show sprites
+||+------- Emphasize red (green on PAL/Dendy)
+|+-------- Emphasize green (red on PAL/Dendy)
++--------- Emphasize blue
+
+Render Control
+
+* Bits 3 and 4 enable the rendering of background and sprites, respectively.
+* Bits 1 and 2 enable rendering of the background and sprites in the leftmost 8 pixel columns. Setting these bits to 0 will mask
+ these columns, which is often useful in horizontal scrolling situations where you want partial sprites or tiles to scroll in from the
+ left.
+* A value of $1E or %00011110 enables all rendering, with no color effects. A value of $00 or %00000000 disables all rendering.
+ It is usually best practice to write this register only during vblank, to prevent partial-frame visual artifacts.
+* If either of bits 3 or 4 is enabled, at any time outside of the vblank interval the PPU will be making continual use to the PPU
+ address and data bus to fetch tiles to render, as well as internally fetching sprite data from the OAM. If you wish to make
+ changes to PPU memory outside of vblank (via $2007), you must set both of these bits to 0 to disable rendering and prevent
+ conflicts.
+* Disabling rendering (clear both bits 3 and 4) during a visible part of the frame can be problematic. It can cause a corruption of
+ the sprite state, which will display incorrect sprite data on the next frame. (See: Errata) It is, however, perfectly fine to mask
+ sprites but leave the background on (set bit 3, clear bit 4) at any time in the frame.
+* Sprite 0 hit does not trigger in any area where the background or sprites are hidden.
+
+Color Control
+
+* Bit 0 controls a greyscale mode, which causes the palette to use only the colors from the grey column: $00, $10, $20, $30. This
+ is implemented as a bitwise AND with $30 on any value read from PPU $3F00-$3FFF, both on the display and through
+ PPUDATA. Writes to the palette through PPUDATA are not affected. Also note that black colours like $0F will be replaced by a
+ non-black grey $00.
+* Bits 5, 6 and 7 control a color "emphasis" or "tint" effect. See Colour emphasis for details. Note that the emphasis bits are
+ applied independently of bit 0, so they will still tint the color of the grey image.
+
+ Status ($2002) < read
+
+* Common name: PPUSTATUS
+* Description: PPU status register
+* Access: read
+
+This register reflects the state of various functions inside the PPU. It is often used for determining timing. To determine when the
+PPU has reached a given pixel of the screen, put an opaque (non-transparent) pixel of sprite 0 there. 
+
+ *  Do not read this address to wait for exactly one vertical redraw! On NTSC it will sometimes give false negatives, and on  
+   Dendy on some reboots it will always give false negatives. Additionally, on the PlayChoice 10, the Z80 supervisor will  
+   reject the game if the game leaves NMIs disabled for too long.   
+   ----------------------------------------------------------------------------------------------------------  
+   Instead, use NMI for timing.   
+*
+7  bit  0
+---- ----
+VSO. ....
+|||| ||||
+|||+-++++- Least significant bits previously written into a PPU register
+|||        (due to register not being updated for this address)
+||+------- Sprite overflow. The intent was for this flag to be set
+||         whenever more than eight sprites appear on a scanline, but a
+||         hardware bug causes the actual behavior to be more complicated
+||         and generate false positives as well as false negatives; see
+||         PPU sprite evaluation. This flag is set during sprite
+||         evaluation and cleared at dot 1 (the second dot) of the
+||         pre-render line.
+|+-------- Sprite 0 Hit.  Set when a nonzero pixel of sprite 0 overlaps
+|          a nonzero background pixel; cleared at dot 1 of the pre-render
+|          line.  Used for raster timing.
++--------- Vertical blank has started (0: not in vblank; 1: in vblank).
+           Set at dot 1 of line 241 (the line *after* the post-render
+           line); cleared after reading $2002 and at dot 1 of the
+           pre-render line.
+
+Notes
+
+* Reading the status register will clear bit 7 mentioned above and also the address latch used by PPUSCROLL and PPUADDR.
+ It does not clear the sprite 0 hit or overflow bit.
+* Once the sprite 0 hit flag is set, it will not be cleared until the end of the next vertical blank. If attempting to use this flag for
+ raster timing, it is important to ensure that the sprite 0 hit check happens outside of vertical blank, otherwise the CPU will
+ "leak" through and the check will fail. The easiest way to do this is to place an earlier check for bit 6 = 0, which will wait for the
+ pre-render scanline to begin.
+* If using sprite 0 hit to make a bottom scroll bar below a vertically scrolling or freely scrolling playfield, be careful to ensure that
+ the tile in the playfield behind sprite 0 is opaque.
+* Sprite 0 hit is not detected at x=255, nor is it detected at x=0 through 7 if the background or sprites are hidden in this area.
+* See: PPU rendering for more information on the timing of setting and clearing the flags.
+* Some Vs. System PPUs return a constant value in bits 4-0 that the game checks.
+* Race Condition Warning: Reading PPUSTATUS within two cycles of the start of vertical blank will return 0 in bit 7 but clear
+ the latch anyway, causing NMI to not occur that frame. See NMI and PPU_frame_timing for details.
+
+ OAM address ($2003) > write
+
+* Common name: OAMADDR
+* Description: OAM address port
+* Access: write
+
+Write the address of OAM you want to access here. Most games just write $00 here and then use OAMDMA. (DMA is
+implemented in the 2A03/7 chip and works by repeatedly writing to OAMDATA) 
+
+Values during rendering
+
+OAMADDR is set to 0 during each of ticks 257-320 (the sprite tile loading interval) of the pre-render and visible scanlines. 
+
+The value of OAMADDR when sprite evaluation starts at tick 65 of the visible scanlines will determine where in OAM sprite
+evaluation starts, and hence which sprite gets treated as sprite 0. The first OAM entry to be checked during sprite evaluation is
+the one starting at OAM[OAMADDR]. If OAMADDR is unaligned and does not point to the y position (first byte) of an OAM entry, then
+whatever it points to (tile index, attribute, or x coordinate) will be reinterpreted as a y position, and the following bytes will be
+similarly reinterpreted. No more sprites will be found once the end of OAM is reached, effectively hiding any sprites before OAM
+[OAMADDR]. 
+
+OAMADDR precautions
+
+On the 2C02G, writes to OAMADDR reliably corrupt OAM.[3] This can then be worked around by writing all 256 bytes of OAM. 
+
+It is also the case that if OAMADDR is not less than eight when rendering starts, the eight bytes starting at OAMADDR & 0xF8 are
+copied to the first eight bytes of OAM; it seems likely that this is related. On the Dendy, the latter bug is required for 2C02
+compatibility. 
+
+It is known that in the 2C03, 2C04, 2C05[4], and 2C07, OAMADDR works as intended. It is not known whether this bug is present
+in all revisions of the 2C02. 
+
+ OAM data ($2004) <> read/write
+
+* Common name: OAMDATA
+* Description: OAM data port
+* Access: read, write
+
+Write OAM data here. Writes will increment OAMADDR after the write; reads during vertical or forced blanking return the value
+from OAM at that address but do not increment. 
+
+Do not write directly to this register in most cases. Because changes to OAM should normally be made only during
+vblank, writing through OAMDATA is only effective for partial updates (it is too slow), and as described above, partial writes cause
+corruption. Most games will use the DMA feature through OAMDMA instead. 
+
+* Reading OAMDATA while the PPU is rendering will expose internal OAM accesses during sprite evaluation and loading; Micro
+ Machines does this.
+* Writes to OAMDATA during rendering (on the pre-render line and the visible lines 0-239, provided either sprite or background
+ rendering is enabled) do not modify values in OAM, but do perform a glitchy increment of OAMADDR, bumping only the high 6
+ bits (i.e., it bumps the [n] value in PPU sprite evaluation - it's plausible that it could bump the low bits instead depending on
+ the current status of sprite evaluation). This extends to DMA transfers via OAMDMA, since that uses writes to $2004. For
+ emulation purposes, it is probably best to completely ignore writes during rendering.
+* It used to be thought that reading from this register wasn't reliable[5], however more recent evidence seems to suggest that
+ this is solely due to corruption by OAMADDR writes.
+* In the oldest instantiations of the PPU, as found on earlier Famicoms and NESes, this register is not readable[6]. The
+ readability was added on the RP2C02G, found on most NESes and later Famicoms.[7]
+* In the 2C07, sprite evaluation can never be fully disabled, and will always start 20 scanlines after the start of vblank[8] (same
+ as when the prerender scanline would have been on the 2C02). As such, you must upload anything to OAM that you intend to
+ within the first 20 scanlines after the 2C07 signals vertical blanking.
+
+ Scroll ($2005) >> write x2
+
+* Common name: PPUSCROLL
+* Description: PPU scrolling position register
+* Access: write twice
+
+This register is used to change the scroll position, that is, to tell the PPU which pixel of the nametable selected through
+PPUCTRL should be at the top left corner of the rendered screen. Typically, this register is written to during vertical blanking, so
+that the next frame starts rendering from the desired location, but it can also be modified during rendering in order to split the
+screen. Changes made to the vertical scroll during rendering will only take effect on the next frame. 
+
+After reading PPUSTATUS to reset the address latch, write the horizontal and vertical scroll offsets here just before turning on
+the screen: 
+
+ bit PPUSTATUS
+ ; possibly other code goes here
+ lda cam_position_x
+ sta PPUSCROLL
+ lda cam_position_y
+ sta PPUSCROLL
+
+Horizontal offsets range from 0 to 255. "Normal" vertical offsets range from 0 to 239, while values of 240 to 255 are treated as
+-16 through -1 in a way, but tile data is incorrectly fetched from the attribute table. 
+
+By changing the values here across several frames and writing tiles to newly revealed areas of the nametables, one can achieve
+the effect of a camera panning over a large background. 
+
+ Address ($2006) >> write x2
+
+* Common name: PPUADDR
+* Description: PPU address register
+* Access: write twice
+
+Because the CPU and the PPU are on separate buses, neither has direct access to the other's memory. The CPU writes to VRAM
+through a pair of registers on the PPU. First it loads an address into PPUADDR, and then it writes repeatedly to PPUDATA to fill
+VRAM. 
+
+After reading PPUSTATUS to reset the address latch, write the 16-bit address of VRAM you want to access here, upper byte
+first. For example, to set the VRAM address to $2108: 
+
+  lda #$21
+  sta PPUADDR
+  lda #$08
+  sta PPUADDR
+
+Valid addresses are $0000-$3FFF; higher addresses will be mirrored down. 
+
+note
+
+Access to PPUSCROLL and PPUADDR during screen refresh produces interesting raster effects; the starting position of each
+scanline can be set to any pixel position in nametable memory. For more information, see PPU scrolling and tokumaru's sample
+code on the BBS.[9]
+
+Editor's note: Last comment about external page should be re-directed to the getting started section instead. 
+
+Bus conflict
+
+During raster effects, if the second write to PPUADDR happens at specific times, at most one axis of scrolling will be set to the
+bitwise AND of the written value and the current value. The only safe time to finish the second write is during blanking; see PPU
+scrolling for more specific timing. [1] 
+
+ Data ($2007) <> read/write
+
+* Common name: PPUDATA
+* Description: PPU data port
+* Access: read, write
+
+VRAM read/write data register. After access, the video memory address will increment by an amount determined by bit 2 of
+$2000. 
+
+When the screen is turned off by disabling the background/sprite rendering flag with the PPUMASK or during vertical blank, you
+can read or write data from VRAM through this port. Since accessing this register increments the VRAM address, it should not be
+accessed outside vertical or forced blanking because it will cause graphical glitches, and if writing, write to an unpredictable
+address in VRAM. However, two games are known to read from PPUDATA during rendering: see Tricky-to-emulate
+games. 
+
+VRAM reading and writing shares the same internal address register that rendering uses. So after loading data into video
+memory, the program should reload the scroll position afterwards with PPUSCROLL and PPUCTRL (bits 1..0) writes in order to
+avoid wrong scrolling. 
+
+ The PPUDATA read buffer (post-fetch)
+
+When reading while the VRAM address is in the range 0-$3EFF (i.e., before the palettes), the read will return the contents of an
+internal read buffer. This internal buffer is updated only when reading PPUDATA, and so is preserved across frames. After the
+CPU reads and gets the contents of the internal buffer, the PPU will immediately update the internal buffer with the byte at the
+current VRAM address. Thus, after setting the VRAM address, one should first read this register to prime the pipeline and discard
+the result. 
+
+Reading palette data from $3F00-$3FFF works differently. The palette data is placed immediately on the data bus, and hence no
+priming read is required. Reading the palettes still updates the internal buffer though, but the data placed in it is the mirrored
+nametable data that would appear "underneath" the palette. (Checking the PPU memory map should make this clearer.) 
+
+Read conflict with DPCM samples
+
+If currently playing DPCM samples, there is a chance that an interruption from the APU's sample fetch will cause an extra read
+cycle if it happened at the same time as an instruction that reads $2007. This will cause an extra increment and a byte to be
+skipped over, corrupting the data you were trying to read. See: APU DMC 
+
+ OAM DMA ($4014) > write
+
+* Common name: OAMDMA
+* Description: OAM DMA register (high byte)
+* Access: write
+
+This port is located on the CPU. Writing $XX will upload 256 bytes of data from CPU page $XX00-$XXFF to the internal PPU OAM.
+This page is typically located in internal RAM, commonly $0200-$02FF, but cartridge RAM or ROM can be used as well. 
+
+* The CPU is suspended during the transfer, which will take 513 or 514 cycles after the $4014 write tick. (1 wait state cycle while
+ waiting for writes to complete, +1 if on an odd CPU cycle, then 256 alternating read/write cycles.)
+* The OAM DMA is the only effective method for initializing all 256 bytes of OAM. Because of the decay of OAM's dynamic RAM
+ when rendering is disabled, the initialization should take place within vblank. Writes through OAMDATA are generally too slow
+ for this task.
+* The DMA transfer will begin at the current OAM write address. It is common practice to initialize it to 0 with a write to
+ OAMADDR before the DMA transfer. Different starting addresses can be used for a simple OAM cycling technique, to alleviate
+ sprite priority conflicts by flickering. If using this technique, after the DMA OAMADDR should be set to 0 before the end of
+ vblank to prevent potential OAM corruption (See: Errata). However, due to OAMADDR writes also having a "corruption" effect
+ [3] this technique is not recommended.
+
+References
+
+1 ↑ ppu.cpp by Bero and Xodnizel 
+2 ↑ Reply to "Riding the open bus" by lidnariq 
+3 ↑ 3.03.1 Manual OAM write glitchyness thread by blargg 
+4 ↑ Writes to $2003 appear to not cause OAM corruption post by lidnariq 
+5 ↑ $2004 reading reliable? thread by blargg 
+6 ↑ $2004 not readable on early revisions reply by jsr 
+7 ↑ hardware revisions and $2004 reads reply by Great Hierophant 
+8 ↑ 2C07 PPU sprite evaluation notes thread by thefox 
+9 ↑ PPU synchronization from NMI post by tokumaru 
+
+Retrieved from "https://www.nesdev.org/w/index.php?title=PPU_registers&oldid=18961"

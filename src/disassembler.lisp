@@ -1,51 +1,60 @@
-(in-package :cl-user)
-
-(defpackage :clones.disassembler
-  (:use :cl :clones.instruction-data)
+(mgl-pax:define-package :clones.disassembler
+  (:use :cl :alexandria :mgl-pax)
+  (:use :clones.opcodes)
   (:import-from :clones.memory
-                :fetch
-                :fetch-range)
-  (:import-from :clones.cpu
-                :cpu-memory
-                :cpu-pc)
-  (:export #:disasm
-           #:now))
+                #:fetch))
 
 (in-package :clones.disassembler)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *opcodes* (make-array 256 :element-type 'cons)
-    "An array of opcode metadata for fast disassembly.")
+(defsection @disassembler (:title "Disassembler")
+  (disasm function)
+  (disassemble-instruction function))
 
-  (dolist (metadata *instructions*)
-    (destructuring-bind (name opcodes docs &key access-pattern skip-pc) metadata
-      (declare (ignore access-pattern skip-pc))
-      (loop for (opcode bytes cycles mode) in opcodes
-            do (setf (aref *opcodes* opcode)
-                     (list name bytes cycles mode docs))))))
+(defun format-args (mode args)
+  "Take a keyword representing a 6502 addressing mode
+   and a list of ARGS and format the arguments in the
+   conventional 6502 assembly style."
+  (let ((formatter
+          (ecase mode
+            (:immediate "#$~{~2,'0X~}")
+            (:zero-page "$~{~2,'0X~}")
+            (:zero-page-x "$~{~2,'0X~}, X")
+            (:zero-page-y "$~{~2,'0X~}, Y")
+            (:accumulator "A")
+            (:absolute  "$~{~2,'0X~}")
+            (:absolute-x "$~{~2,'0X~}, X")
+            (:absolute-y "$~{~2,'0X~}, Y")
+            (:implied "")
+            (:indirect "($~{~2,'0X~})")
+            (:indirect-x "($~{~2,'0X~}, X)")
+            (:indirect-y "($~{~2,'0X~}), Y")
+            (:relative "$~{~2,'0X~}")))
+        (ordered (if (member mode '(:absolute :absolute-x :absolute-y :indirect))
+                     (reverse args)
+                     args)))
+    (format nil formatter ordered)))
 
-(defun hexify (bytes)
-  (format nil "~{~2,'0x ~}" bytes))
+(defun disassemble-instruction (memory index &key (stream t))
+  "Disassemble a single instruction from MEMORY beginning at INDEX.
+   STREAM is the FORMAT destination of the disassembly output."
+  (let* ((opcode (find-opcode (fetch memory index)))
+         (code (opcode-code opcode))
+         (size (opcode-size opcode))
+         (mode (opcode-addressing-mode opcode))
+         (args (loop for i from (1+ index) below (+ index size)
+                     collect (fetch memory i))))
+    (values (format stream "~4,'0X:  ~11@< ~{~2,'0X ~} ~> ;;  ~A ~A~%"
+                    index
+                    (cons code args)
+                    (opcode-name opcode)
+                    (format-args mode args))
+            size)))
 
 (defun disasm (memory start end)
-  (loop with index = start while (<= index end)
-        for opcode = (fetch memory index)
-        do (destructuring-bind (name size cycles mode docs) (aref *opcodes* opcode)
-             (declare (ignore cycles docs))
-             (flet ((format-args (format-string bytes)
-                      (if (member mode '(absolute absolute-x absolute-y indirect))
-                          (format nil format-string (reverse bytes))
-                          (format nil format-string bytes))))
-               (let* ((writer (clones.addressing:get-format-string mode))
-                      (bytes (fetch-range memory index (+ index (1- size))))
-                      (args (format-args writer (rest bytes))))
-                 (format t "~4,'0x  ~9a ;; ~a ~a~%" index (hexify bytes) name args)))
-             (incf index size))))
-
-(defun current-instruction (memory start)
-  (let* ((opcode (fetch memory start))
-         (size (second (aref *opcodes* opcode))))
-    (disasm memory start (+ start (1- size)))))
-
-(defun now (cpu)
-  (current-instruction (cpu-memory cpu) (cpu-pc cpu)))
+  "Loop through MEMORY from START to END printing disassembly
+   for each instruction found in the specified range. An error
+   will be thrown if illegal instructions are present or if the
+   start index is not the beginning of a 6502 instruction."
+  (loop for index = start then (+ index size)
+        for size = (nth-value 1 (disassemble-instruction memory index))
+        while (< index end)))

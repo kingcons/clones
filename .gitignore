@@ -6,3 +6,6 @@
 *.x86f
 *~
 .#*
+site/
+roms/ignored
+test/debug.png

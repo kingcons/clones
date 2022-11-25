@@ -1,12 +1,3 @@
-#|
-  This file is a part of clones project.
-  Copyright (c) 2017 Brit Butler (brit@kingcons.io)
-|#
-
-#|
-  Author: Brit Butler (brit@kingcons.io)
-|#
-
 (in-package :cl-user)
 (defpackage clones-asd
   (:use :cl :asdf))
@@ -15,18 +6,43 @@
 (defsystem clones
   :version "0.1"
   :author "Brit Butler"
-  :license "LLGPL"
-  :depends-on (:alexandria)
+  :license "MIT"
+  :homepage "https://clones.kingcons.io"
+  :source-control (:git "https://git.sr.ht/~kingcons/clones")
+  :description "A work-in-progress Emulator for the Nintendo Entertainment System."
+  :depends-on (:alexandria :serapeum :mgl-pax :sdl2 :static-vectors)
   :components ((:module "src"
+                :serial t
                 :components
-                ((:file "disassembler" :depends-on ("addressing" "instruction-data"))
-                 (:file "instructions" :depends-on ("cpu" "addressing"))
-                 (:file "addressing" :depends-on ("cpu" "memory"))
-                 (:file "cpu" :depends-on ("memory" "instruction-data"))
-                 (:file "memory" :depends-on ("mappers" "util"))
-                 (:file "mappers" :depends-on ("rom" "conditions"))
-                 (:file "rom" :depends-on ("util" "conditions"))
-                 (:file "instruction-data")
-                 (:file "conditions")
-                 (:file "util"))))
-  :in-order-to ((test-op (test-op clones-test))))
+                ((:file "util")
+                 (:file "rom")
+                 (:file "mappers")
+                 (:file "ppu")
+                 (:file "input")
+                 (:file "memory")
+                 (:file "opcodes")
+                 (:file "disassembler")
+                 (:file "cpu")
+                 (:file "renderer")
+                 (:file "debug")
+                 (:file "clones")
+                 (:file "docs"))))
+  :in-order-to ((test-op (test-op clones/test))))
+
+(defsystem clones/test
+  :version "0.1"
+  :author "Brit Butler"
+  :license "MIT"
+  :description "Tests for Clones."
+  :depends-on (:clones :try :zpng :shasht)
+  :components ((:module "test"
+                :serial t
+                :components ((:file "rom")
+                             (:file "mappers")
+                             (:file "ppu")
+                             (:file "memory")
+                             (:file "cpu")
+                             (:file "renderer")
+                             (:file "tests"))))
+  :perform (test-op (o s)
+             (uiop:symbol-call '#:clones.test '#:test)))
