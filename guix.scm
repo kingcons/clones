@@ -13,9 +13,9 @@
 ;;
 ;; Afterwards, start clones running a slynk socket and connect via emacs:
 ;;
-;;  > make dev
+;;  > make repl
 ;;
-;; From there, hack away!
+;; Happy Hacking!
 
 (use-modules (guix packages)
              (guix licenses)

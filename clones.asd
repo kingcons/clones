@@ -10,7 +10,7 @@
   :homepage "https://clones.kingcons.io"
   :source-control (:git "https://git.sr.ht/~kingcons/clones")
   :description "A work-in-progress Emulator for the Nintendo Entertainment System."
-  :depends-on (:alexandria :serapeum :mgl-pax :sdl2 :static-vectors)
+  :depends-on (:alexandria :serapeum :mgl-pax :sdl2 :static-vectors :slynk)
   :components ((:module "src"
                 :serial t
                 :components
