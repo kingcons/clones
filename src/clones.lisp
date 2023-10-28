@@ -170,7 +170,16 @@
 ===========
 CLONES HELP
 ===========
-# App controls
+~%# Game controls
+w: Up
+s: Down
+a: Left
+d: Right
+j: A
+k: B
+Space: Select
+Enter: Start
+~%# App controls
 ESC: Quit the app.
 h: Print this help message.
 n: Print disassembly of the current instruction.
@@ -180,15 +189,6 @@ p: Pause or unpause the emulation.
 l: Toggle disassembly.
 b: Display background. (use while paused)
 r: Display sprites. (use while paused)
-# Game controls
-w: Up
-s: Down
-a: Left
-d: Right
-j: A
-k: B
-Space: Select
-Enter: Start
 ~%~%~%"))
 
 (defun print-now (app)
@@ -227,3 +227,7 @@ Enter: Start
   (:method ((app app))
     (unless (app-paused app)
       (step-frame app))))
+
+(defun load-app (path &optional (app *app*))
+  (with-slots (cpu) app
+    (clones.cpu:change-game cpu path)))

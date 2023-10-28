@@ -1,6 +1,6 @@
 ## Dev Log
 
-### 04/24 - Fighting Graphics Again
+### 04/24/22 - Fighting Graphics Again
 
 [4 weeks ago][4-weeks], I started over on Clones. It has been a productive
 first month. The CPU is finished and tested and we have a disassembler and
@@ -80,7 +80,7 @@ It's not an easy road but it's worth it.
 [szh]: https://www.nesdev.org/wiki/PPU_OAM#Sprite_zero_hits
 [ntm]: https://www.nesdev.org/wiki/Mirroring#Nametable_Mirroring
 
-## 05/15 - Working on Background Rendering
+## 05/15/22 - Working on Background Rendering
 
 Three weeks have flown by. I've probably spent the same number of hours in the
 past 3 weeks as I spent in a single week previously. I have a nice 4 day weekend
@@ -130,7 +130,7 @@ pieces of RENDER-TILE with greater confidence though. Iterating in smaller
 chunks with higher confidence is always good and while I'm pretty confident in
 the fetching code, the remainder of the palette computation feels more dubious.
 
-## 06/23 - Ready for Sprites
+## 06/23/22 - Ready for Sprites
 
 Well, it's been five weeks. There was a lull in Clones activity due to real life
 but I've been back with a vengeance the last week or two. Before the lull, I got
@@ -164,3 +164,25 @@ I'm feeling good about things and hopeful that this burst of energy will carry
 me through muscling through the thorny bits of sprite rendering this weekend. If
 I can get that done and make some tweaks for fine scrolling, I'll be well on my
 way to playing Mega Man 2 using my own code. 😎
+
+## 07/26/22 - Scrolling and bugfixing
+
+Here we are a month later and I've got scrolling working. It was mostly a surprise
+to me, stumbling across it randomly in a stream where I was only hoping to fix other
+smaller rendering bugs. The [stupidest off-by-ones][nt-off-by-one] can just ruin your day.
+
+[nt-off-by-one]: https://git.sr.ht/~kingcons/clones/commit/682118b50bc5b74061b7eece30a478fa4c9adb65
+
+I suspect an error very similar to this one is what ruined scrolling in rawbones. The other
+piece of information I have about scrolling that I've been getting wrong is that the RENDER-TILE
+abstraction (or equivalent) needs to be told _where_ on the x-axis to place the tile. Historically,
+I've tried to compute this from the scroll info or PPU address register which just doesn't make sense
+if the viewport is offset from the Nametable starting position. I wrote some notes about that issue
+[here][scroll-notes].
+
+[scroll-notes]: https://git.sr.ht/~kingcons/clones/commit/91edf2bec84bd30779e1ba4ead17217a1a7f01d7
+
+Next steps will be trying to fix the odd rendering bugs that clones has and rawbones doesn't.
+It may be worth trying to get rawbones/epiderNES building again so I can perform differential
+debugging instead of wandering around in the dark. More soon...
+

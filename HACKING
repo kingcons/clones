@@ -7,3 +7,14 @@
    (i.e. clones.foo:@foo in clones.docs:@clones)
 4. Call clones.test.foo:foo-test in clones.test:test-all
 5. Start writing docs and tests, iterate until commit ready!
+
+# Running a game
+
+```
+(ql:quickload :clones)
+(in-package :clones)
+;; Optionally, load a different ROM: (load-app "relative/path/to/rom.nes")
+(run *app*)
+;; Press 'h' for keybindings info in REPL
+```
+
