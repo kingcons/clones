@@ -11,11 +11,11 @@
 ;;
 ;;   guix shell
 ;;
-;; Afterwards, we recommend starting a slynk socket for emacs to connect to:
+;; Afterwards, start clones running a slynk socket and connect via emacs:
 ;;
-;;  SBCL> (clones:start-server)
+;;  > make dev
 ;;
-;; From there, hack away! Code:
+;; From there, hack away!
 
 (use-modules (guix packages)
              (guix licenses)

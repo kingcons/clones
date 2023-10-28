@@ -13,7 +13,8 @@
                 #:static-vector-pointer)
   (:import-from :serapeum
                 #:octet
-                #:~>>))
+                #:~>>)
+  (:export #:main))
 
 (in-package :clones)
 
@@ -231,3 +232,8 @@ r: Display sprites. (use while paused)
 (defun load-app (path &optional (app *app*))
   (with-slots (cpu) app
     (clones.cpu:change-game cpu path)))
+
+(defun main ()
+  (eval-when (:compile-toplevel :load-toplevel :execute)
+    (ql:quickload :slynk))
+  (slynk:start-server ".slynk-port"))

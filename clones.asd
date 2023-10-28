@@ -27,6 +27,9 @@
                  (:file "debug")
                  (:file "clones")
                  (:file "docs"))))
+  :build-operation "program-op"
+  :build-pathname "bin/clones"
+  :entry-point "clones:main"
   :in-order-to ((test-op (test-op clones/test))))
 
 (defsystem clones/test

@@ -6,6 +6,8 @@
 *.x86f
 *~
 .#*
+.slynk-port
+bin/
 site/
 roms/ignored
 test/debug.png
