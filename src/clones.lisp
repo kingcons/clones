@@ -22,7 +22,6 @@
 (defvar *height* 240)
 (defparameter *scale* 4)
 (defparameter *debug* nil)
-(defparameter *disassemble* nil)
 
 (deftype framebuffer ()
   '(simple-array octet (184320)))
@@ -32,6 +31,7 @@
 
 (defclass app ()
   ((cpu :initarg :cpu :type cpu :reader app-cpu)
+   (disasm :initform nil :type boolean :accessor app-disasm)
    (paused :initform nil :type boolean :accessor app-paused)
    (renderer :initform nil :type (or null renderer) :accessor app-renderer)
    (framebuffer :initform nil :type (or null framebuffer) :accessor app-framebuffer)
@@ -117,7 +117,7 @@
         (:scancode-k (update-button controller 'b 1))
         (:scancode-return (update-button controller 'start 1))
         (:scancode-space (update-button controller 'select 1))
-        (:scancode-escape (sdl2:push-event :quit))))))
+        (:scancode-escape (stop-emulation app))))))
 
 (defgeneric handle-keyup (app keysym)
   (:documentation "Perform any special handling for releasing KEYSYM in APP.")
@@ -158,11 +158,11 @@
     (now cpu)))
 
 (defun step-frame (app)
-  (with-slots (cpu renderer framebuffer) app
+  (with-slots (cpu disasm renderer framebuffer) app
     (loop with vblank-scanline = 241
           for cycles = (single-step cpu)
           for result = (sync renderer cpu framebuffer)
-          when *disassemble* do (now cpu)
+          when disasm do (now cpu)
           until (eql result vblank-scanline))))
 
 (defun print-help (app)
@@ -215,13 +215,19 @@ r: Display sprites. (use while paused)
     (present-frame app)))
 
 (defun toggle-disassembly (app)
-  (setf *disassemble* (not *disassemble*)))
+  (with-slots (disasm) app
+    (setf disasm (not disasm))))
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app
     (let ((cartridge (~>> cpu cpu-memory memory-cart clones.mappers:mapper-pathname pathname-name)))
       (format t "~%~:[Pausing ~;Unpausing ~] ~A~%~%" paused cartridge)
       (setf paused (not paused)))))
+
+(defun stop-emulation (app)
+  (with-slots (paused) app
+    (setf paused nil)
+    (sdl2:push-event :quit)))
 
 (defgeneric handle-idle (app)
   (:documentation "Step the NES forward or perform other idle work.")
