@@ -40,6 +40,12 @@
   (:default-initargs
    :cpu (make-cpu)))
 
+(defun app-ppu (app)
+  (~>> app app-cpu cpu-memory memory-ppu))
+
+(defun app-controller (app)
+  (~>> app app-cpu cpu-memory memory-controller))
+
 (defmethod initialize-instance :after ((app app) &key on-frame)
   (unless (app-renderer app)
     (with-slots (cpu renderer framebuffer) app
@@ -99,7 +105,7 @@
 (defgeneric handle-keydown (app keysym)
   (:documentation "Take the appropriate action for KEYSYM in APP.")
   (:method ((app app) keysym)
-    (let ((controller (~>> app app-cpu cpu-memory memory-controller)))
+    (let ((controller (app-controller app)))
       (case (sdl2:scancode keysym)
         (:scancode-h (print-help app))
         (:scancode-n (print-now app))
@@ -122,7 +128,7 @@
 (defgeneric handle-keyup (app keysym)
   (:documentation "Perform any special handling for releasing KEYSYM in APP.")
   (:method ((app app) keysym)
-    (let ((controller (~>> app app-cpu cpu-memory memory-controller)))
+    (let ((controller (app-controller app)))
       (case (sdl2:scancode keysym)
         (:scancode-w (update-button controller 'up 0))
         (:scancode-s (update-button controller 'down 0))
@@ -137,7 +143,7 @@
   (:documentation "Perform any special handling for a mouseclick at (X,Y).")
   (:method ((app app) (x fixnum) (y fixnum))
     (format t "~%Mouse position (x,y): ~3d,~3d~%" x y)
-    (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+    (let* ((ppu (app-ppu app))
            (nametable (clones.ppu::ppu-name-table ppu))
            (nt-byte (aref nametable
                           (+ (mod (clones.ppu::nametable-address ppu) #x2000)
@@ -197,7 +203,7 @@ r: Display sprites. (use while paused)
     (now cpu)))
 
 (defun display-background (app)
-  (let ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+  (let ((ppu (app-ppu app))
         (framebuffer (app-framebuffer app)))
     (clear-buffer framebuffer)
     (clones.debug:dump-graphics framebuffer ppu
@@ -206,7 +212,7 @@ r: Display sprites. (use while paused)
     (present-frame app)))
 
 (defun display-sprites (app)
-  (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+  (let* ((ppu (app-ppu app))
          (framebuffer (app-framebuffer app)))
     (clear-buffer framebuffer)
     (clones.debug:dump-graphics framebuffer ppu
