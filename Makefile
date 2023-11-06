@@ -17,7 +17,7 @@ docs:
 	     --quit
 
 repl:
-	rm -f .slynk-port
+	rm -f .swank-port
 	sbcl --eval "(ql:quickload :clones)" \
 	     --eval "(clones:main)"
 

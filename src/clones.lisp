@@ -247,5 +247,5 @@ r: Display sprites. (use while paused)
 
 (defun main ()
   (eval-when (:compile-toplevel :load-toplevel :execute)
-    (ql:quickload :slynk))
-  (slynk:start-server ".slynk-port"))
+    (ql:quickload :swank))
+  (swank:start-server ".swank-port"))
