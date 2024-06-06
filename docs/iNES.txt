@@ -1,0 +1,43 @@
+ iNES header format
+ ------------------
+
+ > It's composed by 16 bytes at the beginning of a .NES file.
+ Here's an easy description.
+
+    +--------+------+------------------------------------------+
+    | Offset | Size | Contents                                 |
+    +--------+------+------------------------------------------+
+    |   0    |  4   | NES + $1A                                |
+    +--------+------+------------------------------------------+
+    |   4    |  1   | Number of 16kib PRG ROM banks.           |
+    +--------+------+------------------------------------------+
+    |   5    |  1   | Number of 8kib CHR ROM banks.            |
+    +--------+------+------------------------------------------+
+    |   6    |  1   | Control [lower byte]                     |
+    |        |      |   %mmmmVTSM                              |
+    |        |      |    |  ||||+- 0=Horizontal mirroring      |
+    |        |      |    |  ||||   1=Vertical mirroring        |
+    |        |      |    |  |||+-- 1=Backed battery            |
+    |        |      |    |  ||+--- 1=Trainer data (512 bytes)  |
+    |        |      |    |  |+---- 1=Four screen mirroring     |
+    |        |      |    |  |   (overrides H/V mirroring flag) |
+    |        |      |    +--+----- Low 4 bits of mapper number |
+    +--------+------+------------------------------------------+
+    |   7    |  1   | Control [upper byte]                     |
+    |        |      |   %MMMM--PU                              |
+    |        |      |    |  |  |+- 1=VS System                 |
+    |        |      |    |  |  +-- 1=Playchoice-10 system      |
+    |        |      |    +--+----- High 4 bits of mapper number|
+    +--------+------+------------------------------------------+
+    |  8-15  |  8   | Reserved, must be zeroes. Dirty headers  |
+    |        |      | bring garbage here, be warned!           |
+    +--------+------+------------------------------------------+
+
+An iNES file consists of the following sections, in order:
+
+    Header (16 bytes)
+    Trainer, if present (0 or 512 bytes)
+    PRG ROM data (16384 * x bytes)
+    CHR ROM data, if present (8192 * y bytes)
+    PlayChoice INST-ROM, if present (0 or 8192 bytes)
+    PlayChoice PROM, if present (16 bytes Data, 16 bytes CounterOut) (this is often missing, see PC10 ROM-Images for details)

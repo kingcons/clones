@@ -1,0 +1,9 @@
+# Hacking on Clones
+
+1. Create new package and new test package
+   (i.e. clones.foo and clones.test.foo)
+2. Wire up in ASD file appropriately
+3. Create new section and link to doc generator
+   (i.e. clones.foo:@foo in clones.docs:@clones)
+4. Call clones.test.foo:foo-test in clones.test:test-all
+5. Start writing docs and tests, iterate until commit ready!

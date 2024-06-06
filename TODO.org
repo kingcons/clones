@@ -1,0 +1,227 @@
+* Clones Tasks
+*** DONE Implement ROM parsing, returning a plist
+**** DONE Function parse-rom (pathname) -> plist of attributes
+**** DONE Add pathname as an attribute in parse-rom output
+**** DONE Finish tests for parse-rom
+**** DONE Write docs for exported symbols in ROM module
+*** DONE Implement mapper class, then nrom support
+**** DONE mapper interface -> get-prg, set-prg, get-chr, set-chr, load-rom
+**** DONE add nice docs for mapper module
+*** DONE Implement Disassembler
+**** DONE Add a nice instruction reference
+**** DONE Add a simple memory interface fetch/store, just RAM and mapper for now, 0s if doing other I/O
+**** DONE Write tests for the memory interface
+**** DONE Add opcode-data
+**** DONE Build opcode table from instruction-data. Can this be shared with CPU? array of opcode structs
+**** DONE Build disassembler skipping arg formatting, just hex bytes
+*** DONE Stream Warmup
+**** DONE Fix unbound pathname in default mapper / nestest
+**** DONE Convert uses of initform to default-initargs
+**** DONE Build out a correct arg formatter for the different addressing modes. Maybe use trivia/defunion?
+**** DONE Measure build-opcode-table consing. Export *opcode-table* var instead of rebuilding on demand
+*** DONE Struct -> Class cleanups
+**** DONE Update Memory
+**** DONE Update CPU
+**** Keep Opcodes as structs
+***** Opcodes are the most "struct-like" thing of the bunch. Dumb read only record only used for metadata.
+***** Fine with not updating them provided I can find a way to better describe the data structure in MGL-PAX.
+**** DONE Update PPU
+*** DONE Implement CPU
+**** DONE Add conditions for addressing-mode-not-implemented, opcode-not-implemented, opcode-not-found
+**** DONE Add a CPU structure with correct default values and slots
+**** DONE Add a nestest harness in clones.test.cpu
+**** DONE Add a function single-step(cpu) that dispatches to an appropriate handler for the opcode
+**** DONE Opcode Boss Rush!
+***** Start by going over the diff from last time, big thing was added explicit errors to make the fix clear
+****** https://git.sr.ht/~kingcons/clones/commit/dd3cadaf94a56bbfecd6d7cec5977e6719ddb715
+***** Worth calling out that both keywords as function names and structures are antipatterns
+****** https://www.reddit.com/r/lisp/comments/4tihvq/keywords_as_function_names/
+****** Simple REPL tests suggest (funcall (find-symbol "X")) is 10x slower than (funcall 'x).
+****** Dispatching 1M opcodes the latter way takes ~15M host CPU cycles on my machine, ~160-170M for former.
+****** On my MBP, that's still only ~0.05 seconds for "find-symbol" dispatch so could be okay to try later.
+****** Structs could be a premature optimization but why use classes for something that isn't polymorphic?
+***** Keep notes on any weird / tricky things to implement we encounter (rmw, page boundary bonus cycle, etc)
+***** Does it make a difference to use ASH/+ to combine bytes into an address vs DPB?
+***** No difference. SHL ADD MOV vs SHL OR MOV.
+***** What's the difference between DPB and DEPOSIT-FIELD?
+***** Difference is bit significance, see: https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node132.html
+**** DONE Rewrite SET-FLAG-ZN to not hurt my soul.
+***** Probably a SET-FLAG helper macro is the way. dpb ,value (byte 1 ,flag-index) (cpu-status ,cpu)
+***** SET-FLAG-IF is tempting but less general / no improvement on (set-flag cpu :carry (if (zerop x) 1 0))
+***** Rewrite status locations to reference the helper. Maybe add a STATUS? helper for branch-if.
+***** To update: SEC/CLC and friends, BIT, BCC/BCS and friends, SET-FLAG-ZN
+**** DONE Opcode Boss Rush Pt. 2!
+**** DONE Opcode Boss Rush Pt. 3!
+**** DONE Rewrite all stack interactions. Stack is 0x100 -> 0x1FF but I was treating it as zero page.
+**** DONE Need an update strategy for read-modify-write commands. :-(
+***** Not very tough if we're willing to allocate a list or closure in GET-OPERAND.
+***** May want to pass the mode as an argument to these instructions and push logic inside later to avoid alloc.
+**** DONE Factor out FETCH-WORD from absolute addressing.
+**** DONE Remove errors like ADDRESSING-MODE-NOT-IMPLEMENTED, ACCESS-PATTERN-NOT-IMPLEMENTED, OPCODE-NOT-IMPLEMENTED.
+**** DONE Consider adding fetch-indirect and/or cleaning up page wrapping weirdness with indirect addressing.
+**** DONE Add a test case for relative addressing that would strain the LDA PPUSTATUS; BPL &FB trick.
+**** DONE Handling of the :unused status bit is wonky in PHP.
+***** I.e. Should be doing it on PLP side probably since PHA could put a value on the stack for RTI.
+*** DONE Implement PPU
+**** DONE Scaffold PPU module
+**** DONE Add support for NMI
+**** DONE Support combining tile bytes in the pattern table
+**** DONE Get PPU Registers working
+***** DONE Find docs + Write tests
+***** DONE Finish bulk of PPU register behavior (ppu read buffer)
+**** DONE Add PPU Timing tests
+**** DONE Add fetching code for Nametable byte, Attribute byte, Pattern bytes
+**** DONE Compute palette indices from fetched bytes
+**** DONE Uncover why NMI is not happening on every frame
+*** DONE Implement Rendering algorithm
+**** DONE Add a renderer object that tracks scanline, framebuffer, ppu, on_nmi callback
+**** DONE Add a sync method (or similar) that operates on renderer
+**** DONE Add a framebuffer to the renderer
+**** DONE Add a way to change cartridge loaded after initializing nintendo
+**** DONE Add a toplevel STEP-FRAME driver in clones.lisp
+*** DONE Implement Nametable rendering
+**** DONE Add a RENDER-NAMETABLE method
+**** DONE Add a way to draw framebuffer to a file (maybe with zpng)
+***** This exists in clones/test as clones.test.renderer::test-frame
+***** And I later decided to kill the helper when I moved framebuffer into APP class
+*** TODO Implement Sprite rendering
+**** DONE Add support for DMA
+**** DONE Handle horizontal flipping
+***** This requires changes to RENDER-TILE
+**** DONE Handle vertical flipping
+***** This requires changes to FIND-PATTERN-INDEX
+**** DONE Support Sprite Zero Hit
+**** TODO Support 8x16 sprites 😱
+*** DONE Implement Input handling
+*** Scrolling and other improvements
+**** TODO Fix background scrolling.
+***** The current issue is that COMPUTE-X-OFFSET doesn't make sense for backgrounds. Sprites are absolutely positioned so they have a reasonable value here but the background value will always be based on the location of the tile that is being drawn, NOT where it should go on the viewport.
+***** One simple but gross solution here is to pass tile * 8 down from RENDER-VISIBLE-SCANLINE. That still won't do us many favors when we need to implement fine scrolling but it's better than nothing. I'm not 100% sure what the right thing to do is but at least we've located the problem.
+***** It may be worth following the approach recommended by [[https://bugzmanov.github.io/nes_ebook/chapter_8.html][bugzmanov]] and simply render both nametables with some shift amount for how much to move the tiles. That seems to make mirroring an even bigger headache than what I have today though. I'll think about this more over the next few days and see if I have any bright ideas.
+**** TODO Support fetching two tiles at a time to support fine x scrolling
+***** See: https://www.nesdev.org/wiki/PPU_rendering#Preface
+**** TODO Support fine-scroll-vertical for values above 29. (Needed for MM2)
+*** Add support for more mappers
+**** TODO Support CNROM (contra)
+**** DONE Support MMC1 (mega man 2, zelda, etc)
+**** TODO Support MMC3 (super mario bros 3)
+*** General Refactoring and Cleanup
+**** TODO Switch to ITERATE and abandon LOOP? Most of my LOOPs in clones are trivial though. 🤔
+**** TODO Rewrite OVERFLOW? (and ADC/SBC) after working out the subtraction behavior of overflow in detail.
+**** TODO May want a helper for grabbing an individual bit value from status reg. (Probably use LDB/MASK-FIELD)
+**** TODO Consider removing the reliance on renderer from render-sprites (and even render-visible-scanline)
+***** This assertion holds fine except for an nmi-test that may be a little wonky.
+#+BEGIN_SRC lisp
+    (let ((ppu-y-index (+ (* (ldb (byte 5 5) (clones.ppu::ppu-address ppu)) 8)
+                          (ldb (byte 3 12) (clones.ppu::ppu-address ppu)))))
+      (assert (= scanline ppu-y-index)))
+#+END_SRC
+**** TODO Consider reifying scroll directly rather than relying on PPU internals
+#+BEGIN_SRC lisp
+;;; Do I want to follow the with-scroll approach or have a scroll-info object?
+(defmacro with-scroll ((ppu) &body body)
+  `(symbol-macrolet ((coarse-x (ldb (byte 5 0) (ppu-address ,ppu)))
+                     (coarse-y (ldb (byte 5 5) (ppu-address ,ppu)))
+                     (nt-index (ldb (byte 2 10) (ppu-address ,ppu)))
+                     (fine-y (ldb (byte 3 12) (ppu-address ,ppu))))
+     ,@body))
+
+(defclass scroll-info ()
+  ((coarse-x :initarg :coarse-x :accessor coarse-x)
+   (coarse-y :initarg :coarse-y :accessor coarse-y)
+   (nt-index :initarg :nt-index :accessor nt-index)
+   (fine-y :initarg :fine-y :accessor fine-y)))
+
+(defun make-scroll-info (ppu)
+  (let ((address (ppu-address ppu)))
+    (make-instance 'scroll-info
+                   :coarse-x (ldb (byte 5 0) address)
+                   :coarse-y (ldb (byte 5 5) address)
+                   :nt-index (ldb (byte 2 10) address)
+                   :fine-y (ldb (byte 3 12) address))))
+
+(defun scroll-info->address (scroll-info)
+  (~>> (coarse-x scroll-info)
+       (dpb (coarse-y scroll-info) (byte 5 5))
+       (dpb (nt-index scroll-info) (byte 2 10))
+       (dpb (fine-y scroll-info) (byte 3 12))))
+#+END_SRC
+**** TODO Is it possible to have the PPU notify APP that a frame is ready, rather than use ON-FRAME?
+**** DONE Pass a buffer to RENDER-TILE to remove need for a writer-callback.
+**** DONE See if we can consolidate bg-bits and sprite-bits into a single SCANLINE-BUFFER.
+**** DONE Turn nametable viewing into a debug helper.
+**** DONE Figure out a pattern for killing the temp framebuffers from debug helpers.
+*** Docs and Tests
+**** DONE Update doc generation to link to code on sourcehut
+**** TODO Get Klaus functional tests built for NES and wire up in test
+**** TODO Add tests for disassembler
+**** TODO Add narrative docs for ROM
+**** TODO Add narrative docs for Mappers
+**** TODO Add narrative docs for Memory
+**** TODO Add tests for PPUSTATUS sprite bits when sprite evaluation is finished
+**** TODO Add a test that we mirror down PPUADDR writes above 0x3FFF
+*** Keep it CLOSsy
+**** DONE Explore using EQL specialized methods for opcodes. Maybe the GF is `execute`?
+***** Some of this is motivated by reading bits of Common Lisp Recipes and Keene.
+***** The performance of CLOS dispatch is non-zero but pretty trivial.
+***** CLOS dispatch gives me more precise typing and added control (before,after,around,combinations)
+***** At the very least, there's room to explore here.
+**** TODO Explore using EQL specialized methods for operands. Specialize on mode and pattern?
+**** TODO Use EQL specialized methods to break input handlers into actions.lisp?
+**** TODO Explore adding DESCRIBE-OBJECT / PRINT-OBJECT methods for opcodes. Useful in disassembly?
+*** WAIT Explore Raylib
+**** TODO Create bindings for raygui so I can use simple widgets and windowing tools
+**** TODO Wire up a disassembler and CPU single stepping
+*** Implement SDL2 debugger
+**** TODO See how much of a pain it is to have a single stepping debugger UI in raw SDL2
+
+
+* External dependencies
+** DONE Add support for sourcehut URIs to mgl-pax?
+
+
+* Weird issues
+** Hit a confusing disassembler bug because of a missing ' after the , in a format string. Eg. ~2,'0X
+** Stack grows downward on the 6502 lol (encountered during :JSR) 🙃
+*** Hit this _TWICE_ also. Following stack discipline by hand sucks, added STACK-PUSH-WORD, STACK-POP-WORD.
+*** This was extra confusing because we ran into the issues while in RTS not during the JSR.
+*** The return address was getting mangled and it took adding explicit byte printouts on both sides to fix.
+** Relative instruction cycle counting is weird and based on if you cross a page to get to new PC
+*** Hit this _TWICE_ which was even more confusing. TL;DR: You don't pay the toll unless you take the branch!
+** PLA was super confusing because bit 5 became unset and never should be unset.
+*** Even more confusing, the 6502 doc I have says it should never be unset but nestest log says otherwise.
+** Overflow handling is always confusing
+*** I struggle to think about twos complement representation in addition to unsigned values
+*** Looking at past projects I've used quite unsatisfying solutions in the subtraction case.
+** Carry bit having different meanings when adding or subtracting led to some confusion.
+** Didn't write dedicated stack helpers and then was confused when stack pointer and zero page overlapped.
+*** I.e. Had to debug absolute loading from stack which didn't show the right data.
+** RTI and RTS both need to make minor off by one adjustments to their address to behave properly.
+*** JSR winds up accounting for this by adding PC+2 instead of PC+3 to the stack.
+*** RTI currently subtracts one from it's return address since they are pushed in tests by LDA/PHA.
+*** In both cases it's because they aren't :access-pattern :jump. Logically, it feels like they should be.
+** Forgot that stack ops invert. I.e. If stack-push does store/decf stack, stack-pop should incf/fetch
+** Relative addressing passed all tests but was definitely still wrong. BPL &FB was the test case.
+*** I.e. Waiting on a PPU frame render did not behave as intended. At all.
+** Extremely painful bug from NMI pushing status then PC instead of other way around.
+*** Why the hell isn't the NMI page on nesdev more clear about this? Working backwards from RTI would have been better.
+** Tricky scroll issue where after each tile we incremented local var instead of actual PPUADDR.
+** Forgot to multiply by three when computing framebuffer offset (for each RGB byte in a pixel)
+** When computing palette-low-bits, was treating least significant bit as leftmost pixel instead of rightmost.
+*** I.e. When dealing with bit planes in the pattern table, bits should be read left to right not LSB to MSB.
+** Scrolling code was switching nametables before nametable mirroring was written!
+*** This led to a weird "missing every other scanline" effect. It took tracing the NT bytes and PPUADDR of a specific tile (10) on a few scanlines every frame (40-44) to debug.
+** The PPU Palette values on Nesdev wiki for 2C02 appear to be incorrect.
+*** I adjusted by using values from clones and rawbones but can't figure out where those were sourced from.
+** Nametable mirroring was being handled in FETCH-NT-BYTE but not FETCH-AT-BYTE. Oops.
+*** Should be very careful in the future to sequence: scroll code -> mirroring code -> fetching code.
+*** Or, alternately, do fetching naively first and know that both scroll and mirroring updates must follow.
+
+* Cl-raylib notes
+** Easy fix to load even though it isn't on my path:
+
+```
+(let* ((raylib-path "/home/cons/projects/clones/raylib/build/raylib/")
+       (cffi:*foreign-library-directories* (list raylib-path)))
+  (ql:quickload :cl-raylib))
+```
