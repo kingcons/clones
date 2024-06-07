@@ -13,7 +13,7 @@ app:
 docs:
 	sbcl --non-interactive \
 	     --eval "(ql:quickload :clones)" \
-	     --eval "(funcall #'clones:build-docs)" \
+	     --eval "(funcall #'clones.docs:build-docs)" \
 	     --quit
 
 repl:

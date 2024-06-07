@@ -9,7 +9,9 @@
   (:import-from :clones.ppu #:@ppu)
   (:import-from :clones.renderer #:@renderer)
   (:import-from :clones.input #:@input)
-  (:import-from :clones.debug #:@debug))
+  (:import-from :clones.debug #:@debug)
+  (:export #:build-docs
+           #:build-site))
 
 (in-package :clones.docs)
 
