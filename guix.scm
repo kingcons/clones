@@ -11,7 +11,7 @@
 ;;
 ;;   guix shell
 ;;
-;; Afterwards, start clones running a slynk socket and connect via emacs:
+;; Afterwards, start clones running a swank socket and connect via emacs:
 ;;
 ;;  > make repl
 ;;
@@ -96,7 +96,7 @@ pretty, documentation is code.")
   (source (git-checkout (url (dirname (current-filename)))))
   (build-system gnu-build-system)
   (native-inputs (list automake sdl2))
-  (inputs (list sbcl cl-alexandria cl-serapeum cl-mgl-pax cl-static-vectors cl-sdl2))
+  (inputs (list sbcl cl-slime-swank cl-alexandria cl-serapeum cl-mgl-pax cl-static-vectors cl-sdl2))
   (synopsis "Nintendo Emulator in Common Lisp")
   (description "Clones is an NES emulator written in Common Lisp.")
   (home-page "https://clones.kingcons.io/")
