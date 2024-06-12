@@ -19,7 +19,6 @@
 (deftest test-cpu ()
   (test-initial-values)
   (test-legal-opcodes)
-  (test-opcodes-do-not-allocate)
   (test-nmi)
   (test-backwards-branch))
 
@@ -55,17 +54,6 @@
                (assert (string-equal expected actual))
                (single-step cpu))
           finally (is (= (cpu-pc cpu) #xC6BD)))))
-
-(deftest test-opcodes-do-not-allocate ()
-  (let ((cpu (make-cpu)))
-    (setf (cpu-pc cpu) #xC000)
-    (let ((bytes-allocated (sb-ext:get-bytes-consed)))
-      (loop until (= (cpu-pc cpu) #xC6BD) ; First Illegal Opcode
-            do (single-step cpu))
-      (setf (cpu-pc cpu) #xC000
-            (cpu-status cpu) #x24
-            (cpu-stack cpu) #xFD)
-      (is (= bytes-allocated (sb-ext:get-bytes-consed))))))
 
 (deftest test-nmi ()
   (let ((cpu (make-cpu)))

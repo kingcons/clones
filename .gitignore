@@ -6,6 +6,9 @@
 *.x86f
 *~
 .#*
+.slynk-port
+.swank-port
+bin/
 site/
 roms/ignored
-test/debug.png
+test/nametable.png

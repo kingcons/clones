@@ -1,6 +1,7 @@
 (mgl-pax:define-package :clones.debug
   (:use :cl :alexandria :mgl-pax)
-  (:import-from :serapeum #:~>>))
+  (:import-from :serapeum #:~>>)
+  (:import-from :clones.renderer #:render-pixel))
 
 (in-package :clones.debug)
 
@@ -34,7 +35,8 @@
             (funcall callback pattern-index frame-index)
             (clones.ppu:coarse-scroll-horizontal! ppu)))
         (dotimes (scanline 8)
-          (clones.ppu:fine-scroll-vertical! ppu))))))
+          (clones.ppu:fine-scroll-vertical! ppu)
+          (clones.ppu:sync-horizontal-scroll! ppu))))))
 
 (defun for-tile-scanlines (bytes callback)
   (loop for index below (/ (length bytes) 2)
@@ -42,7 +44,7 @@
                  (high-byte (nth (+ index 8) bytes)))
              (funcall callback low-byte high-byte))))
 
-(defun draw-tile-to (ppu framebuffer tile x y)
+(defun draw-tile-to (ppu buffer tile x y)
   (let ((tile-bytes (clones.ppu:fetch-tile-bytes ppu tile))
         (high-bits (clones.ppu::palette-high-bits ppu tile)))
     (flet ((draw-tile-line (low-byte high-byte)
@@ -51,8 +53,9 @@
                       (palette-index (etypecase tile
                                        (clones.ppu:sprite (+ 16 (dpb high-bits (byte 2 2) low-bits)))
                                        (fixnum (dpb high-bits (byte 2 2) low-bits))))
+                      (color-index (clones.ppu:read-palette ppu palette-index))
                       (x-index (+ x tile-index)))
-                 (clones.renderer::render-pixel framebuffer ppu y x-index palette-index)))
+                 (render-pixel buffer x-index y color-index)))
              (incf y)))
       (for-tile-scanlines tile-bytes #'draw-tile-line))))
 
@@ -63,8 +66,8 @@
     (multiple-value-bind (y-pos x-pos) (layout-fn index)
       (values (+ x-pos margin) (* y-pos (+ tile-width margin))))))
 
-(defun dump-graphics (framebuffer ppu &key iterator margin)
+(defun dump-graphics (buffer ppu &key iterator margin)
   (funcall iterator ppu
            (lambda (tile index)
              (multiple-value-bind (x y) (coordinates-for index :margin margin)
-               (draw-tile-to ppu framebuffer tile x y)))))
+               (draw-tile-to ppu buffer tile x y)))))

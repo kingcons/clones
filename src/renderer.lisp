@@ -20,7 +20,8 @@
 (defsection @renderer (:title "The Rendering Logic")
   (renderer class)
   (make-renderer function)
-  (sync generic-function))
+  (sync generic-function)
+  (render-pixel function))
 
 (define-constant +scanlines-per-frame+ 262
   :documentation "The number of scanlines rendered by the PPU per frame.")
@@ -114,9 +115,9 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
           (when-let ((sprite (aref sprites sprite-index)))
             (let ((x-offset (compute-x-offset ppu sprite)))
               (render-tile-line ppu buffer sprite x-offset scanline))))))
-    (dotimes (pixel-index 256)
-      (let ((palette-index (aref buffer pixel-index)))
-        (render-pixel framebuffer ppu scanline pixel-index palette-index)))
+    (dotimes (x-index 256)
+      (let ((color-index (read-palette ppu (aref buffer x-index))))
+        (render-pixel framebuffer x-index scanline color-index)))
     (fine-scroll-vertical! ppu)
     (sync-horizontal-scroll! ppu)))
 
@@ -181,11 +182,9 @@ to specify this. See: https://www.nesdev.org/wiki/Palette#2C02"
                   (sprite (pixel-priority previous-value palette-index tile ppu))
                   (fixnum palette-index))))))))
 
-(defun render-pixel (framebuffer ppu y-index x-index palette-index)
-  (let* ((color-index (read-palette ppu palette-index))
-         (offset (* (+ (* y-index 256) x-index) 3))
-         (rgb-value (aref +palette+ color-index)))
+(defun render-pixel (framebuffer x y color-index)
+  (let ((color (aref +palette+ color-index))
+        (offset (* 3 (+ (* y 256) x))))
     (dotimes (i 3)
       (setf (aref framebuffer (+ offset i))
-            (aref rgb-value i)))))
-
+            (aref color i)))))

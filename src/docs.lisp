@@ -1,21 +1,33 @@
 (mgl-pax:define-package :clones.docs
-  (:use :cl :alexandria :mgl-pax))
+  (:use :cl :alexandria :mgl-pax)
+  (:import-from :clones.rom #:@rom)
+  (:import-from :clones.mappers #:@mappers)
+  (:import-from :clones.memory #:@memory)
+  (:import-from :clones.opcodes #:@opcodes)
+  (:import-from :clones.disassembler #:@disassembler)
+  (:import-from :clones.cpu #:@cpu)
+  (:import-from :clones.ppu #:@ppu)
+  (:import-from :clones.renderer #:@renderer)
+  (:import-from :clones.input #:@input)
+  (:import-from :clones.debug #:@debug)
+  (:export #:build-docs
+           #:build-site))
 
 (in-package :clones.docs)
 
 (defsection @clones (:title "Clones - An NES Emulator")
   (@links section)
   (@overview section)
-  (clones.rom:@rom section)
-  (clones.mappers:@mappers section)
-  (clones.memory:@memory section)
-  (clones.opcodes:@opcodes section)
-  (clones.disassembler:@disassembler section)
-  (clones.cpu:@cpu section)
-  (clones.ppu:@ppu section)
-  (clones.renderer:@renderer section)
-  (clones.input:@input section)
-  (clones.debug:@debug section))
+  (@rom section)
+  (@mappers section)
+  (@memory section)
+  (@opcodes section)
+  (@disassembler section)
+  (@cpu section)
+  (@ppu section)
+  (@renderer section)
+  (@input section)
+  (@debug section))
 
 (defsection @links (:title "Links")
   "[repo]: https://git.sr.ht/~kingcons/clones
@@ -89,7 +101,7 @@ Work has just begun so nothing is playable yet. Hang in there.
   (update-asdf-system-html-docs
    @clones :clones
    :target-dir (asdf:system-relative-pathname :clones "site/")
-   :pages `((:objects (,clones.docs:@clones)
+   :pages `((:objects (,clones.docs::@clones)
              :source-uri-fn ,(make-git-source-uri-fn
                               :clones "https://git.sr.ht/~kingcons/clones"
                               :uri-format-string "~A/tree/~A/item/~A#L~D")))))

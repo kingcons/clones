@@ -47,8 +47,7 @@
       (zpng:write-png image test-image-path))
     (let ((test-dir (asdf:system-relative-pathname :clones "test/")))
       (uiop:with-current-directory (test-dir)
-        (is (null (uiop:run-program "diff dk-background.png nametable.png")))))
-    (uiop:delete-file-if-exists test-image-path)))
+        (is (null (uiop:run-program "diff dk-background.png nametable.png")))))))
 
 (defun build-renderer (&key on-nmi)
   (let* ((cpu (clones.cpu:make-cpu))

@@ -13,7 +13,8 @@
                 #:static-vector-pointer)
   (:import-from :serapeum
                 #:octet
-                #:~>>))
+                #:~>>)
+  (:export #:main))
 
 (in-package :clones)
 
@@ -21,7 +22,6 @@
 (defvar *height* 240)
 (defparameter *scale* 4)
 (defparameter *debug* nil)
-(defparameter *disassemble* nil)
 
 (deftype framebuffer ()
   '(simple-array octet (184320)))
@@ -31,6 +31,7 @@
 
 (defclass app ()
   ((cpu :initarg :cpu :type cpu :reader app-cpu)
+   (disasm :initform nil :type boolean :accessor app-disasm)
    (paused :initform nil :type boolean :accessor app-paused)
    (renderer :initform nil :type (or null renderer) :accessor app-renderer)
    (framebuffer :initform nil :type (or null framebuffer) :accessor app-framebuffer)
@@ -38,6 +39,12 @@
    (sdl-renderer :initform nil :accessor app-sdl-renderer))
   (:default-initargs
    :cpu (make-cpu)))
+
+(defun app-ppu (app)
+  (~>> app app-cpu cpu-memory memory-ppu))
+
+(defun app-controller (app)
+  (~>> app app-cpu cpu-memory memory-controller))
 
 (defmethod initialize-instance :after ((app app) &key on-frame)
   (unless (app-renderer app)
@@ -98,7 +105,7 @@
 (defgeneric handle-keydown (app keysym)
   (:documentation "Take the appropriate action for KEYSYM in APP.")
   (:method ((app app) keysym)
-    (let ((controller (~>> app app-cpu cpu-memory memory-controller)))
+    (let ((controller (app-controller app)))
       (case (sdl2:scancode keysym)
         (:scancode-h (print-help app))
         (:scancode-n (print-now app))
@@ -116,12 +123,12 @@
         (:scancode-k (update-button controller 'b 1))
         (:scancode-return (update-button controller 'start 1))
         (:scancode-space (update-button controller 'select 1))
-        (:scancode-escape (sdl2:push-event :quit))))))
+        (:scancode-escape (stop-emulation app))))))
 
 (defgeneric handle-keyup (app keysym)
   (:documentation "Perform any special handling for releasing KEYSYM in APP.")
   (:method ((app app) keysym)
-    (let ((controller (~>> app app-cpu cpu-memory memory-controller)))
+    (let ((controller (app-controller app)))
       (case (sdl2:scancode keysym)
         (:scancode-w (update-button controller 'up 0))
         (:scancode-s (update-button controller 'down 0))
@@ -136,7 +143,7 @@
   (:documentation "Perform any special handling for a mouseclick at (X,Y).")
   (:method ((app app) (x fixnum) (y fixnum))
     (format t "~%Mouse position (x,y): ~3d,~3d~%" x y)
-    (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+    (let* ((ppu (app-ppu app))
            (nametable (clones.ppu::ppu-name-table ppu))
            (nt-byte (aref nametable
                           (+ (mod (clones.ppu::nametable-address ppu) #x2000)
@@ -157,11 +164,11 @@
     (now cpu)))
 
 (defun step-frame (app)
-  (with-slots (cpu renderer framebuffer) app
+  (with-slots (cpu disasm renderer framebuffer) app
     (loop with vblank-scanline = 241
           for cycles = (single-step cpu)
           for result = (sync renderer cpu framebuffer)
-          when *disassemble* do (now cpu)
+          when disasm do (now cpu)
           until (eql result vblank-scanline))))
 
 (defun print-help (app)
@@ -170,7 +177,16 @@
 ===========
 CLONES HELP
 ===========
-# App controls
+~%# Game controls
+w: Up
+s: Down
+a: Left
+d: Right
+j: A
+k: B
+Space: Select
+Enter: Start
+~%# App controls
 ESC: Quit the app.
 h: Print this help message.
 n: Print disassembly of the current instruction.
@@ -180,15 +196,6 @@ p: Pause or unpause the emulation.
 l: Toggle disassembly.
 b: Display background. (use while paused)
 r: Display sprites. (use while paused)
-# Game controls
-w: Up
-s: Down
-a: Left
-d: Right
-j: A
-k: B
-Space: Select
-Enter: Start
 ~%~%~%"))
 
 (defun print-now (app)
@@ -196,7 +203,7 @@ Enter: Start
     (now cpu)))
 
 (defun display-background (app)
-  (let ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+  (let ((ppu (app-ppu app))
         (framebuffer (app-framebuffer app)))
     (clear-buffer framebuffer)
     (clones.debug:dump-graphics framebuffer ppu
@@ -205,7 +212,7 @@ Enter: Start
     (present-frame app)))
 
 (defun display-sprites (app)
-  (let* ((ppu (~>> app app-cpu cpu-memory memory-ppu))
+  (let* ((ppu (app-ppu app))
          (framebuffer (app-framebuffer app)))
     (clear-buffer framebuffer)
     (clones.debug:dump-graphics framebuffer ppu
@@ -214,7 +221,8 @@ Enter: Start
     (present-frame app)))
 
 (defun toggle-disassembly (app)
-  (setf *disassemble* (not *disassemble*)))
+  (with-slots (disasm) app
+    (setf disasm (not disasm))))
 
 (defun toggle-pause (app)
   (with-slots (cpu paused) app
@@ -222,8 +230,22 @@ Enter: Start
       (format t "~%~:[Pausing ~;Unpausing ~] ~A~%~%" paused cartridge)
       (setf paused (not paused)))))
 
+(defun stop-emulation (app)
+  (with-slots (paused) app
+    (setf paused nil)
+    (sdl2:push-event :quit)))
+
 (defgeneric handle-idle (app)
   (:documentation "Step the NES forward or perform other idle work.")
   (:method ((app app))
     (unless (app-paused app)
       (step-frame app))))
+
+(defun load-app (path &optional (app *app*))
+  (with-slots (cpu) app
+    (clones.cpu:change-game cpu path)))
+
+(defun main ()
+  (eval-when (:compile-toplevel :load-toplevel :execute)
+    (ql:quickload :swank))
+  (swank:start-server ".swank-port"))
